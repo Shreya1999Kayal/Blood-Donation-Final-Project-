@@ -84,6 +84,7 @@ function donorCooldownRemaining(donor) {
 }
 const requests = bloodRequests || [];
 const showDocsCol = user.role === 'admin' || user.role === 'user';
+const hideUrgencyTable = typeof hideUrgency !== 'undefined' && hideUrgency;
 const colCount = showDocsCol ? 11 : 10;
 %>
 
@@ -116,8 +117,8 @@ const colCount = showDocsCol ? 11 : 10;
                 <% if (requests.length) { %>
                     <% requests.forEach(function(r) {
                         const label = twStatusLabel(r.status);
-                        const urgLevel = String(r.urgencyLevel || 'High').toLowerCase();
-                        const urgKey = urgLevel === 'critical' ? 'critical' : urgLevel === 'normal' ? 'normal' : 'high';
+                        const urgLevel = hideUrgencyTable ? '' : String(r.urgencyLevel || 'High').toLowerCase();
+                        const urgKey = hideUrgencyTable ? '' : (urgLevel === 'critical' ? 'critical' : urgLevel === 'normal' ? 'normal' : 'high');
                         const isLiveRow = ['active', 'contacted'].includes(label);
                         const rowStatus = isLiveRow ? label : 'closed';
                         const rowSearch = [r.patientName, r.bloodGroup, r.hospitalName, r.city, r.contactName, r.contactPhone].join(' ').toLowerCase();
@@ -128,7 +129,7 @@ const colCount = showDocsCol ? 11 : 10;
                         data-req-item
                         data-status="<%= rowStatus %>"
                         data-live="<%= isLiveRow ? '1' : '0' %>"
-                        data-urgency="<%= urgKey %>"
+                        <% if (!hideUrgencyTable) { %>data-urgency="<%= urgKey %>"<% } %>
                         data-search="<%= rowSearch.replace(/"/g, '') %>">
                         <td class="<%= twTdClass() %> whitespace-nowrap">
                             <div class="flex items-center gap-3">
@@ -137,7 +138,7 @@ const colCount = showDocsCol ? 11 : 10;
                                 </div>
                                 <div>
                                     <div class="font-semibold text-slate-900"><%= r.patientName %></div>
-                                    <% if (!isDonorTheme && r.urgencyLevel) { %>
+                                    <% if (!hideUrgencyTable && !isDonorTheme && r.urgencyLevel) { %>
                                     <span class="<%= twBadgeBase() %> <%= twUrgencyTw(r.urgencyLevel) %> !px-1.5 !py-0 text-[10px]"><%= r.urgencyLevel %></span>
                                     <% } %>
                                 </div>

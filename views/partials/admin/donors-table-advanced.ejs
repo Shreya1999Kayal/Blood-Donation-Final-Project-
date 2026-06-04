@@ -1,4 +1,5 @@
 <%
+const donorCardBanner = '/images/donor-profile-banner.png?v=2';
 function twInitials(name) {
     if (!name) return '?';
     return name.split(' ').map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
@@ -67,7 +68,12 @@ const donors = allDonors || [];
                     <tr class="<%= twRowClass() %>" data-donor-item data-status="<%= d.status %>" data-elig="<%= eligKey %>" data-search="<%= searchText.replace(/"/g, '') %>">
                         <td class="<%= twTdClass() %> whitespace-nowrap">
                             <div class="flex items-center gap-3">
-                                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-700 text-[11px] font-bold text-white ring-2 ring-white"><%= twInitials(name) %></div>
+                                <div class="don-table-avatar-wrap">
+                                    <div class="don-table-avatar-ring" style="background-image: url('<%= donorCardBanner %>');"></div>
+                                    <div class="don-table-avatar-inner">
+                                        <%- include('../shared/card-avatar', { contactUser: user, cardAvatarClass: 'don-table-avatar-face' }) %>
+                                    </div>
+                                </div>
                                 <div>
                                     <div class="font-semibold text-slate-900"><%= name %></div>
                                     <div class="text-xs text-slate-500"><%= user.email || '' %></div>

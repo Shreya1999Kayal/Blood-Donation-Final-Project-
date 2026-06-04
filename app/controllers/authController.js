@@ -438,7 +438,10 @@ exports.resendOtp = async (req, res) => {
     } catch (error) {
         console.error('Resend OTP error:', error);
         const email = req.body.email || '';
-        res.redirect(`/auth/verify-email?email=${encodeURIComponent(email)}&error=${encodeURIComponent('Could not resend code. Please try again.')}`);
+        const msg = error.message && /sendgrid|email delivery|smtp/i.test(error.message)
+            ? 'Could not send email. Check SendGrid sender verification and Render environment variables.'
+            : 'Could not resend code. Please try again.';
+        res.redirect(`/auth/verify-email?email=${encodeURIComponent(email)}&error=${encodeURIComponent(msg)}`);
     }
 };
 

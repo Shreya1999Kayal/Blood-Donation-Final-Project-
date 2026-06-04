@@ -69,7 +69,6 @@
     const reqCardsView = document.getElementById('reqCardsView');
     const reqTableView = document.getElementById('reqTableView');
     let reqStatusFilter = 'all';
-    let reqUrgencyFilter = 'all';
 
     function reqItems() {
         return reqBoard ? Array.from(reqBoard.querySelectorAll('[data-req-item]')) : [];
@@ -78,12 +77,10 @@
     function reqMatchesFilters(el, query) {
         const status = el.dataset.status;
         const live = el.dataset.live === '1';
-        const urgency = el.dataset.urgency;
         const search = el.dataset.search || '';
         if (query && search.indexOf(query) === -1) return false;
         if (reqStatusFilter === 'live' && !live) return false;
         if (reqStatusFilter !== 'all' && reqStatusFilter !== 'live' && status !== reqStatusFilter) return false;
-        if (reqUrgencyFilter !== 'all' && urgency !== reqUrgencyFilter) return false;
         return true;
     }
 
@@ -122,29 +119,10 @@
         });
     });
 
-    document.getElementById('reqUrgencyFilters')?.querySelectorAll('.req-pill').forEach(function (pill) {
-        pill.addEventListener('click', function () {
-            reqUrgencyFilter = pill.dataset.reqUrgency;
-            setReqPillActive(document.getElementById('reqUrgencyFilters'), 'reqUrgency', reqUrgencyFilter);
-            applyReqFilters();
-        });
-    });
-
-    document.getElementById('reqFilterCritical')?.addEventListener('click', function () {
-        reqUrgencyFilter = 'critical';
-        reqStatusFilter = 'live';
-        setReqPillActive(document.getElementById('reqUrgencyFilters'), 'reqUrgency', 'critical');
-        setReqPillActive(document.getElementById('reqStatusFilters'), 'reqStatus', 'live');
-        applyReqFilters();
-        document.getElementById('section-requests')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-
     document.getElementById('reqClearFilters')?.addEventListener('click', function () {
         reqStatusFilter = 'all';
-        reqUrgencyFilter = 'all';
         if (reqSearch) reqSearch.value = '';
         setReqPillActive(document.getElementById('reqStatusFilters'), 'reqStatus', 'all');
-        setReqPillActive(document.getElementById('reqUrgencyFilters'), 'reqUrgency', 'all');
         applyReqFilters();
     });
 

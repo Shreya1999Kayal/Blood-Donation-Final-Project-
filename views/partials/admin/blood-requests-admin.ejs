@@ -26,20 +26,22 @@ function filterStatus(s) {
     return 'closed';
 }
 const showUrgency = typeof hideUrgency === 'undefined' ? true : !hideUrgency;
+const bloodRequestBanner = '/images/blood-request-banner.png';
 %>
 
 <div class="req-board" id="reqBoard">
     <% if (bloodRequests && bloodRequests.length > 0) { %>
         <% bloodRequests.forEach(function(r) {
             const label = statusLabel(r.status);
-            const urg = urgencyClass(r.urgencyLevel);
+            const urg = showUrgency ? urgencyClass(r.urgencyLevel) : '';
             const isLive = ['active', 'contacted'].includes(label);
             const searchText = [r.patientName, r.bloodGroup, r.hospitalName, r.city, r.contactName, r.contactPhone].join(' ').toLowerCase();
             const matchedCount = (r.matchedDonors || []).length;
             const responderCount = (r.contacts || []).length;
+            const cardBanner = showUrgency ? bannerImg(r.urgencyLevel) : bloodRequestBanner;
         %>
         <article
-            class="req-card<%= showUrgency ? ' req-card-' + urg : '' %><%= isLive ? '' : ' req-card-closed' %>"
+            class="req-card<%= showUrgency && urg ? ' req-card-' + urg : '' %><%= !showUrgency ? ' req-card-banner-brand' : '' %><%= isLive ? '' : ' req-card-closed' %>"
             data-req-item
             data-status="<%= filterStatus(r.status) %>"
             data-live="<%= isLive ? '1' : '0' %>"
@@ -47,7 +49,7 @@ const showUrgency = typeof hideUrgency === 'undefined' ? true : !hideUrgency;
             data-search="<%= searchText.replace(/"/g, '') %>"
         >
             <div class="req-card-banner">
-                <img src="<%= bannerImg(showUrgency ? r.urgencyLevel : 'normal') %>" alt="" loading="lazy">
+                <img src="<%= cardBanner %>" alt="" loading="lazy">
                 <div class="req-card-banner-shade"></div>
                 <div class="req-card-blood"><%= r.bloodGroup %></div>
                 <div class="req-card-top-badges">

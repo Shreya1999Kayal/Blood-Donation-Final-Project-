@@ -439,3 +439,5 @@ The platform includes:
 ✅ Scalable hospital-grade architecture
 
 This is a highly advanced industry-level Node.js + EJS healthcare emergency platform.
+
+Render link - https://blood-donation-final-project.onrender.com/

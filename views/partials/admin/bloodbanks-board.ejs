@@ -1,13 +1,5 @@
 <%
-function bannerForStatus(status) {
-    if (status === 'approved') return 'https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=600&h=200&fit=crop&q=80';
-    if (status === 'rejected') return 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&h=200&fit=crop&q=80';
-    return 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&h=200&fit=crop&q=80';
-}
-function initials(name) {
-    if (!name) return '?';
-    return name.split(' ').map(function(p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
-}
+const bloodbankCardBanner = '/images/bloodbank-profile-banner.png?v=2';
 function isPdfUrl(url) {
     if (!url || typeof url !== 'string') return false;
     return /\.pdf($|\?|#)/i.test(url) || (url.includes('cloudinary.com') && url.includes('/raw/upload/'));
@@ -39,11 +31,10 @@ function barLevel(units) {
         >
             <div class="bb-card-top">
                 <div class="bb-card-cover">
-                    <img src="<%= bannerForStatus(bb.status) %>" alt="" loading="lazy">
+                    <img src="<%= bloodbankCardBanner %>" alt="" loading="lazy">
                     <div class="bb-card-cover-shade"></div>
                 </div>
                 <div class="bb-card-identity">
-                    <div class="bb-card-avatar"><%= initials(bb.hospitalName) %></div>
                     <div class="bb-card-identity-main">
                         <span class="bb-card-stock"><%= units %> units</span>
                         <div class="bb-card-top-badges">

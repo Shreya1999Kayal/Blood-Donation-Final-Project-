@@ -1,190 +1,273 @@
 <%
+
 function statusLabel(s) {
+
     if (s === 'fulfilled') return 'received';
+
     return s;
+
 }
+
 const requests = bloodRequests || [];
+
 const activeList = requests.filter(function(r) { return ['active', 'contacted'].includes(r.status); });
-const criticalList = requests.filter(function(r) { return String(r.urgencyLevel).toLowerCase() === 'critical' && !['received', 'fulfilled', 'cancelled'].includes(r.status); });
+
 const contactedCount = requests.filter(function(r) { return r.status === 'contacted'; }).length;
+
 const closedCount = requests.filter(function(r) { return ['received', 'fulfilled', 'cancelled'].includes(r.status); }).length;
+
 const totalUnits = activeList.reduce(function(sum, r) { return sum + Number(r.requiredUnits || 0); }, 0);
 
+
+
 const reqStats = [
+
     { label: 'Total requests', value: requests.length, icon: 'clipboard-list', tone: 'slate', img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=260&fit=crop&q=80' },
+
     { label: 'Live emergencies', value: activeList.length, icon: 'siren', tone: 'red', img: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=400&h=260&fit=crop&q=80' },
-    { label: 'Critical cases', value: criticalList.length, icon: 'alert-triangle', tone: 'amber', img: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=260&fit=crop&q=80' },
+
+    { label: 'In coordination', value: contactedCount, icon: 'phone-call', tone: 'blue', img: 'https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=400&h=260&fit=crop&q=80' },
+
     { label: 'Units needed (live)', value: totalUnits, icon: 'droplets', tone: 'rose', img: 'https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=400&h=260&fit=crop&q=80' },
+
 ];
+
 %>
 
+
+
 <!-- Hero -->
+
 <div class="req-hero mb-4">
+
     <div class="req-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1584982751661-6085a089094a?w=1400&h=420&fit=crop&q=85');"></div>
+
     <div class="req-hero-overlay"></div>
+
     <div class="req-hero-content">
+
         <div class="row align-items-end g-3">
+
             <div class="col-lg-8">
+
                 <span class="req-hero-badge"><span class="pulse-dot"></span> Emergency dispatch center</span>
+
                 <h3 class="req-hero-title">Emergency blood requests</h3>
+
                 <p class="req-hero-sub mb-0">Monitor live patient cases, coordinate responders, and track fulfillment across every hospital on the platform.</p>
+
             </div>
+
             <div class="col-lg-4">
+
                 <div class="req-hero-meta">
+
                     <div><small>Active now</small><strong><%= activeList.length %></strong></div>
-                    <div><small>Critical</small><strong class="text-warning"><%= criticalList.length %></strong></div>
+
+                    <div><small>Closed</small><strong><%= closedCount %></strong></div>
+
                     <div><small>Responders engaged</small><strong><%= contactedCount %></strong></div>
+
                 </div>
+
             </div>
+
         </div>
+
     </div>
+
 </div>
 
-<% if (criticalList.length > 0) { %>
-<div class="req-critical-strip mb-4">
-    <div class="req-critical-strip-icon">
-        <img src="https://images.unsplash.com/photo-1516549655169-df83a0774514?w=100&h=100&fit=crop&q=80" alt="" loading="lazy">
-    </div>
-    <div class="flex-grow-1">
-        <h6 class="mb-1"><i data-lucide="alert-circle" style="width:16px;height:16px;" class="me-1"></i> <%= criticalList.length %> critical case<%= criticalList.length !== 1 ? 's' : '' %> require immediate attention</h6>
-        <p class="mb-0 small text-muted">Prioritize contact and donor matching for high-urgency patients below.</p>
-    </div>
-    <button type="button" class="btn btn-danger btn-sm" id="reqFilterCritical">Show critical only</button>
-</div>
-<% } %>
+
 
 <!-- KPI row -->
+
 <div class="row g-3 mb-4">
+
     <% reqStats.forEach(function(stat) { %>
+
     <div class="col-sm-6 col-xl-3">
+
         <div class="overview-kpi overview-kpi-<%= stat.tone %>">
+
             <div class="overview-kpi-visual">
+
                 <img src="<%= stat.img %>" alt="" loading="lazy">
+
                 <div class="overview-kpi-visual-shade"></div>
+
             </div>
+
             <div class="overview-kpi-body">
+
                 <div class="overview-kpi-icon"><i data-lucide="<%= stat.icon %>" style="width:20px;height:20px;"></i></div>
+
                 <div class="overview-kpi-label"><%= stat.label %></div>
+
                 <div class="overview-kpi-value"><%= stat.value %></div>
+
             </div>
+
         </div>
+
     </div>
+
     <% }); %>
+
 </div>
+
+
 
 <div class="row g-4 mb-4">
+
     <!-- Main board -->
+
     <div class="col-xl-8">
+
         <div class="overview-panel">
+
             <div class="overview-panel-head flex-wrap">
+
                 <div>
+
                     <h5>Request board</h5>
+
                     <p class="text-muted small mb-0"><span id="reqVisibleCount"><%= requests.length %></span> of <%= requests.length %> request(s) shown</p>
+
                 </div>
+
                 <div class="d-flex align-items-center gap-2 flex-wrap">
+
                     <a href="/request" class="btn btn-outline-danger btn-sm">Full list page</a>
+
                     <div class="btn-group btn-group-sm req-view-toggle" role="group">
+
                         <button type="button" class="btn btn-danger active" data-req-view="cards" title="Card view"><i data-lucide="layout-grid" style="width:14px;height:14px;"></i></button>
+
                         <button type="button" class="btn btn-outline-secondary" data-req-view="table" title="Table view"><i data-lucide="table" style="width:14px;height:14px;"></i></button>
+
                     </div>
+
                 </div>
+
             </div>
+
+
 
             <!-- Filters -->
+
             <div class="req-toolbar">
+
                 <div class="req-search-wrap">
+
                     <i data-lucide="search" style="width:16px;height:16px;"></i>
+
                     <input type="search" class="form-control form-control-sm" id="reqSearch" placeholder="Search patient, hospital, city, blood type…" autocomplete="off">
+
                 </div>
+
                 <div class="req-filter-group">
+
                     <span class="req-filter-label">Status</span>
+
                     <div class="req-pills" id="reqStatusFilters">
+
                         <button type="button" class="req-pill active" data-req-status="all">All</button>
+
                         <button type="button" class="req-pill" data-req-status="live">Live</button>
+
                         <button type="button" class="req-pill" data-req-status="active">Active</button>
+
                         <button type="button" class="req-pill" data-req-status="contacted">Contacted</button>
+
                         <button type="button" class="req-pill" data-req-status="closed">Closed</button>
+
                     </div>
+
                 </div>
-                <div class="req-filter-group">
-                    <span class="req-filter-label">Urgency</span>
-                    <div class="req-pills" id="reqUrgencyFilters">
-                        <button type="button" class="req-pill active" data-req-urgency="all">All</button>
-                        <button type="button" class="req-pill" data-req-urgency="critical">Critical</button>
-                        <button type="button" class="req-pill" data-req-urgency="high">High</button>
-                        <button type="button" class="req-pill" data-req-urgency="normal">Normal</button>
-                    </div>
-                </div>
+
             </div>
+
+
 
             <div class="overview-panel-body pt-0">
+
                 <div id="reqCardsView">
-                    <%- include('blood-requests-admin', { bloodRequests: requests, user }) %>
+
+                    <%- include('blood-requests-admin', { bloodRequests: requests, user, hideUrgency: true }) %>
+
                 </div>
+
                 <div id="reqTableView" class="d-none">
-                    <%- include('../shared/advanced-blood-requests-table', { bloodRequests: requests, user, donorProfile: null, bloodbank: null, twTheme: 'admin' }) %>
+
+                    <%- include('../shared/advanced-blood-requests-table', { bloodRequests: requests, user, donorProfile: null, bloodbank: null, twTheme: 'admin', hideUrgency: true }) %>
+
                 </div>
+
             </div>
+
         </div>
+
     </div>
+
+
 
     <!-- Sidebar -->
+
     <div class="col-xl-4">
-        <% if (typeof analytics !== 'undefined' && analytics && analytics.requestsByUrgency) { %>
-        <div class="overview-panel mb-4">
-            <div class="overview-panel-head">
-                <div>
-                    <h5>Urgency breakdown</h5>
-                    <p class="text-muted small mb-0">Platform-wide request distribution</p>
-                </div>
-            </div>
-            <div class="overview-panel-body">
-                <div class="overview-chart-box">
-                    <canvas id="reqSectionUrgencyChart" height="200"></canvas>
-                </div>
-            </div>
-        </div>
-        <% } %>
 
         <div class="overview-panel mb-4">
+
             <div class="overview-panel-head">
+
                 <h5>Response playbook</h5>
+
             </div>
+
             <div class="overview-panel-body pt-2">
+
                 <div class="req-playbook-item">
-                    <img src="https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
-                    <div>
-                        <strong>1. Triage critical first</strong>
-                        <p class="small text-muted mb-0">Filter by critical urgency and contact patients within minutes.</p>
-                    </div>
+                    <strong>1. Review live cases first</strong>
+                    <p class="small text-muted mb-0">Filter by live or active status and contact patients promptly.</p>
                 </div>
                 <div class="req-playbook-item">
-                    <img src="https://images.unsplash.com/photo-1615461066159-fa5966998606?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
-                    <div>
-                        <strong>2. Match verified donors</strong>
-                        <p class="small text-muted mb-0">Review matched donors on each card and coordinate via call or chat.</p>
-                    </div>
+                    <strong>2. Match verified donors</strong>
+                    <p class="small text-muted mb-0">Review matched donors on each card and coordinate via call or chat.</p>
                 </div>
                 <div class="req-playbook-item mb-0">
-                    <img src="https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
-                    <div>
-                        <strong>3. Confirm fulfillment</strong>
-                        <p class="small text-muted mb-0"><%= closedCount %> request(s) already closed on the network.</p>
-                    </div>
+                    <strong>3. Confirm fulfillment</strong>
+                    <p class="small text-muted mb-0"><%= closedCount %> request(s) already closed on the network.</p>
                 </div>
+
             </div>
+
         </div>
 
+
+
         <div class="overview-panel overview-panel-accent">
+
             <div class="overview-panel-head border-0 pb-0">
+
                 <h5 class="text-white mb-0">Live snapshot</h5>
+
             </div>
+
             <div class="overview-panel-body">
+
                 <div class="req-live-stat"><span>Active cases</span><strong><%= activeList.length %></strong></div>
+
                 <div class="req-live-stat"><span>Awaiting contact</span><strong><%= requests.filter(function(r) { return r.status === 'active'; }).length %></strong></div>
+
                 <div class="req-live-stat"><span>In coordination</span><strong><%= contactedCount %></strong></div>
+
                 <div class="req-live-stat mb-0"><span>Blood units (live)</span><strong><%= totalUnits %></strong></div>
+
             </div>
+
         </div>
+
     </div>
+
 </div>
+

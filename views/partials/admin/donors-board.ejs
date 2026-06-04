@@ -1,9 +1,5 @@
 <%
-function bannerForStatus(status) {
-    if (status === 'approved') return 'https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=600&h=200&fit=crop&q=80';
-    if (status === 'rejected') return 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&h=200&fit=crop&q=80';
-    return 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&h=200&fit=crop&q=80';
-}
+const donorCardBanner = '/images/donor-profile-banner.png?v=2';
 function initials(name) {
     if (!name) return '?';
     return name.split(' ').map(function(p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
@@ -42,11 +38,16 @@ function docSlots(docs) {
         >
             <div class="don-card-top">
                 <div class="don-card-cover">
-                    <img src="<%= bannerForStatus(d.status) %>" alt="" loading="lazy">
+                    <img src="<%= donorCardBanner %>" alt="" loading="lazy">
                     <div class="don-card-cover-shade"></div>
                 </div>
                 <div class="don-card-identity">
-                    <%- include('../shared/card-avatar', { contactUser: user, cardAvatarClass: 'don-card-avatar' }) %>
+                    <div class="don-card-avatar">
+                        <div class="don-card-avatar-ring" style="background-image: url('<%= donorCardBanner %>');"></div>
+                        <div class="don-card-avatar-inner">
+                            <%- include('../shared/card-avatar', { contactUser: user, cardAvatarClass: 'don-card-avatar-face' }) %>
+                        </div>
+                    </div>
                     <div class="don-card-identity-main">
                         <span class="don-card-blood"><%= d.bloodGroup %></span>
                         <div class="don-card-top-badges">
