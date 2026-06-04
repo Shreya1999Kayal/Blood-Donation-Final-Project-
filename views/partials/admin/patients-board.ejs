@@ -1,0 +1,147 @@
+<%
+function bannerForActivity(stats) {
+    if (stats.active > 0) return 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=600&h=200&fit=crop&q=80';
+    if (stats.total > 0) return 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=200&fit=crop&q=80';
+    return 'https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=600&h=200&fit=crop&q=80';
+}
+function initials(name) {
+    if (!name) return '?';
+    return name.split(' ').map(function(p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
+}
+%>
+
+<div class="pt-board" id="ptBoard">
+    <% if (allUsers && allUsers.length) { %>
+        <% allUsers.forEach(function(u) {
+            const stats = patientStats(u);
+            const activity = activityKey(stats);
+            const searchText = [u.name, u.email, u.phone, u.city].filter(Boolean).join(' ').toLowerCase();
+            const tone = planTone(u);
+            const latest = stats.latest;
+        %>
+        <article
+            class="pt-card pt-card-<%= activity %>"
+            data-pt-item
+            data-account="<%= u.emailVerified ? 'verified' : 'unverified' %>"
+            data-activity="<%= activity %>"
+            data-search="<%= searchText.replace(/"/g, '') %>"
+        >
+            <div class="pt-card-top">
+                <div class="pt-card-cover">
+                    <img src="<%= bannerForActivity(stats) %>" alt="" loading="lazy">
+                    <div class="pt-card-cover-shade"></div>
+                </div>
+                <div class="pt-card-identity">
+                    <%- include('../shared/card-avatar', { contactUser: u, cardAvatarClass: 'pt-card-avatar' }) %>
+                    <div class="pt-card-identity-main">
+                        <span class="pt-card-plan pt-plan-<%= tone %>"><%= planLabel(u) %></span>
+                        <div class="pt-card-top-badges">
+                            <span class="pt-account-badge <%= u.emailVerified ? 'verified' : 'pending' %>">
+                                <%= u.emailVerified ? 'Verified' : 'Unverified' %>
+                            </span>
+                            <% if (stats.active > 0) { %>
+                            <span class="pt-live-badge"><span class="pulse-dot"></span> <%= stats.active %> live</span>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-card-body">
+                <div class="pt-card-head">
+                    <div>
+                        <h6 class="pt-name"><%= u.name %></h6>
+                        <p class="pt-email mb-0"><%= u.email %></p>
+                    </div>
+                    <% if (stats.total > 0) { %>
+                    <span class="badge bg-<%= stats.active ? 'danger' : 'secondary' %> pt-req-badge">
+                        <%= stats.total %> request<%= stats.total !== 1 ? 's' : '' %>
+                    </span>
+                    <% } %>
+                </div>
+
+                <div class="pt-meta-grid">
+                    <div class="pt-meta-item">
+                        <i data-lucide="phone" style="width:14px;height:14px;"></i>
+                        <div><small>Phone</small><span><a href="tel:<%= u.phone %>"><%= u.phone %></a></span></div>
+                    </div>
+                    <div class="pt-meta-item">
+                        <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+                        <div><small>City</small><span><%= u.city %></span></div>
+                    </div>
+                    <div class="pt-meta-item">
+                        <i data-lucide="calendar" style="width:14px;height:14px;"></i>
+                        <div><small>Joined</small><span><%= new Date(u.createdAt).toLocaleDateString([], { dateStyle: 'medium' }) %></span></div>
+                    </div>
+                    <div class="pt-meta-item">
+                        <i data-lucide="clipboard-list" style="width:14px;height:14px;"></i>
+                        <div><small>Requests</small><span><%= stats.total %> total · <%= stats.active %> active</span></div>
+                    </div>
+                </div>
+
+                <% if (latest) { %>
+                <div class="pt-case-panel <%= stats.active ? 'pt-case-live' : '' %>">
+                    <div class="pt-case-head">
+                        <i data-lucide="siren" style="width:14px;height:14px;"></i>
+                        Latest blood request
+                        <% if (stats.active) { %><span class="badge bg-danger">Live</span><% } %>
+                    </div>
+                    <div class="pt-case-grid">
+                        <div><small>Patient</small><strong><%= latest.patientName %></strong></div>
+                        <div><small>Blood</small><span class="overview-blood-badge"><%= latest.bloodGroup %></span></div>
+                        <div><small>Hospital</small><span><%= latest.hospitalName %></span></div>
+                        <div><small>Status</small><span class="badge bg-primary-subtle text-primary border border-primary-subtle"><%= latest.status %></span></div>
+                    </div>
+                </div>
+                <% } else { %>
+                <div class="pt-case-empty">
+                    <i data-lucide="inbox" style="width:16px;height:16px;"></i>
+                    <span>No blood requests submitted yet</span>
+                </div>
+                <% } %>
+
+                <% if (u.subscription && u.subscription.plan !== 'free') { %>
+                <div class="pt-sub-row">
+                    <i data-lucide="crown" style="width:14px;height:14px;"></i>
+                    <span><strong><%= planLabel(u) %></strong> plan · <%= (u.subscription.status || 'active') %></span>
+                </div>
+                <% } %>
+            </div>
+
+            <div class="pt-card-footer">
+                <a href="mailto:<%= u.email %>" class="btn btn-outline-primary btn-sm">
+                    <i data-lucide="mail" style="width:14px;height:14px;"></i> Email
+                </a>
+                <a href="tel:<%= u.phone %>" class="btn btn-outline-secondary btn-sm">
+                    <i data-lucide="phone-call" style="width:14px;height:14px;"></i> Call
+                </a>
+                <% if (stats.active > 0) { %>
+                <a href="#" class="btn btn-danger btn-sm ms-auto" data-admin-section="requests" data-admin-label="Emergency Requests">
+                    <i data-lucide="arrow-right" style="width:14px;height:14px;"></i> View emergencies
+                </a>
+                <% } %>
+                <%- include('admin-crud-actions', {
+                    entity: 'patient',
+                    payloadObj: {
+                        id: u._id,
+                        name: u.name || '',
+                        email: u.email || '',
+                        phone: u.phone || '',
+                        city: u.city || '',
+                        emailVerified: u.emailVerified,
+                        subscriptionPlan: (u.subscription && u.subscription.plan) || 'free'
+                    },
+                    deleteUrl: '/admin/patient/' + u._id + '/delete',
+                    confirmLabel: u.name || 'this patient'
+                }) %>
+            </div>
+        </article>
+        <% }); %>
+    <% } else { %>
+        <div class="pt-empty">
+            <img src="https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=400&h=260&fit=crop&q=80" alt="" loading="lazy">
+            <h5>No patients registered yet</h5>
+            <p class="text-muted mb-0">Patient accounts will appear here when users sign up on the platform.</p>
+        </div>
+    <% } %>
+</div>

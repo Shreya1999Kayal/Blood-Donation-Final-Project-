@@ -1,0 +1,191 @@
+<% 
+function statusLabel(s) {
+    if (s === 'fulfilled') return 'received';
+    return s;
+}
+function statusBadge(s) {
+    const label = statusLabel(s);
+    const map = { active: 'warning', contacted: 'info', received: 'success', cancelled: 'secondary' };
+    return map[label] || 'secondary';
+}
+function donorCooldownDays(donor) {
+    if (!donor || !donor.lastDonationDate) return 999;
+    return Math.floor((Date.now() - new Date(donor.lastDonationDate).getTime()) / (1000 * 60 * 60 * 24));
+}
+function donorCooldownRemaining(donor) {
+    return Math.max(0, 90 - donorCooldownDays(donor));
+}
+%>
+
+<div class="table-responsive">
+    <table class="table table-striped table-bordered bg-white align-middle">
+        <thead class="table-danger">
+            <tr>
+                <th>Patient</th>
+                <th>Blood</th>
+                <th>Hospital</th>
+                <th>City</th>
+                <th>Units</th>
+                <th>Contact</th>
+                <% if (user.role === 'admin' || user.role === 'user') { %><th>Patient docs</th><% } %>
+                <th>Status</th>
+                <th>Matched donors</th>
+                <th>Responders</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (bloodRequests && bloodRequests.length > 0) { %>
+                <% bloodRequests.forEach(function(r) { %>
+                    <% const label = statusLabel(r.status); %>
+                    <% 
+                    const urgLevel = String(r.urgencyLevel || 'High').toLowerCase();
+                    const urgKey = urgLevel === 'critical' ? 'critical' : urgLevel === 'normal' ? 'normal' : 'high';
+                    const isLiveRow = ['active', 'contacted'].includes(label);
+                    const rowStatus = isLiveRow ? label : 'closed';
+                    const rowSearch = [r.patientName, r.bloodGroup, r.hospitalName, r.city, r.contactName, r.contactPhone].join(' ').toLowerCase();
+                    %>
+                    <tr<% if (typeof adminTableFilter !== 'undefined' && adminTableFilter) { %>
+                        data-req-item data-status="<%= rowStatus %>" data-live="<%= isLiveRow ? '1' : '0' %>" data-urgency="<%= urgKey %>" data-search="<%= rowSearch.replace(/"/g, '') %>"
+                    <% } %>>
+                        <td><%= r.patientName %></td>
+                        <td><strong class="text-danger"><%= r.bloodGroup %></strong></td>
+                        <td><%= r.hospitalName %></td>
+                        <td><%= r.city %></td>
+                        <td><%= r.requiredUnits %></td>
+                        <td>
+                            <a href="tel:<%= r.contactPhone %>"><%= r.contactPhone %></a>
+                            <br><small class="text-muted"><%= r.contactName %></small>
+                        </td>
+                        <% if (user.role === 'admin' || (user.role === 'user' && r.requestedBy && (r.requestedBy._id || r.requestedBy).toString() === user._id.toString())) { %>
+                            <td class="small">
+                                <% if (r.patientDocuments && r.patientDocuments.bloodTestReportUrl) { %>
+                                    <a href="<%= docUrl(r.patientDocuments.bloodTestReportUrl) %>" target="_blank">Blood test</a><br>
+                                <% } else { %>—<br><% } %>
+                                <% if (r.patientDocuments && r.patientDocuments.prescriptionUrl) { %>
+                                    <a href="<%= docUrl(r.patientDocuments.prescriptionUrl) %>" target="_blank">Prescription</a>
+                                <% } else { %>—<% } %>
+                            </td>
+                        <% } %>
+                        <td>
+                            <span class="badge bg-<%= statusBadge(r.status) %>"><%= label %></span>
+                            <% if (r.receivedAt) { %>
+                                <br><small class="text-muted">Received <%= new Date(r.receivedAt).toLocaleString() %></small>
+                            <% } %>
+                        </td>
+                        <td>
+                            <% if (r.matchedDonors && r.matchedDonors.length) { %>
+                                <ul class="list-unstyled mb-0 small">
+                                    <% r.matchedDonors.slice(0, 3).forEach(function(d) { %>
+                                        <li>
+                                            <strong><%= d.userId ? d.userId.name : 'Donor' %></strong>
+                                            <br><span class="text-muted"><%= d.bloodGroup %></span>
+                                        </li>
+                                    <% }); %>
+                                </ul>
+                            <% } else { %>
+                                <span class="text-muted">None</span>
+                            <% } %>
+                        </td>
+                        <td>
+                            <% if (r.contacts && r.contacts.length > 0) { %>
+                                <ul class="list-unstyled mb-0 small">
+                                    <% r.contacts.forEach(function(c) { %>
+                                        <li>
+                                            <strong><%= c.name %></strong> (<%= c.role %>)
+                                            <br><a href="tel:<%= c.phone %>"><%= c.phone %></a>
+                                            <% if (c.note) { %><br><em><%= c.note %></em><% } %>
+                                            <% if (user.role === 'user' && c.userId && ['donor','bloodbank'].includes(c.role)) { %>
+                                                <br>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-outline-primary btn-sm mt-1 chat-btn"
+                                                    data-user-id="<%= c.userId._id || c.userId %>"
+                                                    data-user-name="<%= c.name %>"
+                                                    data-user-role="<%= c.role %>"
+                                                >Chat</button>
+                                            <% } %>
+                                        </li>
+                                    <% }); %>
+                                </ul>
+                            <% } else { %>
+                                <span class="text-muted">—</span>
+                            <% } %>
+                        </td>
+                        <td>
+                            <% 
+                            const requestOwnerId = r.requestedBy && (r.requestedBy._id || r.requestedBy).toString();
+                            const isOwnRequest = user.role === 'user' && requestOwnerId === user._id.toString();
+                            %>
+                            <% if (isOwnRequest) { %>
+                                <% if (label !== 'received' && label !== 'cancelled') { %>
+                                    <form action="/request/<%= r._id %>/received" method="POST" class="d-inline"
+                                        onsubmit="return confirm('Confirm that you have received the blood?');">
+                                        <select name="responderUserId" class="form-select form-select-sm mb-1" required>
+                                            <option value="">Select donor / blood bank</option>
+                                            <% (r.contacts || []).filter(function(c) { return c.userId && ['donor','bloodbank'].includes(c.role); }).forEach(function(c) { %>
+                                                <option value="<%= c.userId._id || c.userId %>"><%= c.name %> (<%= c.role %>)</option>
+                                            <% }); %>
+                                        </select>
+                                        <button type="submit" class="btn btn-success btn-sm">Mark as received</button>
+                                    </form>
+                                    <% if (!r.contacts || !r.contacts.some(function(c) { return c.userId && ['donor','bloodbank'].includes(c.role); })) { %>
+                                        <div class="text-muted small mt-1">No donor or blood bank has responded yet.</div>
+                                    <% } %>
+                                <% } else if (label === 'received') { %>
+                                    <span class="text-success small">✓ Blood received</span>
+                                    <% if (r.fulfilledBy && r.fulfilledBy.name) { %>
+                                        <br><span class="small">Given by <strong><%= r.fulfilledBy.name %></strong> (<%= r.fulfilledBy.role %>)</span>
+                                    <% } %>
+                                <% } %>
+                            <% } else if (['donor', 'bloodbank', 'admin'].includes(user.role)) { %>
+                                <% if (label !== 'received' && label !== 'cancelled') { %>
+                                    <% 
+                                    const donorInCooldown = user.role === 'donor' && typeof donorProfile !== 'undefined' && donorProfile && donorCooldownRemaining(donorProfile) > 0;
+                                    const canContact = user.role === 'admin' ||
+                                        (user.role === 'donor' && typeof donorProfile !== 'undefined' && donorProfile && donorProfile.status === 'approved' && !donorInCooldown) ||
+                                        (user.role === 'bloodbank' && typeof bloodbank !== 'undefined' && bloodbank && bloodbank.status === 'approved');
+                                    %>
+                                    <% if (canContact) { %>
+                                        <form action="/request/<%= r._id %>/contact" method="POST">
+                                            <input type="text" name="note" class="form-control form-control-sm mb-1" placeholder="Optional message">
+                                            <button type="submit" class="btn btn-primary btn-sm w-100">I contacted patient</button>
+                                        </form>
+                                        <a href="tel:<%= r.contactPhone %>" class="btn btn-outline-danger btn-sm w-100 mt-1">Call patient</a>
+                                        <% if (r.requestedBy && r.requestedBy._id) { %>
+                                            <button
+                                                type="button"
+                                                class="btn btn-outline-primary btn-sm w-100 mt-1 chat-btn"
+                                                data-user-id="<%= r.requestedBy._id %>"
+                                                data-user-name="<%= r.patientName %>"
+                                                data-user-role="user"
+                                            >Chat patient</button>
+                                        <% } %>
+                                    <% } else { %>
+                                        <% if (donorInCooldown) { %>
+                                            <button class="btn btn-secondary btn-sm w-100" disabled>Not eligible for <%= donorCooldownRemaining(donorProfile) %> days</button>
+                                        <% } else { %>
+                                            <span class="text-muted small">Awaiting admin approval</span>
+                                        <% } %>
+                                    <% } %>
+                                <% } else { %>
+                                    <span class="text-muted small">Closed</span>
+                                <% } %>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }); %>
+            <% } else { %>
+                <tr>
+                    <td colspan="<%= (user.role === 'admin' || user.role === 'user') ? 11 : 10 %>" class="text-center text-muted py-4">
+                        <% if (user.role === 'user') { %>
+                            You have not created any blood requests yet.
+                        <% } else { %>
+                            No patient blood requests yet.
+                        <% } %>
+                    </td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+</div>

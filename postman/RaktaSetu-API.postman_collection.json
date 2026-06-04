@@ -1,0 +1,710 @@
+{
+  "info": {
+    "_postman_id": "rakta-setu-api-collection",
+    "name": "RaktaSetu API",
+    "description": "RaktaSetu blood donation system — REST & JSON endpoints.\n\n## Setup\n1. Import **RaktaSetu-Local.postman_environment.json** and select it.\n2. Set `email`, `password`, and IDs in environment variables.\n3. Run **Auth → Login (user/donor/patient)** or **Auth → Admin Login** — Postman saves `accessToken` + `refreshToken` cookies automatically.\n4. For JSON APIs, send `Accept: application/json` (included on API requests).\n5. Optional: set `accessToken` env var and add header `Authorization: Bearer {{accessToken}}` on requests.\n\nBase URL default: `http://localhost:3000`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (user / donor / patient / bloodbank / camp)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "{{email}}" },
+                { "key": "password", "value": "{{password}}" }
+              ]
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Sets auth cookies on success (302 → /dashboard). Use verified account."
+          }
+        },
+        {
+          "name": "Admin Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "{{adminEmail}}" },
+                { "key": "password", "value": "{{adminPassword}}" }
+              ]
+            },
+            "url": "{{baseUrl}}/admin/login"
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "name", "value": "Test User" },
+                { "key": "email", "value": "newuser@example.com" },
+                { "key": "password", "value": "password123" },
+                { "key": "phone", "value": "9876543210" },
+                { "key": "city", "value": "Mumbai" },
+                { "key": "role", "value": "donor" }
+              ]
+            },
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Verify Email OTP",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "{{email}}" },
+                { "key": "otp", "value": "123456" }
+              ]
+            },
+            "url": "{{baseUrl}}/auth/verify-otp"
+          }
+        },
+        {
+          "name": "Verify Phone OTP",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "{{email}}" },
+                { "key": "otp", "value": "123456" }
+              ]
+            },
+            "url": "{{baseUrl}}/auth/verify-phone-otp"
+          }
+        },
+        {
+          "name": "Resend Email OTP",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": { "mode": "urlencoded", "urlencoded": [{ "key": "email", "value": "{{email}}" }] },
+            "url": "{{baseUrl}}/auth/resend-otp"
+          }
+        },
+        {
+          "name": "Refresh Tokens (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/refresh"
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "name", "value": "Updated Name" },
+                { "key": "phone", "value": "9876543210" },
+                { "key": "city", "value": "Mumbai" }
+              ]
+            },
+            "url": "{{baseUrl}}/auth/profile"
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "currentPassword", "value": "{{password}}" },
+                { "key": "newPassword", "value": "newpassword123" },
+                { "key": "confirmPassword", "value": "newpassword123" }
+              ]
+            },
+            "url": "{{baseUrl}}/auth/change-password"
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": { "mode": "urlencoded", "urlencoded": [{ "key": "email", "value": "{{email}}" }] },
+            "url": "{{baseUrl}}/auth/forgot-password"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": { "method": "GET", "url": "{{baseUrl}}/auth/logout" }
+        }
+      ]
+    },
+    {
+      "name": "Chat & Messages",
+      "item": [
+        {
+          "name": "Messages Inbox (HTML page)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/messages" }
+        },
+        {
+          "name": "Open Chat (HTML page)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/chat/{{otherUserId}}" }
+        },
+        {
+          "name": "List Conversations (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/chat/conversations"
+          }
+        },
+        {
+          "name": "Get Conversation Messages (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/conversation/{{conversationId}}/messages?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "conversation", "{{conversationId}}", "messages"],
+              "query": [{ "key": "limit", "value": "50" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "Search Donors",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/search/donors?bloodGroup=O%2B&city=Mumbai&approval=approved&nearby=1&latitude={{latitude}}&longitude={{longitude}}&radiusKm=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "donors"],
+              "query": [
+                { "key": "bloodGroup", "value": "O+" },
+                { "key": "city", "value": "Mumbai" },
+                { "key": "approval", "value": "approved" },
+                { "key": "nearby", "value": "1" },
+                { "key": "latitude", "value": "{{latitude}}" },
+                { "key": "longitude", "value": "{{longitude}}" },
+                { "key": "radiusKm", "value": "20" },
+                { "key": "ranked", "value": "0" },
+                { "key": "availability", "value": "available" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Blood Banks",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/search/bloodbanks?bloodGroup=O%2B&city=Mumbai&approval=approved&nearby=1&latitude={{latitude}}&longitude={{longitude}}&radiusKm=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "bloodbanks"],
+              "query": [
+                { "key": "bloodGroup", "value": "O+" },
+                { "key": "city", "value": "Mumbai" },
+                { "key": "approval", "value": "approved" },
+                { "key": "nearby", "value": "1" },
+                { "key": "latitude", "value": "{{latitude}}" },
+                { "key": "longitude", "value": "{{longitude}}" },
+                { "key": "radiusKm", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Donor",
+      "item": [
+        {
+          "name": "Update Availability (JSON)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"isAvailable\": true\n}" },
+            "url": "{{baseUrl}}/donor/availability"
+          }
+        },
+        {
+          "name": "Update Availability (form POST)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": { "mode": "urlencoded", "urlencoded": [{ "key": "isAvailable", "value": "true" }] },
+            "url": "{{baseUrl}}/donor/availability"
+          }
+        },
+        {
+          "name": "Donation History (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/donor/history"
+          }
+        },
+        {
+          "name": "Register Donor (multipart — 4 docs required)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "bloodGroup", "value": "O+", "type": "text" },
+                { "key": "latitude", "value": "{{latitude}}", "type": "text" },
+                { "key": "longitude", "value": "{{longitude}}", "type": "text" },
+                { "key": "bloodGroupReport", "type": "file", "src": [] },
+                { "key": "bloodTestReport", "type": "file", "src": [] },
+                { "key": "fitnessCertificate", "type": "file", "src": [] },
+                { "key": "identityProof", "type": "file", "src": [] }
+              ]
+            },
+            "url": "{{baseUrl}}/donor/register"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Blood Bank",
+      "item": [
+        {
+          "name": "Get Inventory (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/bloodbank/inventory"
+          }
+        },
+        {
+          "name": "Update Inventory",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"A+\": 10, \"A-\": 5, \"B+\": 8, \"B-\": 4, \"AB+\": 3, \"AB-\": 2, \"O+\": 15, \"O-\": 6\n}"
+            },
+            "url": "{{baseUrl}}/bloodbank/update-inventory"
+          }
+        },
+        {
+          "name": "Setup Blood Bank (multipart)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "hospitalName", "value": "City Blood Bank", "type": "text" },
+                { "key": "latitude", "value": "{{latitude}}", "type": "text" },
+                { "key": "longitude", "value": "{{longitude}}", "type": "text" },
+                { "key": "registrationCertificate", "type": "file", "src": [] }
+              ]
+            },
+            "url": "{{baseUrl}}/bloodbank/setup"
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "hospitalName", "value": "Updated Hospital Name" },
+                { "key": "latitude", "value": "{{latitude}}" },
+                { "key": "longitude", "value": "{{longitude}}" }
+              ]
+            },
+            "url": "{{baseUrl}}/bloodbank/profile"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Blood Requests",
+      "item": [
+        {
+          "name": "List Requests (HTML)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/request" }
+        },
+        {
+          "name": "Create Request (patient — multipart)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "bloodGroup", "value": "O+", "type": "text" },
+                { "key": "hospitalName", "value": "City Hospital", "type": "text" },
+                { "key": "requiredUnits", "value": "2", "type": "text" },
+                { "key": "urgencyLevel", "value": "Critical", "type": "text" },
+                { "key": "latitude", "value": "{{latitude}}", "type": "text" },
+                { "key": "longitude", "value": "{{longitude}}", "type": "text" },
+                { "key": "bloodTestReport", "type": "file", "src": [] },
+                { "key": "prescription", "type": "file", "src": [] }
+              ]
+            },
+            "url": "{{baseUrl}}/request/create"
+          }
+        },
+        {
+          "name": "Record Contact (donor/bloodbank)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"note\": \"Called patient, ready to donate.\"\n}" },
+            "url": "{{baseUrl}}/request/{{requestId}}/contact"
+          }
+        },
+        {
+          "name": "Mark Received (patient)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"responderUserId\": \"{{otherUserId}}\"\n}" },
+            "url": "{{baseUrl}}/request/{{requestId}}/received"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment (Razorpay)",
+      "item": [
+        {
+          "name": "Create Order — Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"purpose\": \"subscription\",\n  \"plan\": \"premium\"\n}" },
+            "url": "{{baseUrl}}/payment/create-order"
+          }
+        },
+        {
+          "name": "Create Order — Donor Verification",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"purpose\": \"donor_verification\"\n}" },
+            "url": "{{baseUrl}}/payment/create-order"
+          }
+        },
+        {
+          "name": "Create Order — Request Boost",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"purpose\": \"request_boost\"\n}" },
+            "url": "{{baseUrl}}/payment/create-order"
+          }
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razorpay_order_id\": \"order_xxx\",\n  \"razorpay_payment_id\": \"pay_xxx\",\n  \"razorpay_signature\": \"signature_xxx\"\n}"
+            },
+            "url": "{{baseUrl}}/payment/verify"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI",
+      "item": [
+        {
+          "name": "Help Chat (public / optional auth)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"How do I register as a donor?\",\n  \"userRole\": \"donor\",\n  \"context\": \"help\"\n}"
+            },
+            "url": "{{baseUrl}}/ai/help"
+          }
+        },
+        {
+          "name": "AI Chat (authenticated)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"What documents do donors need?\",\n  \"context\": \"help\"\n}"
+            },
+            "url": "{{baseUrl}}/ai/chat"
+          }
+        },
+        {
+          "name": "Recommend Donors",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/ai/recommend-donors?bloodGroup=O%2B&city=Mumbai&latitude={{latitude}}&longitude={{longitude}}&radiusKm=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "recommend-donors"],
+              "query": [
+                { "key": "bloodGroup", "value": "O+" },
+                { "key": "city", "value": "Mumbai" },
+                { "key": "latitude", "value": "{{latitude}}" },
+                { "key": "longitude", "value": "{{longitude}}" },
+                { "key": "radiusKm", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Predict Priority",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"urgencyLevel\": \"Critical\",\n  \"requiredUnits\": 3\n}" },
+            "url": "{{baseUrl}}/ai/predict-priority"
+          }
+        },
+        {
+          "name": "Analyze Medical Report (multipart)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "donorId", "value": "{{donorId}}", "type": "text" },
+                { "key": "bloodGroup", "value": "O+", "type": "text" },
+                { "key": "documentType", "value": "bloodTestReport", "type": "text" },
+                { "key": "report", "type": "file", "src": [] }
+              ]
+            },
+            "url": "{{baseUrl}}/ai/analyze-medical-report"
+          }
+        },
+        {
+          "name": "Verify Blood Group (multipart or text)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "bloodGroup", "value": "O+", "type": "text" },
+                { "key": "text", "value": "Blood Group: O Positive", "type": "text" },
+                { "key": "report", "type": "file", "src": [] }
+              ]
+            },
+            "url": "{{baseUrl}}/ai/verify-blood-group"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Export",
+      "item": [
+        {
+          "name": "Export My Data (PDF — Advanced plan)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/export/my-data" }
+        }
+      ]
+    },
+    {
+      "name": "Feedback",
+      "item": [
+        {
+          "name": "Submit Feedback (multipart optional photos)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "rating", "value": "5", "type": "text" },
+                { "key": "category", "value": "platform", "type": "text" },
+                { "key": "reviewText", "value": "Great platform for connecting donors with patients quickly.", "type": "text" },
+                { "key": "photos", "type": "file", "src": [] }
+              ]
+            },
+            "url": "{{baseUrl}}/feedback"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Camp",
+      "item": [
+        {
+          "name": "Camp Setup",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationType\": \"NGO\",\n  \"organizationName\": \"Red Cross Mumbai\",\n  \"organizerName\": \"Camp Lead\",\n  \"organizerMobile\": \"9876543210\",\n  \"organizerEmail\": \"camp@example.com\",\n  \"campName\": \"Summer Blood Drive\",\n  \"campAddress\": \"123 Main Street, Andheri\",\n  \"state\": \"Maharashtra\",\n  \"district\": \"Mumbai Suburban\",\n  \"city\": \"Mumbai\",\n  \"proposedDate\": \"2026-06-15\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"17:00\",\n  \"latitude\": 19.076,\n  \"longitude\": 72.8777,\n  \"estimatedParticipants\": 200\n}"
+            },
+            "url": "{{baseUrl}}/camp/setup"
+          }
+        },
+        {
+          "name": "Verify Camp Setup OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"otp\": \"123456\"\n}" },
+            "url": "{{baseUrl}}/camp/verify-setup"
+          }
+        },
+        {
+          "name": "Create Camp Event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"campName\": \"Community Drive\",\n  \"campAddress\": \"456 Park Road\",\n  \"state\": \"Maharashtra\",\n  \"district\": \"Mumbai\",\n  \"city\": \"Mumbai\",\n  \"proposedDate\": \"2026-07-01\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"16:00\",\n  \"estimatedParticipants\": 100\n}"
+            },
+            "url": "{{baseUrl}}/camp/events"
+          }
+        },
+        {
+          "name": "Complete Camp Event",
+          "request": { "method": "POST", "url": "{{baseUrl}}/camp/events/{{campEventId}}/complete" }
+        },
+        {
+          "name": "Cancel Camp Event",
+          "request": { "method": "POST", "url": "{{baseUrl}}/camp/events/{{campEventId}}/cancel" }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Medical Review (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/admin/medical-review/{{donorId}}"
+          }
+        },
+        {
+          "name": "Approve Donor",
+          "request": { "method": "POST", "url": "{{baseUrl}}/admin/donor/{{donorId}}/approve" }
+        },
+        {
+          "name": "Reject Donor",
+          "request": { "method": "POST", "url": "{{baseUrl}}/admin/donor/{{donorId}}/reject" }
+        },
+        {
+          "name": "Approve Blood Bank",
+          "request": { "method": "POST", "url": "{{baseUrl}}/admin/bloodbank/{{donorId}}/approve" }
+        },
+        {
+          "name": "Reject Blood Bank",
+          "request": { "method": "POST", "url": "{{baseUrl}}/admin/bloodbank/{{donorId}}/reject" }
+        },
+        {
+          "name": "Approve Camp",
+          "request": { "method": "POST", "url": "{{baseUrl}}/admin/camp/{{donorId}}/approve" }
+        },
+        {
+          "name": "Reject Camp",
+          "request": { "method": "POST", "url": "{{baseUrl}}/admin/camp/{{donorId}}/reject" }
+        },
+        {
+          "name": "Publish Feedback",
+          "request": { "method": "POST", "url": "{{baseUrl}}/admin/feedback/{{feedbackId}}/publish" }
+        },
+        {
+          "name": "Hide Feedback",
+          "request": { "method": "POST", "url": "{{baseUrl}}/admin/feedback/{{feedbackId}}/hide" }
+        },
+        {
+          "name": "Create Patient (admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Patient One\",\n  \"email\": \"patient1@example.com\",\n  \"phone\": \"9876543210\",\n  \"city\": \"Mumbai\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/patients/create"
+          }
+        },
+        {
+          "name": "Create Donor (admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Donor One\",\n  \"email\": \"donor1@example.com\",\n  \"phone\": \"9876543211\",\n  \"city\": \"Mumbai\",\n  \"password\": \"password123\",\n  \"bloodGroup\": \"O+\",\n  \"latitude\": 19.076,\n  \"longitude\": 72.8777\n}"
+            },
+            "url": "{{baseUrl}}/admin/donors/create"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pages (HTML — smoke test)",
+      "item": [
+        { "name": "Home", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/" } },
+        { "name": "Dashboard", "request": { "method": "GET", "url": "{{baseUrl}}/dashboard" } },
+        { "name": "Login Page", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/auth/login" } },
+        { "name": "Register Page", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/auth/register" } },
+        { "name": "Admin Login Page", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/admin/login" } }
+      ]
+    }
+  ]
+}

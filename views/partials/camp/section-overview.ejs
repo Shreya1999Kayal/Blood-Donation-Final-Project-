@@ -1,0 +1,54 @@
+<%
+const hour = new Date().getHours();
+const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+const status = campProfile ? campProfile.status : 'setup';
+const events = campEvents || [];
+const scheduled = events.filter(function(e) { return e.status === 'scheduled'; }).length;
+const completed = events.filter(function(e) { return e.status === 'completed'; }).length;
+%>
+<div class="overview-hero mb-4 cp-hero">
+    <div class="overview-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="overview-hero-overlay"></div>
+    <div class="overview-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="overview-hero-badge"><span class="pulse-dot"></span> Blood donation camp coordinator</span>
+                <h3 class="overview-hero-title"><%= greeting %>, <%= campProfile ? campProfile.organizerName : user.name %></h3>
+                <p class="overview-hero-sub mb-0">Browse verified, available, and eligible donors and blood banks, unlock contacts after payment, and coordinate successful donation camps across <%= user.city %>.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="overview-hero-aside">
+                    <%- include('../shared/user-avatar', { user, avatarSize: 'lg', avatarClass: 'overview-hero-avatar' }) %>
+                    <div class="overview-hero-meta">
+                        <div><small>Eligible donors</small><strong><%= campDonorDirectoryAccess ? (campDonors || []).length : (campDonorDirectoryCount || 0) %></strong></div>
+                        <div><small>Blood banks</small><strong><%= (campBloodBanks || []).length %></strong></div>
+                        <div><small>Camps organized</small><strong><%= completed %> / <%= events.length %></strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (status === 'pending') { %>
+<div class="cp-status-banner pending mb-4">
+    <i data-lucide="clock" style="width:22px;height:22px;color:#d97706;"></i>
+    <div><strong>Awaiting admin approval</strong><p class="mb-0 small text-muted">Your camp organization profile is under review. Directory browsing is available after approval.</p></div>
+</div>
+<% } else if (status === 'rejected') { %>
+<div class="cp-status-banner rejected mb-4">
+    <i data-lucide="x-circle" style="width:22px;height:22px;color:#dc2626;"></i>
+    <div><strong>Registration not approved</strong><p class="mb-0 small text-muted">Contact admin or update your camp registration at <a href="/camp/setup">camp setup</a>.</p></div>
+</div>
+<% } else if (status === 'approved') { %>
+<div class="cp-status-banner approved mb-4">
+    <i data-lucide="badge-check" style="width:22px;height:22px;color:#059669;"></i>
+    <div><strong>Approved camp organization</strong><p class="mb-0 small text-muted"><% if (campDonorDirectoryAccess) { %>Donor directory unlocked — all eligible donor contacts are available.<% } else { %>Pay ₹<%= campUnlockFees.donorDirectory %> once to unlock all donor contacts, or ₹<%= campUnlockFees.donorContact %> per donor. Blood bank unlock: ₹<%= campUnlockFees.bloodbank %> each.<% } %></p></div>
+</div>
+<% } %>
+
+<div class="row g-4">
+    <div class="col-md-4"><div class="overview-panel h-100"><div class="overview-panel-head"><h5>Unlock pricing</h5></div><div class="overview-panel-body"><p class="small mb-2"><strong>Donor directory:</strong> ₹<%= campUnlockFees.donorDirectory %> (unlocks all donors)</p><p class="small mb-2"><strong>Single donor:</strong> ₹<%= campUnlockFees.donorContact %> each (without directory)</p><p class="small mb-0"><strong>Blood bank contact:</strong> ₹<%= campUnlockFees.bloodbank %> each</p></div></div></div>
+    <div class="col-md-4"><div class="overview-panel h-100"><div class="overview-panel-head"><h5>Scheduled camps</h5></div><div class="overview-panel-body"><p class="display-6 fw-bold text-primary mb-0" style="color:#7c3aed!important"><%= scheduled %></p></div></div></div>
+    <div class="col-md-4"><div class="overview-panel h-100"><div class="overview-panel-head"><h5>Quick actions</h5></div><div class="overview-panel-body d-grid gap-2"><a href="#" class="btn btn-sm btn-outline-primary" data-cp-section="donors" data-cp-label="Donor Directory">Browse donors</a><a href="#" class="btn btn-sm btn-primary" style="background:#7c3aed;border-color:#6d28d9" data-cp-section="organize" data-cp-label="Organize Camp">Plan new camp</a></div></div></div>
+</div>

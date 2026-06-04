@@ -1,0 +1,74 @@
+<%
+function statusLabel(s) {
+    if (s === 'fulfilled') return 'received';
+    return s;
+}
+const requests = bloodRequests || [];
+const activeList = requests.filter(function(r) { return ['active', 'contacted'].includes(r.status); });
+const receivedList = requests.filter(function(r) { return ['received', 'fulfilled'].includes(r.status); });
+%>
+
+<div class="req-hero mb-4 pt-hero">
+    <div class="req-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1584982751661-6085a089094a?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="req-hero-overlay"></div>
+    <div class="req-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="req-hero-badge"><span class="pulse-dot"></span> Your emergency history</span>
+                <h3 class="req-hero-title">My blood requests</h3>
+                <p class="req-hero-sub mb-0">Track status, view responders, mark blood as received, and access uploaded medical documents.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="req-hero-meta">
+                    <div><small>Total</small><strong><%= requests.length %></strong></div>
+                    <div><small>Active</small><strong class="text-danger"><%= activeList.length %></strong></div>
+                    <div><small>Received</small><strong class="text-success"><%= receivedList.length %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="overview-panel">
+            <div class="overview-panel-head flex-wrap">
+                <div>
+                    <h5>Request board</h5>
+                    <p class="text-muted small mb-0"><span id="reqVisibleCount"><%= requests.length %></span> of <%= requests.length %> request(s) shown</p>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <a href="/request" class="btn btn-outline-danger btn-sm">Full list page</a>
+                    <a href="#" class="btn btn-danger btn-sm" data-pt-section="create-request" data-pt-label="Create Request">
+                        <i data-lucide="plus" style="width:14px;height:14px;"></i> New request
+                    </a>
+                </div>
+            </div>
+
+            <div class="req-toolbar">
+                <div class="req-search-wrap">
+                    <i data-lucide="search" style="width:16px;height:16px;"></i>
+                    <input type="search" class="form-control form-control-sm" id="reqSearch" placeholder="Search hospital, blood group, city…" autocomplete="off">
+                </div>
+                <div class="req-filter-group">
+                    <span class="req-filter-label">Status</span>
+                    <div class="req-pills" id="reqStatusFilters">
+                        <button type="button" class="req-pill active" data-req-status="all">All</button>
+                        <button type="button" class="req-pill" data-req-status="live">Live</button>
+                        <button type="button" class="req-pill" data-req-status="active">Active</button>
+                        <button type="button" class="req-pill" data-req-status="contacted">Contacted</button>
+                        <button type="button" class="req-pill" data-req-status="closed">Closed</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overview-panel-body pt-0" id="reqBoard">
+                <%- include('blood-requests-table', { bloodRequests: requests, user }) %>
+            </div>
+            <div class="req-empty req-empty-filter d-none" id="reqEmptyFilter">
+                <h5>No requests match your filters</h5>
+                <button type="button" class="btn btn-outline-danger btn-sm" id="reqClearFilters">Clear filters</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,30 @@
+<header class="home-topbar">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <a href="/" class="flex items-center gap-3 no-underline">
+                <div class="home-brand-mark">
+                    <i data-lucide="droplets" class="text-white" style="width:22px;height:22px;"></i>
+                </div>
+                <div>
+                    <div class="text-white font-extrabold text-lg leading-tight tracking-tight">RaktaSetu</div>
+                    <div class="text-slate-400 text-xs font-medium hidden sm:block">National Blood Donation Network</div>
+                </div>
+            </a>
+            <div class="flex items-center gap-2 sm:gap-3">
+                <% if (user) { %>
+                    <a href="/dashboard" class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 no-underline transition-colors">
+                        <i data-lucide="layout-dashboard" style="width:16px;height:16px;"></i>
+                        <span class="hidden sm:inline">Dashboard</span>
+                    </a>
+                    <a href="/auth/logout" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold text-slate-300 border border-slate-600 hover:text-white hover:border-slate-400 no-underline transition-colors">Logout</a>
+                <% } else { %>
+                    <a href="/auth/login" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold text-slate-200 hover:text-white no-underline transition-colors">Login</a>
+                    <a href="/auth/register" class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-lg shadow-brand-600/30 no-underline transition-colors">
+                        <i data-lucide="user-plus" style="width:16px;height:16px;"></i>
+                        Register
+                    </a>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</header>

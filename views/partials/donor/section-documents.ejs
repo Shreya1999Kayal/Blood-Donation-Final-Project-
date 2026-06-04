@@ -1,0 +1,108 @@
+<div class="cp-hero mb-4 dn-hero">
+    <div class="cp-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1584982751661-6085a089094a?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="cp-hero-overlay"></div>
+    <div class="cp-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="cp-hero-badge"><i data-lucide="file-heart" style="width:14px;height:14px;"></i> Verification documents</span>
+                <h3 class="cp-hero-title">Medical documents</h3>
+                <p class="cp-hero-sub mb-0">Upload blood group report, test results, fitness certificate, and identity proof for admin verification.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="cp-hero-meta">
+                    <div><small>Status</small><strong class="text-capitalize"><%= donorProfile ? donorProfile.status : 'not registered' %></strong></div>
+                    <div><small>Blood group</small><strong><%= donorProfile ? donorProfile.bloodGroup : '—' %></strong></div>
+                    <div><small>City</small><strong><%= user.city %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-3">
+    <div class="col-lg-7">
+        <div class="overview-panel dn-doc-upload">
+            <div class="overview-panel-head dn-doc-upload-head">
+                <div>
+                    <h5>Upload / update documents</h5>
+                    <p class="text-muted small mb-0">Accepted formats: PDF, JPG, PNG, WEBP (max 10 MB each)</p>
+                </div>
+                <span class="dn-doc-upload-badge">4 required files</span>
+            </div>
+            <div class="overview-panel-body">
+                <div class="dn-doc-hint mb-3">
+                    <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+                    Your location is captured automatically to improve matching with nearby patients.
+                </div>
+                <form action="/donor/register" method="POST" enctype="multipart/form-data" data-geo-form class="cp-form">
+                    <div class="cp-field mb-3">
+                        <label>Blood group</label>
+                        <div class="cp-input-wrap">
+                            <i data-lucide="droplets" style="width:16px;height:16px;"></i>
+                            <select name="bloodGroup" class="form-select" required>
+                                <% ['A+','A-','B+','B-','AB+','AB-','O+','O-'].forEach(function(bg) { %>
+                                    <option <%= donorProfile && donorProfile.bloodGroup === bg ? 'selected' : '' %>><%= bg %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="cp-field">
+                                <label>Blood group report</label>
+                                <input type="file" name="bloodGroupReport" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="cp-field">
+                                <label>Blood test report</label>
+                                <input type="file" name="bloodTestReport" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="cp-field">
+                                <label>Fitness certificate</label>
+                                <input type="file" name="fitnessCertificate" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="cp-field">
+                                <label>Identity proof</label>
+                                <input type="file" name="identityProof" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="latitude" data-geo-lat>
+                    <input type="hidden" name="longitude" data-geo-lng>
+                    <div class="cp-actions mt-3">
+                        <button type="submit" class="btn btn-danger">
+                            <i data-lucide="upload" style="width:16px;height:16px;"></i> Submit for admin approval
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="overview-panel dn-doc-summary">
+            <div class="overview-panel-head">
+                <h5>Verification checklist</h5>
+            </div>
+            <div class="overview-panel-body">
+                <ul class="dn-doc-checklist">
+                    <li><i data-lucide="droplets" style="width:16px;height:16px;"></i> Select your blood group</li>
+                    <li><i data-lucide="file-up" style="width:16px;height:16px;"></i> Upload all four medical documents</li>
+                    <li><i data-lucide="user-check" style="width:16px;height:16px;"></i> Admin reviews within 24–48 hours</li>
+                    <li><i data-lucide="siren" style="width:16px;height:16px;"></i> Contact patients after approval</li>
+                </ul>
+                <div class="dn-doc-summary-status text-capitalize">
+                    <small>Current status</small>
+                    <strong><%= donorProfile ? donorProfile.status : 'Not registered' %></strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="mb-4">
+        <%- include('documents-table', { donorProfile, user }) %>
+</div>

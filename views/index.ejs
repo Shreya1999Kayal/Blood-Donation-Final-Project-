@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="RaktaSetu — National blood donation network connecting verified donors, blood banks, patients, and donation camps across India.">
+    <title>RaktaSetu — National Blood Donation Network</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="/css/home.css" rel="stylesheet">
+    <%- include('partials/home/tailwind-head') %>
+</head>
+<body>
+<div class="home-shell min-h-screen">
+
+    <%- include('partials/home/topbar', { user }) %>
+    <%- include('partials/home/subnav') %>
+
+    <main>
+        <%- include('partials/home/carousel', { carouselSlides }) %>
+        <%- include('partials/home/section-about', { aboutImageSrc }) %>
+        <%- include('partials/home/section-services') %>
+        <%- include('partials/home/section-who-can-donate') %>
+        <%- include('partials/home/section-how-it-works') %>
+        <%- include('partials/home/section-stats', { stats }) %>
+        <%- include('partials/home/section-find-blood', { donors, bloodBanks, user }) %>
+        <%- include('partials/home/section-gallery', { galleryItems }) %>
+    </main>
+
+    <%- include('partials/home/footer') %>
+</div>
+
+<%- include('partials/shared/help-chatbot', { user: typeof user !== 'undefined' ? user : null }) %>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="/js/home.js?v=2"></script>
+</body>
+</html>

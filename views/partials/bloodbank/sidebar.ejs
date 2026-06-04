@@ -1,0 +1,85 @@
+<%
+const requests = bloodRequests || [];
+const activeRequests = requests.filter(function(r) { return ['active', 'contacted'].includes(r.status); }).length;
+const criticalRequests = requests.filter(function(r) {
+    return String(r.urgencyLevel).toLowerCase() === 'critical' && !['received', 'fulfilled', 'cancelled'].includes(r.status);
+}).length;
+const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const totalStock = bloodbank && bloodbank.inventory
+    ? bloodGroups.reduce(function(sum, g) { return sum + Number(bloodbank.inventory[g] || 0); }, 0)
+    : 0;
+const statusLabel = bloodbank ? bloodbank.status : 'setup';
+%>
+<aside class="admin-sidebar bb-sidebar" id="bbSidebar">
+    <div class="admin-sidebar-brand">
+        <div class="d-flex align-items-start gap-3">
+            <div class="logo"><i data-lucide="building-2" style="width:22px;height:22px;color:#fff;"></i></div>
+            <div>
+                <h1>RaktaSetu</h1>
+                <p class="bb-portal-subtitle">Hospital operations portal</p>
+                <span class="bb-portal-tag">Blood bank</span>
+            </div>
+        </div>
+    </div>
+
+    <nav class="admin-nav">
+        <a href="#" class="admin-nav-link active" data-bb-section="overview" data-bb-label="Overview">
+            <i data-lucide="layout-dashboard" style="width:18px;height:18px;"></i> Overview
+        </a>
+        <a href="#" class="admin-nav-link" data-bb-section="requests" data-bb-label="Emergency Requests">
+            <i data-lucide="siren" style="width:18px;height:18px;"></i> Emergency Requests
+            <% if (activeRequests > 0) { %><span class="badge-count"><%= activeRequests %></span><% } %>
+        </a>
+        <a href="#" class="admin-nav-link" data-bb-section="inventory" data-bb-label="Inventory">
+            <i data-lucide="flask-conical" style="width:18px;height:18px;"></i> Inventory
+            <% if (bloodbank && bloodbank.status === 'approved') { %><span class="badge-count bb-stock-badge"><%= totalStock %></span><% } %>
+        </a>
+        <a href="#" class="admin-nav-link" data-bb-section="profile" data-bb-label="Hospital Profile">
+            <i data-lucide="hospital" style="width:18px;height:18px;"></i> Hospital Profile
+        </a>
+        <a href="#" class="admin-nav-link" data-bb-section="certificate" data-bb-label="Registration Certificate">
+            <i data-lucide="file-badge" style="width:18px;height:18px;"></i> Certificate
+        </a>
+        <a href="#" class="admin-nav-link" data-bb-section="messages" data-bb-label="Messages">
+            <i data-lucide="messages-square" style="width:18px;height:18px;"></i> Messages
+        </a>
+        <a href="#" class="admin-nav-link" data-bb-section="subscription" data-bb-label="Plans & Billing">
+            <i data-lucide="credit-card" style="width:18px;height:18px;"></i> Plans & Billing
+        </a>
+        <a href="#" class="admin-nav-link" data-bb-section="history" data-bb-label="Records">
+            <i data-lucide="history" style="width:18px;height:18px;"></i> Records
+            <% if ((bloodIssueHistory || []).length > 0) { %><span class="badge-count"><%= bloodIssueHistory.length %></span><% } %>
+        </a>
+        <a href="#" class="admin-nav-link" data-bb-section="feedback" data-bb-label="Feedback">
+            <i data-lucide="message-square-heart" style="width:18px;height:18px;"></i> Feedback
+        </a>
+        <% if (userAnalytics) { %>
+        <a href="#" class="admin-nav-link" data-bb-section="analytics" data-bb-label="Analytics">
+            <i data-lucide="bar-chart-3" style="width:18px;height:18px;"></i> Analytics
+        </a>
+        <% } %>
+        <a href="#" class="admin-nav-link" data-bb-section="notifications" data-bb-label="Notifications">
+            <i data-lucide="bell" style="width:18px;height:18px;"></i> Notifications
+            <span class="badge-count d-none" id="bbNotifBadge">0</span>
+        </a>
+        <hr style="border-color: var(--adm-border); margin: 0.75rem 0;">
+        <a href="#" class="admin-nav-link" data-bb-section="password" data-bb-label="Change Password">
+            <i data-lucide="key-round" style="width:18px;height:18px;"></i> Change Password
+        </a>
+        <a href="/auth/logout" class="admin-nav-link text-danger">
+            <i data-lucide="log-out" style="width:18px;height:18px;"></i> Logout
+        </a>
+    </nav>
+
+    <div class="admin-sidebar-footer">
+        <div class="admin-profile">
+            <%- include('../shared/user-avatar', { user, avatarSize: 'sm' }) %>
+            <div class="overflow-hidden">
+                <div class="small fw-semibold text-truncate"><%= bloodbank ? bloodbank.hospitalName : user.name %></div>
+                <div style="font-size:0.65rem;color:var(--adm-muted);">
+                    <% if (statusLabel === 'approved') { %>Verified blood bank<% } else if (statusLabel === 'pending') { %>Pending verification<% } else if (statusLabel === 'rejected') { %>Not approved<% } else { %>Setup required<% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</aside>

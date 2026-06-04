@@ -1,0 +1,122 @@
+<%
+const requests = bloodRequests || [];
+const activeList = requests.filter(function(r) { return ['active', 'contacted'].includes(r.status); });
+const receivedList = requests.filter(function(r) { return ['received', 'fulfilled'].includes(r.status); });
+const totalResponses = requests.reduce(function(sum, r) { return sum + (r.contacts ? r.contacts.length : 0); }, 0);
+const hour = new Date().getHours();
+const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+const latestActive = activeList[0];
+const kpis = [
+    { label: 'My requests', value: requests.length, icon: 'clipboard-list', tone: 'slate', img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=260&fit=crop&q=80' },
+    { label: 'Active emergencies', value: activeList.length, icon: 'siren', tone: 'red', img: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=400&h=260&fit=crop&q=80' },
+    { label: 'Responders', value: totalResponses, icon: 'phone-call', tone: 'blue', img: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=260&fit=crop&q=80' },
+    { label: 'Fulfilled', value: receivedList.length, icon: 'check-circle', tone: 'green', img: 'https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=400&h=260&fit=crop&q=80' },
+    { label: 'Subscription', value: ((user.subscription && user.subscription.plan) || 'free'), icon: 'credit-card', tone: 'rose', img: 'https://images.unsplash.com/photo-1563986768494-4ccb4962f667?w=400&h=260&fit=crop&q=80' },
+    { label: 'City', value: user.city, icon: 'map-pin', tone: 'amber', img: 'https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=400&h=260&fit=crop&q=80' },
+];
+%>
+
+<div class="overview-hero mb-4 pt-hero">
+    <div class="overview-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="overview-hero-overlay"></div>
+    <div class="overview-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="overview-hero-badge"><span class="pulse-dot"></span> Patient emergency portal</span>
+                <h3 class="overview-hero-title"><%= greeting %>, <%= user.name %></h3>
+                <p class="overview-hero-sub mb-0">Post urgent blood needs, connect with verified donors and hospitals in <%= user.city %>, and track responses in real time.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="overview-hero-aside">
+                    <%- include('../shared/user-avatar', { user, avatarSize: 'lg', avatarClass: 'overview-hero-avatar' }) %>
+                    <div class="overview-hero-meta">
+                    <div><small>Active cases</small><strong class="text-danger"><%= activeList.length %></strong></div>
+                    <div><small>Plan</small><strong class="text-capitalize"><%= (user.subscription && user.subscription.plan) || 'free' %></strong></div>
+                    <div><small>Messages</small><strong><%= (inbox || []).length %></strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (!activeList.length) { %>
+<div class="overview-action-banner mb-4">
+    <div class="overview-action-banner-icon">
+        <img src="https://images.unsplash.com/photo-1584982751661-6085a089094a?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
+    </div>
+    <div class="flex-grow-1">
+        <h6 class="mb-1">No active emergency request</h6>
+        <p class="mb-0 small text-muted">Create a request with your blood test report and prescription to alert donors and blood banks nearby.</p>
+    </div>
+    <a href="#" class="btn btn-danger btn-sm" data-pt-section="create-request" data-pt-label="Create Request">Post request</a>
+</div>
+<% } else if (latestActive) { %>
+<div class="overview-action-banner mb-4 border-danger">
+    <div class="overview-action-banner-icon">
+        <img src="https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
+    </div>
+    <div class="flex-grow-1">
+        <h6 class="mb-1 text-danger">Live emergency — <%= latestActive.bloodGroup %> at <%= latestActive.hospitalName %></h6>
+        <p class="mb-0 small text-muted"><%= latestActive.requiredUnits %> unit(s) needed · Status: <strong><%= latestActive.status %></strong></p>
+    </div>
+    <a href="#" class="btn btn-outline-danger btn-sm" data-pt-section="requests" data-pt-label="My Requests">View request</a>
+</div>
+<% } %>
+
+<div class="row g-3 mb-4">
+    <% kpis.forEach(function(stat) { %>
+    <div class="col-sm-6 col-xl-4 col-xxl-2">
+        <div class="overview-kpi overview-kpi-<%= stat.tone %>">
+            <div class="overview-kpi-visual">
+                <img src="<%= stat.img %>" alt="" loading="lazy">
+                <div class="overview-kpi-visual-shade"></div>
+            </div>
+            <div class="overview-kpi-body">
+                <div class="overview-kpi-icon"><i data-lucide="<%= stat.icon %>" style="width:20px;height:20px;"></i></div>
+                <div class="overview-kpi-label"><%= stat.label %></div>
+                <div class="overview-kpi-value text-capitalize"><%= stat.value %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel">
+            <div class="overview-panel-head"><h5>Quick actions</h5></div>
+            <div class="overview-panel-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <a href="#" class="overview-quick-link" data-pt-section="create-request" data-pt-label="Create Request">
+                            <i data-lucide="plus-circle" style="width:22px;height:22px;"></i>
+                            <span>Post emergency</span>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="#" class="overview-quick-link" data-pt-section="donors" data-pt-label="Find Donors">
+                            <i data-lucide="users" style="width:22px;height:22px;"></i>
+                            <span>Find donors</span>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="#" class="overview-quick-link" data-pt-section="messages" data-pt-label="Messages">
+                            <i data-lucide="messages-square" style="width:22px;height:22px;"></i>
+                            <span>Open inbox</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="overview-panel overview-panel-accent">
+            <div class="overview-panel-head border-0 pb-0"><h5 class="text-white mb-0">Need blood fast?</h5></div>
+            <div class="overview-panel-body">
+                <p class="small mb-3" style="color:rgba(255,255,255,0.78);">Paid plans boost your request visibility. Smart matches rank the best donors and hospitals for your active case.</p>
+                <a href="#" class="btn btn-outline-light btn-sm w-100" data-pt-section="subscription" data-pt-label="Plans & Billing">View plans</a>
+            </div>
+        </div>
+    </div>
+</div>

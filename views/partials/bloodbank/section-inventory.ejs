@@ -1,0 +1,133 @@
+<%
+const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const inventory = bloodbank && bloodbank.inventory ? bloodbank.inventory : {};
+const totalUnits = bloodGroups.reduce(function(sum, g) { return sum + Number(inventory[g] || 0); }, 0);
+const maxGroupUnits = Math.max.apply(null, bloodGroups.map(function(g) { return Number(inventory[g] || 0); }).concat([1]));
+const emptyGroups = bloodGroups.filter(function(g) { return Number(inventory[g] || 0) === 0; });
+const lowGroups = bloodGroups.filter(function(g) { const n = Number(inventory[g] || 0); return n > 0 && n <= 5; });
+const approved = bloodbank && bloodbank.status === 'approved';
+%>
+
+<div class="bb-inv-hero mb-4">
+    <div class="bb-inv-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="bb-inv-hero-overlay"></div>
+    <div class="bb-inv-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="bb-inv-hero-badge"><i data-lucide="flask-conical" style="width:14px;height:14px;"></i> Blood inventory control</span>
+                <h3 class="bb-inv-hero-title">Hospital stock management</h3>
+                <p class="bb-inv-hero-sub mb-0">Maintain accurate unit counts for all blood groups. Patients searching nearby banks rely on your live inventory data.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="bb-inv-hero-meta">
+                    <div><small>Total units</small><strong><%= totalUnits %></strong></div>
+                    <div><small>Empty groups</small><strong class="<%= emptyGroups.length ? 'text-danger' : 'text-success' %>"><%= emptyGroups.length %></strong></div>
+                    <div><small>Low stock</small><strong class="<%= lowGroups.length ? 'text-warning' : 'text-success' %>"><%= lowGroups.length %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (!bloodbank) { %>
+<div class="alert alert-warning">Complete <a href="/bloodbank/setup">blood bank setup</a> before managing inventory.</div>
+<% } else if (!approved) { %>
+<div class="bb-gate-banner mb-4">
+    <i data-lucide="lock" style="width:22px;height:22px;"></i>
+    <div>
+        <strong>Inventory editing locked</strong>
+        <p class="mb-0 small">Inventory updates are available after admin approves your blood bank registration. Current status: <strong class="text-capitalize"><%= bloodbank.status %></strong>.</p>
+    </div>
+</div>
+<% } %>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel">
+            <div class="overview-panel-head">
+                <div>
+                    <h5>Live inventory — <%= bloodbank ? bloodbank.hospitalName : 'Hospital' %></h5>
+                    <p class="text-muted small mb-0">Update unit counts for each blood group. Changes are reflected immediately in patient search.</p>
+                </div>
+            </div>
+            <div class="overview-panel-body">
+                <% if (approved) { %>
+                <form action="/bloodbank/update-inventory" method="POST" id="bbInventoryForm">
+                    <div class="bb-inv-edit-grid">
+                        <% bloodGroups.forEach(function(bg) {
+                            const count = Number(inventory[bg] || 0);
+                            const pct = maxGroupUnits ? Math.round((count / maxGroupUnits) * 100) : 0;
+                            const level = count <= 0 ? 'critical' : count <= 5 ? 'low' : 'ok';
+                        %>
+                        <div class="bb-inv-edit-card bb-inv-level-<%= level %>">
+                            <div class="bb-inv-edit-head">
+                                <span class="overview-blood-badge"><%= bg %></span>
+                                <span class="bb-inv-level-label"><%= count <= 0 ? 'Out of stock' : count <= 5 ? 'Low' : 'In stock' %></span>
+                            </div>
+                            <div class="bb-inventory-bar-wrap">
+                                <div class="bb-inventory-bar"><span class="bb-bar-<%= level %>" style="width:<%= pct %>%"></span></div>
+                            </div>
+                            <label class="small text-muted mb-1">Units available</label>
+                            <input type="number" name="<%= bg %>" class="form-control bb-inv-input" value="<%= count %>" min="0" required>
+                        </div>
+                        <% }); %>
+                    </div>
+                    <div class="bb-inv-actions">
+                        <button type="submit" class="btn btn-danger">
+                            <i data-lucide="save" style="width:16px;height:16px;"></i> Save inventory
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary">Reset form</button>
+                    </div>
+                </form>
+                <% } else if (bloodbank) { %>
+                <div class="bb-inv-readonly-grid">
+                    <% bloodGroups.forEach(function(bg) {
+                        const count = Number(inventory[bg] || 0);
+                        const pct = maxGroupUnits ? Math.round((count / maxGroupUnits) * 100) : 0;
+                        const level = count <= 0 ? 'critical' : count <= 5 ? 'low' : 'ok';
+                    %>
+                    <div class="bb-inv-readonly-card">
+                        <span class="overview-blood-badge"><%= bg %></span>
+                        <div class="bb-inventory-bar-wrap"><div class="bb-inventory-bar"><span class="bb-bar-<%= level %>" style="width:<%= pct %>%"></span></div></div>
+                        <strong><%= count %> units</strong>
+                    </div>
+                    <% }); %>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="overview-panel mb-4">
+            <div class="overview-panel-head"><h5>Stock health</h5></div>
+            <div class="overview-panel-body pt-2">
+                <% if (emptyGroups.length) { %>
+                <div class="bb-stock-alert bb-stock-critical mb-2">
+                    <strong>Out of stock:</strong> <%= emptyGroups.join(', ') %>
+                </div>
+                <% } %>
+                <% if (lowGroups.length) { %>
+                <div class="bb-stock-alert bb-stock-low mb-2">
+                    <strong>Low stock (≤5):</strong> <%= lowGroups.join(', ') %>
+                </div>
+                <% } %>
+                <% if (!emptyGroups.length && !lowGroups.length && approved) { %>
+                <div class="bb-stock-alert bb-stock-ok">
+                    <i data-lucide="check-circle" style="width:16px;height:16px;"></i> All groups adequately stocked.
+                </div>
+                <% } %>
+                <p class="small text-muted mt-3 mb-0">When a patient marks a request as received and selects your hospital, matching inventory units are deducted automatically.</p>
+            </div>
+        </div>
+        <div class="overview-panel overview-panel-accent">
+            <div class="overview-panel-head border-0 pb-0"><h5 class="text-white mb-0">Best practices</h5></div>
+            <div class="overview-panel-body">
+                <ul class="small mb-0" style="color:rgba(255,255,255,0.8);padding-left:1.1rem;">
+                    <li class="mb-2">Update counts after every collection or transfusion.</li>
+                    <li class="mb-2">Keep at least one universal donor group (O−) in stock when possible.</li>
+                    <li>Respond to matching emergencies within minutes of notification.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

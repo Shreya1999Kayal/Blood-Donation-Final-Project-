@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Messages — RaktaSetu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard">🩸 RaktaSetu</a>
+            <div class="collapse navbar-collapse justify-content-end">
+                <a class="btn btn-light btn-sm me-2" href="/messages">💬 Messages</a>
+                <a class="btn btn-outline-light btn-sm me-2" href="/dashboard">Dashboard</a>
+                <a class="btn btn-outline-light btn-sm" href="/auth/logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mb-5">
+        <h4 class="mb-1">💬 Messages</h4>
+        <p class="text-muted small mb-4">
+            <% if (user.role === 'user') { %>
+                Chat with <strong>approved donors</strong> and <strong>approved blood banks</strong> from your dashboard lists or below.
+            <% } else if (user.role === 'donor' || user.role === 'bloodbank') { %>
+                Chat with <strong>patients</strong> from <strong>Emergency blood requests</strong> → <strong>Chat patient</strong> (after admin approval).
+            <% } %>
+        </p>
+
+        <div class="card shadow-sm">
+            <div class="list-group list-group-flush">
+                <% if (inbox && inbox.length) { %>
+                    <% inbox.forEach(function(item) { %>
+                        <% const other = item.otherUser; %>
+                        <a href="/chat/<%= other._id %>" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong><%= other.name || 'User' %></strong>
+                                    <span class="badge bg-secondary text-uppercase ms-1"><%= other.role %></span>
+                                    <% if (item.lastMessage && item.lastMessage.text) { %>
+                                        <div class="text-muted small text-truncate" style="max-width:420px;">
+                                            <%= item.lastMessage.text %>
+                                        </div>
+                                    <% } else { %>
+                                        <div class="text-muted small">No messages yet</div>
+                                    <% } %>
+                                </div>
+                                <small class="text-muted text-nowrap ms-2">
+                                    <%= item.updatedAt ? new Date(item.updatedAt).toLocaleString() : '' %>
+                                </small>
+                            </div>
+                        </a>
+                    <% }); %>
+                <% } else { %>
+                    <div class="list-group-item text-center py-5 text-muted">
+                        <p class="mb-2">No conversations yet.</p>
+                        <a href="/dashboard" class="btn btn-danger btn-sm">Go to dashboard to start chatting</a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="alert alert-info mt-4 small mb-0">
+            <strong>How to start a new chat:</strong>
+            <ul class="mb-0 mt-2">
+                <% if (user.role === 'user') { %>
+                    <li>Dashboard → <em>Approved blood donors</em> or <em>Approved blood banks</em> → click <strong>Chat</strong></li>
+                    <li>Or open a request responder under <em>My emergency requests</em> → <strong>Chat</strong></li>
+                <% } else { %>
+                    <li>Dashboard → <em>Emergency blood requests</em> → <strong>Chat patient</strong> on an active request</li>
+                <% } %>
+                <li>Live chat also opens in a popup on the dashboard when you click <strong>Chat</strong></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

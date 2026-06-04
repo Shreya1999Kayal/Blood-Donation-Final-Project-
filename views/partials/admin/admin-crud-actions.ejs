@@ -1,0 +1,7 @@
+<% const payloadStr = JSON.stringify(payloadObj || {}).replace(/'/g, '&#39;'); %>
+<div class="d-inline-flex flex-wrap gap-1 justify-content-end admin-crud-actions">
+    <button type="button" class="btn btn-sm btn-outline-primary admin-crud-btn" data-admin-edit="<%= entity %>" data-payload='<%= payloadStr %>'>Edit</button>
+    <form action="<%= deleteUrl %>" method="POST" class="d-inline" data-admin-delete data-confirm-label="<%= confirmLabel %>">
+        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+    </form>
+</div>

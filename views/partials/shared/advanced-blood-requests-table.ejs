@@ -1,0 +1,257 @@
+<%
+const tableTheme = typeof twTheme !== 'undefined' ? twTheme : 'admin';
+const isBbTheme = tableTheme === 'bloodbank';
+const isDonorTheme = tableTheme === 'donor';
+function twInitials(name) {
+    if (!name) return '?';
+    return name.split(' ').map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
+}
+function twStatusLabel(s) {
+    if (s === 'fulfilled') return 'received';
+    return s;
+}
+function twStatusTw(s) {
+    const label = twStatusLabel(s);
+    const map = {
+        active: 'bg-amber-50 text-amber-800 ring-amber-600/20',
+        contacted: 'bg-sky-50 text-sky-800 ring-sky-600/20',
+        received: 'bg-emerald-50 text-emerald-800 ring-emerald-600/20',
+        cancelled: 'bg-slate-100 text-slate-600 ring-slate-500/20',
+    };
+    return map[label] || map.cancelled;
+}
+function twUrgencyTw(level) {
+    const key = String(level || 'high').toLowerCase();
+    if (key === 'critical') return 'bg-rose-50 text-rose-800 ring-rose-600/20';
+    if (key === 'normal') return 'bg-slate-100 text-slate-700 ring-slate-500/20';
+    return 'bg-orange-50 text-orange-800 ring-orange-600/20';
+}
+function twBadgeBase() {
+    return 'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset';
+}
+function twBloodTw() {
+    return twBadgeBase() + ' bg-rose-50 text-rose-700 ring-rose-600/20';
+}
+function twThClass() {
+    return 'px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap';
+}
+function twTdClass() {
+    return 'px-4 py-3.5 align-middle text-slate-700';
+}
+function twRowClass() {
+    return 'transition-colors hover:bg-slate-50/90 group';
+}
+function twChatBtnClass() {
+    if (isBbTheme) {
+        return 'chat-btn inline-flex items-center gap-1 rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-sky-700 shadow-sm transition hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-500/30';
+    }
+    if (isDonorTheme) {
+        return 'chat-btn inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30';
+    }
+    return 'chat-btn inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-500/30';
+}
+function twHeaderGrad() {
+    if (isBbTheme) return 'from-sky-50/80 via-white to-slate-50/50';
+    if (isDonorTheme) return 'from-emerald-50/80 via-white to-slate-50/50';
+    return 'from-rose-50/80 via-white to-slate-50/50';
+}
+function twTheadGrad() {
+    if (isBbTheme) return 'from-sky-50 via-slate-50 to-white';
+    if (isDonorTheme) return 'from-emerald-50 via-slate-50 to-white';
+    return 'from-rose-50 via-slate-50 to-white';
+}
+function twPulseColor() {
+    if (isBbTheme) return 'bg-sky-500';
+    if (isDonorTheme) return 'bg-emerald-500';
+    return 'bg-rose-500';
+}
+function twAvatarGrad() {
+    if (isBbTheme) return 'from-sky-500 to-cyan-700';
+    if (isDonorTheme) return 'from-emerald-500 to-teal-700';
+    return 'from-rose-500 to-red-700';
+}
+function twContactBtnClass() {
+    if (isBbTheme) return 'bg-sky-600 hover:bg-sky-700';
+    if (isDonorTheme) return 'bg-emerald-600 hover:bg-emerald-700';
+    return 'bg-rose-600 hover:bg-rose-700';
+}
+function donorCooldownDays(donor) {
+    if (!donor || !donor.lastDonationDate) return 999;
+    return Math.floor((Date.now() - new Date(donor.lastDonationDate).getTime()) / (1000 * 60 * 60 * 24));
+}
+function donorCooldownRemaining(donor) {
+    return Math.max(0, 90 - donorCooldownDays(donor));
+}
+const requests = bloodRequests || [];
+const showDocsCol = user.role === 'admin' || user.role === 'user';
+const colCount = showDocsCol ? 11 : 10;
+%>
+
+<div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm ring-1 ring-slate-900/5">
+    <div class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r <%= twHeaderGrad() %> px-4 py-3">
+        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <span class="inline-flex h-2 w-2 rounded-full <%= twPulseColor() %> animate-pulse"></span>
+            Emergency request registry
+        </div>
+        <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600"><%= requests.length %> records</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-gradient-to-r <%= twTheadGrad() %>">
+                <tr>
+                    <th class="<%= twThClass() %>">Patient</th>
+                    <th class="<%= twThClass() %>">Blood</th>
+                    <th class="<%= twThClass() %>">Hospital</th>
+                    <th class="<%= twThClass() %>">City</th>
+                    <th class="<%= twThClass() %>">Units</th>
+                    <th class="<%= twThClass() %>">Contact</th>
+                    <% if (showDocsCol) { %><th class="<%= twThClass() %>">Docs</th><% } %>
+                    <th class="<%= twThClass() %>">Status</th>
+                    <th class="<%= twThClass() %>">Matched</th>
+                    <th class="<%= twThClass() %>">Responders</th>
+                    <th class="<%= twThClass() %> text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+                <% if (requests.length) { %>
+                    <% requests.forEach(function(r) {
+                        const label = twStatusLabel(r.status);
+                        const urgLevel = String(r.urgencyLevel || 'High').toLowerCase();
+                        const urgKey = urgLevel === 'critical' ? 'critical' : urgLevel === 'normal' ? 'normal' : 'high';
+                        const isLiveRow = ['active', 'contacted'].includes(label);
+                        const rowStatus = isLiveRow ? label : 'closed';
+                        const rowSearch = [r.patientName, r.bloodGroup, r.hospitalName, r.city, r.contactName, r.contactPhone].join(' ').toLowerCase();
+                        const requestOwnerId = r.requestedBy && (r.requestedBy._id || r.requestedBy).toString();
+                        const isOwnRequest = user.role === 'user' && requestOwnerId === user._id.toString();
+                    %>
+                    <tr class="<%= twRowClass() %>"
+                        data-req-item
+                        data-status="<%= rowStatus %>"
+                        data-live="<%= isLiveRow ? '1' : '0' %>"
+                        data-urgency="<%= urgKey %>"
+                        data-search="<%= rowSearch.replace(/"/g, '') %>">
+                        <td class="<%= twTdClass() %> whitespace-nowrap">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br <%= twAvatarGrad() %> text-[11px] font-bold text-white shadow-sm ring-2 ring-white">
+                                    <%= twInitials(r.patientName) %>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-slate-900"><%= r.patientName %></div>
+                                    <% if (!isDonorTheme && r.urgencyLevel) { %>
+                                    <span class="<%= twBadgeBase() %> <%= twUrgencyTw(r.urgencyLevel) %> !px-1.5 !py-0 text-[10px]"><%= r.urgencyLevel %></span>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="<%= twTdClass() %>"><span class="<%= twBloodTw() %>"><%= r.bloodGroup %></span></td>
+                        <td class="<%= twTdClass() %> max-w-[150px]"><span class="line-clamp-2 font-medium text-slate-900"><%= r.hospitalName %></span></td>
+                        <td class="<%= twTdClass() %> whitespace-nowrap text-slate-600"><%= r.city %></td>
+                        <td class="<%= twTdClass() %> whitespace-nowrap">
+                            <span class="inline-flex h-8 min-w-[2rem] items-center justify-center rounded-lg bg-slate-100 px-2 text-sm font-bold text-slate-800"><%= r.requiredUnits %></span>
+                        </td>
+                        <td class="<%= twTdClass() %> whitespace-nowrap">
+                            <a href="tel:<%= r.contactPhone %>" class="font-medium text-slate-800 hover:text-rose-600"><%= r.contactPhone %></a>
+                            <div class="text-xs text-slate-500"><%= r.contactName %></div>
+                        </td>
+                        <% if (showDocsCol) { %>
+                        <td class="<%= twTdClass() %> text-xs whitespace-nowrap">
+                            <% if (user.role === 'admin' || isOwnRequest) { %>
+                                <% if (r.patientDocuments && r.patientDocuments.bloodTestReportUrl) { %>
+                                    <a href="<%= docUrl(r.patientDocuments.bloodTestReportUrl) %>" target="_blank" class="block font-medium text-sky-700 hover:text-sky-900">Blood test</a>
+                                <% } %>
+                                <% if (r.patientDocuments && r.patientDocuments.prescriptionUrl) { %>
+                                    <a href="<%= docUrl(r.patientDocuments.prescriptionUrl) %>" target="_blank" class="block font-medium text-sky-700 hover:text-sky-900">Prescription</a>
+                                <% } %>
+                                <% if (!r.patientDocuments || (!r.patientDocuments.bloodTestReportUrl && !r.patientDocuments.prescriptionUrl)) { %><span class="text-slate-400">—</span><% } %>
+                            <% } else { %><span class="text-slate-400">—</span><% } %>
+                        </td>
+                        <% } %>
+                        <td class="<%= twTdClass() %> whitespace-nowrap">
+                            <span class="<%= twBadgeBase() %> <%= twStatusTw(r.status) %>"><%= label %></span>
+                        </td>
+                        <td class="<%= twTdClass() %> min-w-[110px]">
+                            <% if (r.matchedDonors && r.matchedDonors.length) { %>
+                                <ul class="space-y-1">
+                                    <% r.matchedDonors.slice(0, 2).forEach(function(d) { %>
+                                        <li class="rounded-md border border-slate-100 bg-slate-50 px-2 py-0.5 text-xs">
+                                            <span class="font-semibold"><%= d.userId ? d.userId.name : 'Donor' %></span>
+                                            <span class="<%= twBloodTw() %> !px-1 !py-0 text-[10px] ml-1"><%= d.bloodGroup %></span>
+                                        </li>
+                                    <% }); %>
+                                </ul>
+                            <% } else { %><span class="text-slate-400 text-xs">None</span><% } %>
+                        </td>
+                        <td class="<%= twTdClass() %> min-w-[130px]">
+                            <% if (r.contacts && r.contacts.length) { %>
+                                <ul class="space-y-1.5">
+                                    <% r.contacts.forEach(function(c) { %>
+                                        <li class="rounded-lg border border-slate-100 px-2 py-1 text-xs">
+                                            <strong><%= c.name %></strong>
+                                            <span class="text-slate-500">(<%= c.role %>)</span>
+                                            <% if (user.role === 'user' && c.userId && ['donor','bloodbank'].includes(c.role)) { %>
+                                                <button type="button" class="<%= twChatBtnClass() %> mt-1"
+                                                    data-user-id="<%= c.userId._id || c.userId %>"
+                                                    data-user-name="<%= c.name %>"
+                                                    data-user-role="<%= c.role %>">Chat</button>
+                                            <% } %>
+                                        </li>
+                                    <% }); %>
+                                </ul>
+                            <% } else { %><span class="text-slate-400 text-xs">—</span><% } %>
+                        </td>
+                        <td class="<%= twTdClass() %> text-right whitespace-nowrap">
+                            <% if (isOwnRequest) { %>
+                                <% if (label !== 'received' && label !== 'cancelled') { %>
+                                    <form action="/request/<%= r._id %>/received" method="POST" class="inline-block min-w-[160px] text-left" onsubmit="return confirm('Confirm blood received?');">
+                                        <select name="responderUserId" class="mb-1 w-full rounded-lg border border-slate-200 px-2 py-1 text-xs" required>
+                                            <option value="">Select responder</option>
+                                            <% (r.contacts || []).filter(function(c) { return c.userId && ['donor','bloodbank'].includes(c.role); }).forEach(function(c) { %>
+                                                <option value="<%= c.userId._id || c.userId %>"><%= c.name %></option>
+                                            <% }); %>
+                                        </select>
+                                        <button type="submit" class="inline-flex w-full justify-center rounded-lg bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Mark received</button>
+                                    </form>
+                                <% } else if (label === 'received') { %>
+                                    <span class="text-xs font-semibold text-emerald-700">✓ Received</span>
+                                <% } %>
+                            <% } else if (['donor', 'bloodbank', 'admin'].includes(user.role)) { %>
+                                <% if (label !== 'received' && label !== 'cancelled') { %>
+                                    <% 
+                                    const donorInCooldown = user.role === 'donor' && donorProfile && donorCooldownRemaining(donorProfile) > 0;
+                                    const canContact = user.role === 'admin' ||
+                                        (user.role === 'donor' && donorProfile && donorProfile.status === 'approved' && !donorInCooldown) ||
+                                        (user.role === 'bloodbank' && bloodbank && bloodbank.status === 'approved');
+                                    %>
+                                    <% if (canContact) { %>
+                                        <form action="/request/<%= r._id %>/contact" method="POST" class="min-w-[150px] text-left">
+                                            <input type="text" name="note" class="mb-1 w-full rounded-lg border border-slate-200 px-2 py-1 text-xs" placeholder="Optional note">
+                                            <button type="submit" class="inline-flex w-full justify-center rounded-lg <%= twContactBtnClass() %> px-2 py-1 text-xs font-semibold text-white">Contacted patient</button>
+                                        </form>
+                                        <a href="tel:<%= r.contactPhone %>" class="mt-1 inline-flex w-full justify-center rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Call</a>
+                                        <% if (r.requestedBy && r.requestedBy._id) { %>
+                                            <button type="button" class="<%= twChatBtnClass() %> mt-1 w-full justify-center"
+                                                data-user-id="<%= r.requestedBy._id %>"
+                                                data-user-name="<%= r.patientName %>"
+                                                data-user-role="user">Chat patient</button>
+                                        <% } %>
+                                    <% } else { %>
+                                        <span class="text-xs text-slate-500"><%= donorInCooldown ? 'Cooldown ' + donorCooldownRemaining(donorProfile) + 'd' : 'Awaiting approval' %></span>
+                                    <% } %>
+                                <% } else { %>
+                                    <span class="text-xs text-slate-400">Closed</span>
+                                <% } %>
+                            <% } else { %>
+                                <span class="text-xs text-slate-400">—</span>
+                            <% } %>
+                        </td>
+                    </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="<%= colCount %>" class="px-4 py-14 text-center text-sm text-slate-500">No emergency requests on the network.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>

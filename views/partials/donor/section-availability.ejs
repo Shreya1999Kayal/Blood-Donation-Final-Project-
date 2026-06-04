@@ -1,0 +1,77 @@
+<%
+function donorCooldownDays(d) {
+    if (!d || !d.lastDonationDate) return 999;
+    return Math.floor((Date.now() - new Date(d.lastDonationDate).getTime()) / (1000 * 60 * 60 * 24));
+}
+function donorCooldownRemaining(d) {
+    return Math.max(0, 90 - donorCooldownDays(d));
+}
+function donorEligibilityLabel(d) {
+    if (!d || d.status !== 'approved') return 'Pending approval';
+    const remaining = donorCooldownRemaining(d);
+    if (remaining > 0) return 'Not eligible (' + remaining + ' days left)';
+    if (!d.isAvailable) return 'Unavailable';
+    return 'Eligible to donate';
+}
+%>
+
+<div class="cp-hero mb-4 dn-hero">
+    <div class="cp-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="cp-hero-overlay"></div>
+    <div class="cp-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="cp-hero-badge"><i data-lucide="toggle-right" style="width:14px;height:14px;"></i> Donor availability</span>
+                <h3 class="cp-hero-title">Availability status</h3>
+                <p class="cp-hero-sub mb-0">Let patients and hospitals know when you are ready to respond to emergency blood requests.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="cp-hero-meta">
+                    <div><small>Current</small><strong><%= donorProfile && donorProfile.isAvailable ? 'Available' : 'Unavailable' %></strong></div>
+                    <div><small>Eligibility</small><strong><%= donorProfile ? donorEligibilityLabel(donorProfile) : 'Not registered' %></strong></div>
+                    <div><small>Blood group</small><strong><%= donorProfile ? donorProfile.bloodGroup : '—' %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (!donorProfile) { %>
+<div class="alert alert-warning border-0 shadow-sm">
+    <strong>Register first</strong> — upload medical documents before setting availability.
+    <a href="#" class="alert-link" data-dn-section="documents" data-dn-label="Medical Documents">Go to documents</a>
+</div>
+<% } else { %>
+<div class="row g-4 mb-4">
+    <div class="col-xl-6">
+        <div class="overview-panel">
+            <div class="overview-panel-head"><h5>Toggle availability</h5></div>
+            <div class="overview-panel-body">
+                <form action="/donor/availability" method="POST" class="d-flex flex-wrap gap-3 align-items-end">
+                    <div class="flex-grow-1">
+                        <label class="form-label small fw-semibold">Your status for patients searching donors</label>
+                        <select name="isAvailable" class="form-select">
+                            <option value="true" <%= donorProfile.isAvailable ? 'selected' : '' %>>Available — ready to respond</option>
+                            <option value="false" <%= !donorProfile.isAvailable ? 'selected' : '' %>>Unavailable — do not contact me</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i data-lucide="save" style="width:16px;height:16px;"></i> Update status
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="overview-panel">
+            <div class="overview-panel-head"><h5>Verification & cooldown</h5></div>
+            <div class="overview-panel-body pt-2">
+                <div class="dn-snapshot-row"><span>Donor status</span><strong class="text-capitalize"><%= donorProfile.status %></strong></div>
+                <div class="dn-snapshot-row"><span>Last donation</span><strong><%= donorProfile.lastDonationDate ? new Date(donorProfile.lastDonationDate).toLocaleDateString() : 'None recorded' %></strong></div>
+                <div class="dn-snapshot-row"><span>Cooldown remaining</span><strong><%= donorCooldownRemaining(donorProfile) %> days</strong></div>
+                <div class="dn-snapshot-row"><span>Verification fee</span><strong><%= user.donorVerificationFeePaid ? 'Paid ✓' : 'Not paid' %></strong></div>
+            </div>
+        </div>
+    </div>
+</div>
+<% } %>

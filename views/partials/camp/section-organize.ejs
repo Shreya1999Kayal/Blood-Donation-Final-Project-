@@ -1,0 +1,77 @@
+<div class="cp-hero mb-4"><div class="cp-hero-bg" style="background-image:url('https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1400&h=420&fit=crop&q=85');"></div><div class="cp-hero-overlay"></div><div class="cp-hero-content"><span class="cp-hero-badge"><i data-lucide="calendar-plus" style="width:14px;height:14px;"></i> Plan camp</span><h3 class="cp-hero-title">Organize a new camp</h3><p class="cp-hero-sub mb-0">Schedule another blood donation camp. Details are saved to your camp history automatically.</p></div></div>
+
+
+
+<div class="row g-4 align-items-start">
+
+    <div class="col-lg-7">
+
+        <% if (!campProfile || campProfile.status !== 'approved') { %>
+
+        <div class="alert alert-warning mb-0">Camp organization must be approved before scheduling additional events.</div>
+
+        <% } else { %>
+
+        <div class="overview-panel cp-form-panel">
+
+            <div class="overview-panel-body">
+
+                <form action="/camp/events" method="POST" class="cp-form">
+
+                    <div class="row g-3">
+
+                        <div class="col-md-6"><label class="form-label fw-semibold">Camp Name *</label><input type="text" name="campName" class="form-control" required></div>
+
+                        <div class="col-md-6"><label class="form-label fw-semibold">Blood Bank</label><select name="linkedBloodBankId" class="form-select"><option value="">Select Blood Bank</option><% (approvedBloodBanksForCamp || []).forEach(function(bb) { %><option value="<%= bb._id %>"><%= bb.hospitalName %></option><% }); %></select></div>
+
+                        <div class="col-12"><label class="form-label fw-semibold">Camp Address *</label><textarea name="campAddress" class="form-control" rows="2" required></textarea></div>
+
+                        <div class="col-md-4"><label class="form-label fw-semibold">State *</label><select name="state" id="cpStateSelect" class="form-select" required><option value="">Select State</option><% (campStates || []).forEach(function(s) { %><option value="<%= s %>"><%= s %></option><% }); %></select></div>
+
+                        <div class="col-md-4"><label class="form-label fw-semibold">District *</label><select name="district" id="cpDistrictSelect" class="form-select" required><option value="">Select District</option></select></div>
+
+                        <div class="col-md-4"><label class="form-label fw-semibold">City *</label><input type="text" name="city" class="form-control" value="<%= user.city %>" required></div>
+
+                        <div class="col-md-4"><label class="form-label fw-semibold">Proposed Date *</label><input type="date" name="proposedDate" class="form-control" required></div>
+
+                        <div class="col-md-4"><label class="form-label fw-semibold">Start Time *</label><input type="time" name="startTime" class="form-control" value="09:00" required></div>
+
+                        <div class="col-md-4"><label class="form-label fw-semibold">End Time *</label><input type="time" name="endTime" class="form-control" value="17:00" required></div>
+
+                        <div class="col-md-4"><label class="form-label fw-semibold">Latitude</label><input type="text" name="latitude" class="form-control"></div>
+
+                        <div class="col-md-4"><label class="form-label fw-semibold">Longitude</label><input type="text" name="longitude" class="form-control"></div>
+
+                        <div class="col-md-4"><label class="form-label fw-semibold">Estimated Participants *</label><input type="number" name="estimatedParticipants" class="form-control" min="1" required></div>
+
+                        <div class="col-md-6"><label class="form-label fw-semibold">Reference / Prayojak</label><input type="text" name="referenceSupporter" class="form-control"></div>
+
+                        <div class="col-md-6"><label class="form-label fw-semibold">Remarks</label><input type="text" name="remarks" class="form-control"></div>
+
+                    </div>
+
+                    <button type="submit" class="btn btn-primary mt-3" style="background:#7c3aed;border-color:#6d28d9">Save camp event</button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+        <% } %>
+
+    </div>
+
+    <div class="col-lg-5">
+
+        <aside class="cp-organize-visual" aria-label="Blood donation camp motivation">
+
+            <img src="/uploads/camp.jpeg" alt="Let us do something for someone — help us organise a camp for blood" class="cp-organize-visual-img" width="600" height="600" loading="lazy">
+
+        </aside>
+
+    </div>
+
+</div>
+
+

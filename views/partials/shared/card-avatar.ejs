@@ -1,0 +1,15 @@
+<%
+const subject = typeof contactUser !== 'undefined' ? contactUser : user;
+const url = profileImageUrl(subject);
+const initial = userInitials(subject && subject.name, '?');
+const cssClass = typeof cardAvatarClass !== 'undefined' ? cardAvatarClass : 'card-face-avatar';
+%>
+<div class="<%= cssClass %>">
+    <% if (url) { %>
+        <img src="<%= url %>" alt="<%= subject && subject.name ? subject.name : 'Profile' %>" class="card-avatar-img" loading="lazy">
+    <% } else if (typeof cardAvatarText !== 'undefined') { %>
+        <span class="card-avatar-text"><%= cardAvatarText %></span>
+    <% } else { %>
+        <span class="card-avatar-text"><%= initial %></span>
+    <% } %>
+</div>

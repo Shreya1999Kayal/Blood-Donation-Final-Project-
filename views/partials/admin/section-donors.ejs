@@ -1,0 +1,198 @@
+<%
+const donors = allDonors || [];
+const pendingList = donors.filter(function(d) { return d.status === 'pending'; });
+const approvedList = donors.filter(function(d) { return d.status === 'approved'; });
+const rejectedList = donors.filter(function(d) { return d.status === 'rejected'; });
+const eligibleList = donors.filter(function(d) {
+    return d.status === 'approved' && donorEligibilityLabel(d) === 'Eligible';
+});
+const feePaidCount = donors.filter(function(d) { return d.userId && d.userId.donorVerificationFeePaid; }).length;
+
+function donorEligibilityKey(d) {
+    if (d.status !== 'approved') return 'pending';
+    const label = donorEligibilityLabel(d);
+    if (label === 'Eligible') return 'eligible';
+    if (label.indexOf('Not eligible') === 0) return 'cooldown';
+    if (label === 'Unavailable') return 'unavailable';
+    return 'other';
+}
+
+const donStats = [
+    { label: 'Total donors', value: donors.length, icon: 'users', tone: 'slate', img: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=260&fit=crop&q=80' },
+    { label: 'Pending review', value: pendingList.length, icon: 'clipboard-check', tone: 'amber', img: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=260&fit=crop&q=80' },
+    { label: 'Verified donors', value: approvedList.length, icon: 'badge-check', tone: 'green', img: 'https://images.unsplash.com/photo-1615461066159-fa5966998606?w=400&h=260&fit=crop&q=80' },
+    { label: 'Ready to donate', value: eligibleList.length, icon: 'heart-pulse', tone: 'red', img: 'https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=400&h=260&fit=crop&q=80' },
+];
+%>
+
+<!-- Hero -->
+<div class="don-hero mb-4">
+    <div class="don-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1615461066159-fa5966998606?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="don-hero-overlay"></div>
+    <div class="don-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="don-hero-badge"><span class="pulse-dot"></span> Donor verification hub</span>
+                <h3 class="don-hero-title">Donor management</h3>
+                <p class="don-hero-sub mb-0">Review medical documents, verify eligibility, and approve donors who can respond to emergency blood requests across the network.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="don-hero-meta">
+                    <div><small>Pending review</small><strong class="<%= pendingList.length ? 'text-warning' : 'text-success' %>"><%= pendingList.length %></strong></div>
+                    <div><small>Verified</small><strong><%= approvedList.length %></strong></div>
+                    <div><small>Ready now</small><strong><%= eligibleList.length %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (pendingList.length > 0) { %>
+<div class="don-pending-strip mb-4">
+    <div class="don-pending-strip-icon">
+        <img src="https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=100&h=100&fit=crop&q=80" alt="" loading="lazy">
+    </div>
+    <div class="flex-grow-1">
+        <h6 class="mb-1"><i data-lucide="user-check" style="width:16px;height:16px;"></i> <%= pendingList.length %> donor<%= pendingList.length !== 1 ? 's' : '' %> awaiting verification</h6>
+        <p class="mb-0 small text-muted">Review uploaded medical reports and approve or reject registrations below.</p>
+    </div>
+    <button type="button" class="btn btn-warning btn-sm text-dark" id="donFilterPending">Show pending only</button>
+</div>
+<% } %>
+
+<!-- KPI row -->
+<div class="row g-3 mb-4">
+    <% donStats.forEach(function(stat) { %>
+    <div class="col-sm-6 col-xl-3">
+        <div class="overview-kpi overview-kpi-<%= stat.tone %>">
+            <div class="overview-kpi-visual">
+                <img src="<%= stat.img %>" alt="" loading="lazy">
+                <div class="overview-kpi-visual-shade"></div>
+            </div>
+            <div class="overview-kpi-body">
+                <div class="overview-kpi-icon"><i data-lucide="<%= stat.icon %>" style="width:20px;height:20px;"></i></div>
+                <div class="overview-kpi-label"><%= stat.label %></div>
+                <div class="overview-kpi-value"><%= stat.value %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel">
+            <div class="overview-panel-head flex-wrap">
+                <div>
+                    <h5>Donor registry</h5>
+                    <p class="text-muted small mb-0"><span id="donVisibleCount"><%= donors.length %></span> of <%= donors.length %> donor(s) shown</p>
+                </div>
+                <div class="btn-group btn-group-sm don-view-toggle" role="group">
+                    <button type="button" class="btn btn-danger active" data-don-view="cards" title="Card view"><i data-lucide="layout-grid" style="width:14px;height:14px;"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" data-don-view="table" title="Table view"><i data-lucide="table" style="width:14px;height:14px;"></i></button>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm ms-2" data-admin-create="donor"><i data-lucide="plus" style="width:14px;height:14px;"></i> Add donor</button>
+            </div>
+
+            <div class="don-toolbar">
+                <div class="don-search-wrap">
+                    <i data-lucide="search" style="width:16px;height:16px;"></i>
+                    <input type="search" class="form-control form-control-sm" id="donSearch" placeholder="Search name, email, blood type, city…" autocomplete="off">
+                </div>
+                <div class="don-filter-group">
+                    <span class="don-filter-label">Status</span>
+                    <div class="don-pills" id="donStatusFilters">
+                        <button type="button" class="don-pill active" data-don-status="all">All</button>
+                        <button type="button" class="don-pill" data-don-status="pending">Pending</button>
+                        <button type="button" class="don-pill" data-don-status="approved">Approved</button>
+                        <button type="button" class="don-pill" data-don-status="rejected">Rejected</button>
+                    </div>
+                </div>
+                <div class="don-filter-group">
+                    <span class="don-filter-label">Eligibility</span>
+                    <div class="don-pills" id="donEligFilters">
+                        <button type="button" class="don-pill active" data-don-elig="all">All</button>
+                        <button type="button" class="don-pill" data-don-elig="eligible">Eligible</button>
+                        <button type="button" class="don-pill" data-don-elig="cooldown">Cooldown</button>
+                        <button type="button" class="don-pill" data-don-elig="unavailable">Unavailable</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overview-panel-body pt-0">
+                <div id="donCardsView">
+                    <%- include('donors-board', { allDonors: donors, donorEligibilityLabel, donorEligibilityBadge, donorEligibilityKey }) %>
+                </div>
+                <div id="donTableView" class="d-none">
+                    <%- include('donors-table-advanced', { allDonors: donors, donorEligibilityLabel, donorEligibilityBadge, donorEligibilityKey }) %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <% if (typeof analytics !== 'undefined' && analytics && analytics.donorsByStatus) { %>
+        <div class="overview-panel mb-4">
+            <div class="overview-panel-head">
+                <div>
+                    <h5>Verification pipeline</h5>
+                    <p class="text-muted small mb-0">Donors by approval status</p>
+                </div>
+            </div>
+            <div class="overview-panel-body">
+                <div class="overview-chart-box">
+                    <canvas id="donSectionStatusChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <div class="overview-panel mb-4">
+            <div class="overview-panel-head">
+                <h5>Verification checklist</h5>
+            </div>
+            <div class="overview-panel-body pt-2">
+                <div class="don-checklist-item">
+                    <img src="https://images.unsplash.com/photo-1584982751661-6085a089094a?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <div>
+                        <strong>1. Validate documents</strong>
+                        <p class="small text-muted mb-0">Blood group report, test results, fitness certificate, and ID proof.</p>
+                    </div>
+                </div>
+                <div class="don-checklist-item">
+                    <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <div>
+                        <strong>2. Check AI risk flags</strong>
+                        <p class="small text-muted mb-0">Review automated eligibility recommendations when present.</p>
+                    </div>
+                </div>
+                <div class="don-checklist-item mb-0">
+                    <img src="https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <div>
+                        <strong>3. Approve verified donors</strong>
+                        <p class="small text-muted mb-0"><%= feePaidCount %> donor(s) paid verification fee · <%= rejectedList.length %> rejected.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="overview-panel overview-panel-accent">
+            <div class="overview-panel-head border-0 pb-0">
+                <h5 class="text-white mb-0">Network capacity</h5>
+            </div>
+            <div class="overview-panel-body">
+                <div class="don-live-stat"><span>Total registered</span><strong><%= donors.length %></strong></div>
+                <div class="don-live-stat"><span>Verified & active</span><strong><%= approvedList.length %></strong></div>
+                <div class="don-live-stat"><span>Ready to donate</span><strong><%= eligibleList.length %></strong></div>
+                <div class="don-live-stat mb-0"><span>Awaiting review</span><strong><%= pendingList.length %></strong></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="don-empty don-empty-filter d-none" id="donEmptyFilter">
+    <img src="https://images.unsplash.com/photo-1615461066159-fa5966998606?w=400&h=260&fit=crop&q=80" alt="" loading="lazy">
+    <h5>No donors match your filters</h5>
+    <p class="text-muted mb-3">Try adjusting search or filter criteria.</p>
+    <button type="button" class="btn btn-outline-danger btn-sm" id="donClearFilters">Clear all filters</button>
+</div>

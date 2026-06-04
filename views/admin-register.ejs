@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Registration — RaktaSetu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/admin-ui.css" rel="stylesheet">
+    <link href="/css/admin-auth-pages.css" rel="stylesheet">
+    <style>
+        .profile-photo-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+        .profile-photo-preview { width: 88px; height: 88px; border-radius: 20px; overflow: hidden; background: linear-gradient(135deg, #ef4444, #991b1b); display: flex; align-items: center; justify-content: center; }
+        .profile-photo-preview-img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-photo-preview-initial { color: #fff; font-weight: 800; font-size: 1.5rem; }
+        .profile-photo-hint { font-size: 0.78rem; color: #94a3b8; margin-top: 0.45rem; }
+    </style>
+</head>
+<body class="admin-auth-shell">
+    <header class="admin-auth-header">
+        <a href="/admin/login" class="admin-auth-brand">
+            <div class="admin-auth-brand-mark">
+                <i data-lucide="shield" style="width:22px;height:22px;color:#fff;"></i>
+            </div>
+            <div>
+                <h1>RaktaSetu</h1>
+                <p>Platform administration</p>
+            </div>
+        </a>
+        <span class="admin-auth-badge"><i data-lucide="shield-check" style="width:14px;height:14px;"></i> Admin portal</span>
+    </header>
+
+    <main class="admin-auth-main">
+        <div class="admin-auth-card admin-auth-card-wide">
+            <div class="admin-auth-card-head">
+                <h2>Admin registration</h2>
+                <p>Create a platform administrator account · then sign in at /admin/login</p>
+            </div>
+            <div class="admin-auth-card-body">
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <div class="alert alert-danger py-2"><%= error %></div>
+                <% } %>
+                <form action="/admin/registration" method="POST" enctype="multipart/form-data" id="adminRegisterForm">
+                    <%- include('partials/shared/profile-photo-field', { user: { name: '', profileImage: {} }, photoFieldPrefix: 'register', photoHint: 'Optional — change later in profile' }) %>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="password" class="form-control" minlength="6" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" name="phone" class="form-control" pattern="[6-9][0-9]{9}" placeholder="e.g. 9876543210" minlength="10" maxlength="10" inputmode="numeric" required>
+                            <div class="form-text">10-digit Indian mobile starting with 6, 7, 8, or 9</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">City</label>
+                            <input type="text" name="city" class="form-control" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-admin w-100 mt-4">Create admin account</button>
+                </form>
+                <div class="admin-auth-footer-links">
+                    <p class="mb-1">Already registered? <a href="/admin/login">Admin login</a></p>
+                    <p class="mb-0"><a href="/auth/login">Main site login</a></p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="/js/profile-photo-preview.js"></script>
+    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+    <%- include('partials/shared/help-chatbot', { user: typeof user !== 'undefined' ? user : null }) %>
+</body>
+</html>

@@ -1,0 +1,7 @@
+<div class="topbar-user-chip d-flex align-items-center gap-2">
+    <%- include('./user-avatar', { user, avatarSize: 'sm' }) %>
+    <div class="topbar-user-meta d-none d-lg-block">
+        <div class="topbar-user-name text-truncate"><%= user.name %></div>
+        <div class="topbar-user-email text-muted small text-truncate"><%= user.email %></div>
+    </div>
+</div>

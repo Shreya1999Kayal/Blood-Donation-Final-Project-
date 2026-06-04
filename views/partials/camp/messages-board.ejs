@@ -1,0 +1,64 @@
+<%
+const items = inbox || [];
+
+function cpRoleLabel(role) {
+    if (role === 'donor') return 'Donor';
+    if (role === 'bloodbank') return 'Blood bank';
+    if (role === 'user') return 'Patient';
+    return role || 'Contact';
+}
+
+function cpRoleTone(role) {
+    if (role === 'donor') return 'donor';
+    if (role === 'bloodbank') return 'bank';
+    return 'other';
+}
+
+function cpPreview(item) {
+    const text = item.lastMessage && item.lastMessage.text ? item.lastMessage.text : '';
+    return text.length > 90 ? text.slice(0, 87) + '…' : text;
+}
+
+function cpFormatTime(d) {
+    if (!d) return '';
+    const date = new Date(d);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (date >= today) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+%>
+
+<% if (items.length) { %>
+<div class="cp-inbox-list" id="cpMsgFeed">
+    <% items.forEach(function(item) {
+        const other = item.otherUser || {};
+        const hasPreview = !!(item.lastMessage && item.lastMessage.text);
+    %>
+    <a href="/chat/<%= other._id %>" class="cp-inbox-thread cp-inbox-thread--<%= cpRoleTone(other.role) %>">
+        <div class="cp-inbox-thread-avatar">
+            <%- include('../shared/card-avatar', { contactUser: other, cardAvatarClass: 'cp-inbox-avatar' }) %>
+        </div>
+        <div class="cp-inbox-thread-main">
+            <div class="cp-inbox-thread-top">
+                <div class="cp-inbox-thread-ident">
+                    <span class="cp-inbox-role"><%= cpRoleLabel(other.role) %></span>
+                    <h6 class="cp-inbox-name"><%= other.name || 'Contact' %></h6>
+                </div>
+                <time class="cp-inbox-time"><%= cpFormatTime(item.updatedAt) %></time>
+            </div>
+            <p class="cp-inbox-preview <%= hasPreview ? '' : 'is-empty' %>"><%= hasPreview ? cpPreview(item) : 'No messages yet — say hello' %></p>
+        </div>
+        <span class="cp-inbox-chevron" aria-hidden="true"><i data-lucide="chevron-right" style="width:16px;height:16px;"></i></span>
+    </a>
+    <% }); %>
+</div>
+<% } else { %>
+<div class="cp-inbox-empty">
+    <div class="cp-inbox-empty-icon"><i data-lucide="inbox" style="width:28px;height:28px;"></i></div>
+    <h6>No conversations yet</h6>
+    <p class="text-muted small mb-0">Unlock a donor or blood bank contact, then open a chat from their directory row.</p>
+</div>
+<% } %>

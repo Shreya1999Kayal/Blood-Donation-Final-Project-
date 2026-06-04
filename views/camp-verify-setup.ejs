@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Camp Registration — RaktaSetu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="/css/camp-ui.css" rel="stylesheet">
+</head>
+<body class="cp-setup-page">
+<div class="cp-setup-shell">
+
+    <header class="cp-setup-header">
+        <div class="cp-setup-header-inner">
+            <a href="/" class="cp-setup-brand">
+                <div class="cp-setup-logo">
+                    <i data-lucide="tent" style="width:22px;height:22px;color:#fff;"></i>
+                </div>
+                <div>
+                    <div class="cp-setup-brand-title">RaktaSetu</div>
+                    <div class="cp-setup-brand-sub">Camp organization portal</div>
+                </div>
+            </a>
+            <div class="cp-setup-steps" aria-hidden="true">
+                <span class="cp-setup-step-pill done">1. Profile</span>
+                <span class="cp-setup-step-arrow">→</span>
+                <span class="cp-setup-step-pill active">2. OTP verify</span>
+                <span class="cp-setup-step-arrow">→</span>
+                <span class="cp-setup-step-pill">3. Admin approval</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="cp-setup-main cp-setup-main--narrow">
+        <div class="cp-setup-card cp-setup-verify-card">
+            <div class="cp-setup-verify-icon">
+                <i data-lucide="shield-check" style="width:32px;height:32px;color:#6d28d9;"></i>
+            </div>
+            <h1 class="cp-setup-verify-title">Verify organizer</h1>
+            <p class="cp-setup-verify-lead">
+                Enter the 6-digit OTP sent to<br>
+                <strong><%= camp.organizerEmail %></strong>
+            </p>
+
+            <% if (sent) { %>
+                <div class="cp-setup-alert cp-setup-alert--success">
+                    <i data-lucide="check-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
+                    <span>OTP sent successfully.</span>
+                </div>
+            <% } %>
+            <% if (error) { %>
+                <div class="cp-setup-alert cp-setup-alert--error">
+                    <i data-lucide="alert-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
+                    <span><%= error %></span>
+                </div>
+            <% } %>
+
+            <form action="/camp/verify-setup" method="POST" class="cp-setup-verify-form">
+                <div class="cp-setup-field">
+                    <label for="otp">One-time password</label>
+                    <input type="text" name="otp" id="otp" class="cp-setup-input cp-setup-otp" maxlength="6" pattern="[0-9]{6}" placeholder="000000" required autocomplete="one-time-code" inputmode="numeric">
+                </div>
+                <button type="submit" class="cp-setup-submit cp-setup-submit--block">
+                    <i data-lucide="badge-check" style="width:18px;height:18px;"></i>
+                    Verify &amp; submit for admin approval
+                </button>
+            </form>
+
+            <a href="/camp/setup?edit=1" class="cp-setup-edit-link">
+                <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                Edit registration details
+            </a>
+        </div>
+    </main>
+</div>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<%
+const items = inbox || [];
+const messagesHeroSrc = portalMedia.messagesHeroSrc();
+const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+const donorList = items.filter(function(i) { return i.otherUser && i.otherUser.role === 'donor'; });
+const bankList = items.filter(function(i) { return i.otherUser && i.otherUser.role === 'bloodbank'; });
+const todayList = items.filter(function(i) { return i.updatedAt && new Date(i.updatedAt) >= todayStart; });
+const msgStats = [
+    { label: 'Conversations', value: items.length, icon: 'messages-square', iconTone: 'rose' },
+    { label: 'Donors', value: donorList.length, icon: 'heart-handshake', iconTone: 'rose' },
+    { label: 'Blood banks', value: bankList.length, icon: 'building-2', iconTone: 'slate' },
+    { label: 'Active today', value: todayList.length, icon: 'calendar-clock', iconTone: 'green' },
+];
+%>
+
+<div class="msg-hero mb-4">
+    <div class="msg-hero-bg" style="background-image: url('<%= messagesHeroSrc %>');"></div>
+    <div class="msg-hero-overlay"></div>
+    <div class="msg-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="msg-hero-badge"><i data-lucide="messages-square" style="width:14px;height:14px;"></i> Secure messaging</span>
+                <h3 class="msg-hero-title">Messages</h3>
+                <p class="msg-hero-sub mb-0">People you have chatted with appear below. Open a thread in the popup — no need to leave the dashboard.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="msg-hero-meta">
+                    <div><small>Chats</small><strong id="msgFeedTotal"><%= items.length %></strong></div>
+                    <div><small>Donors</small><strong><%= donorList.length %></strong></div>
+                    <div><small>Status</small><strong class="text-success">Live</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <% msgStats.forEach(function(stat) { %>
+    <div class="col-6 col-xl-3">
+        <div class="pt-req-kpi<%= stat.iconTone === 'rose' && stat.label === 'Conversations' ? ' pt-req-kpi--live' : '' %>">
+            <div class="pt-req-kpi-icon pt-req-kpi-icon--<%= stat.iconTone %>"><i data-lucide="<%= stat.icon %>" style="width:18px;height:18px;"></i></div>
+            <div>
+                <div class="pt-req-kpi-label"><%= stat.label %></div>
+                <div class="pt-req-kpi-value"><%= stat.value %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel pt-msg-panel" id="ptMsgPanel" data-inbox-total="<%= items.length %>">
+            <div class="overview-panel-head flex-wrap">
+                <div>
+                    <h5 class="mb-0">Conversation inbox</h5>
+                    <p class="text-muted small mb-0"><span id="msgVisibleCount"><%= items.length %></span> conversation(s) shown</p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="#" class="btn btn-danger btn-sm d-inline-flex align-items-center gap-1" data-pt-section="donors" data-pt-label="Find Donors">
+                        <i data-lucide="users" style="width:14px;height:14px;"></i> Find contacts
+                    </a>
+                </div>
+            </div>
+
+            <div class="msg-toolbar">
+                <div class="msg-search-wrap">
+                    <i data-lucide="search" style="width:16px;height:16px;"></i>
+                    <input type="search" class="form-control form-control-sm" id="msgSearch" placeholder="Search name, city, phone, message…" autocomplete="off">
+                </div>
+                <div class="msg-filter-group">
+                    <span class="msg-filter-label">Contact</span>
+                    <div class="msg-pills" id="msgRoleFilters">
+                        <button type="button" class="msg-pill active" data-msg-role="all">All</button>
+                        <button type="button" class="msg-pill" data-msg-role="donor">Donors</button>
+                        <button type="button" class="msg-pill" data-msg-role="bloodbank">Blood banks</button>
+                    </div>
+                </div>
+                <div class="msg-filter-group">
+                    <span class="msg-filter-label">Activity</span>
+                    <div class="msg-pills" id="msgWhenFilters">
+                        <button type="button" class="msg-pill active" data-msg-when="all">All time</button>
+                        <button type="button" class="msg-pill" data-msg-when="today">Today</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overview-panel-body p-0" id="msgInboxBody">
+                <%- include('messages-board', { inbox: items, filterEmpty: false }) %>
+            </div>
+            <div class="msg-empty msg-empty-filter d-none" id="msgEmptyFilter">
+                <div class="pt-msg-empty-icon">
+                    <i data-lucide="loader" style="width:24px;height:24px;"></i>
+                </div>
+                <p class="text-muted small mb-0">Loading conversations…</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="overview-panel pt-msg-side-panel mb-4">
+            <div class="overview-panel-head border-bottom">
+                <h5 class="mb-0">How messaging works</h5>
+            </div>
+            <div class="overview-panel-body">
+                <div class="pt-msg-steps">
+                    <div class="pt-msg-step">
+                        <span class="pt-msg-step-num">1</span>
+                        <div>
+                            <strong>Browse donors or blood banks</strong>
+                            <p class="small text-muted mb-0">Use the directory or smart matches for your active request.</p>
+                        </div>
+                    </div>
+                    <div class="pt-msg-step">
+                        <span class="pt-msg-step-num">2</span>
+                        <div>
+                            <strong>Click Chat on any contact</strong>
+                            <p class="small text-muted mb-0">Send messages in the popup — you stay on the dashboard.</p>
+                        </div>
+                    </div>
+                    <div class="pt-msg-step mb-0">
+                        <span class="pt-msg-step-num">3</span>
+                        <div>
+                            <strong>Return to this inbox</strong>
+                            <p class="small text-muted mb-0">Only people you have messaged appear here. Filter by donor, blood bank, or today.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-msg-tip">
+                    <div class="d-flex align-items-start gap-2">
+                        <i data-lucide="shield-check" style="width:18px;height:18px;color:#b91c1c;flex-shrink:0;margin-top:2px;"></i>
+                        <p>Messages are encrypted in transit. Only you and your verified contacts can read the conversation.</p>
+                    </div>
+                </div>
+                <a href="#" class="btn btn-danger w-100 mt-3 d-inline-flex align-items-center justify-content-center gap-1" data-pt-section="donors" data-pt-label="Find Donors">
+                    <i data-lucide="users" style="width:14px;height:14px;"></i> Browse donors
+                </a>
+                <a href="#" class="btn btn-outline-danger w-100 mt-2 d-inline-flex align-items-center justify-content-center gap-1" data-pt-section="bloodbanks" data-pt-label="Blood Banks">
+                    <i data-lucide="building-2" style="width:14px;height:14px;"></i> Browse blood banks
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

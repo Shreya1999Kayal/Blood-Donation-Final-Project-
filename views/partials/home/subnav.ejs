@@ -1,0 +1,70 @@
+<nav class="home-subnav" aria-label="Main navigation">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between">
+            <div class="home-subnav-desktop flex items-center flex-wrap">
+                <a href="#" class="home-subnav-link active" data-scroll-top>Home</a>
+                <a href="#about" class="home-subnav-link">About RaktaSetu</a>
+
+                <div class="home-dropdown" data-home-dropdown>
+                    <button type="button" class="home-subnav-link border-0 bg-transparent" data-home-dropdown-toggle>
+                        Find Blood
+                        <i data-lucide="chevron-down" style="width:16px;height:16px;"></i>
+                    </button>
+                    <div class="home-dropdown-menu">
+                        <button type="button" class="home-dropdown-item" data-scroll-find="bloodbanks">
+                            <i data-lucide="building-2" style="width:18px;height:18px;color:#dc2626;"></i>
+                            Blood Banks
+                        </button>
+                        <button type="button" class="home-dropdown-item" data-scroll-find="donors">
+                            <i data-lucide="heart-handshake" style="width:18px;height:18px;color:#dc2626;"></i>
+                            Donors
+                        </button>
+                    </div>
+                </div>
+
+                <div class="home-dropdown" data-home-dropdown>
+                    <button type="button" class="home-subnav-link border-0 bg-transparent" data-home-dropdown-toggle>
+                        Donate Blood
+                        <i data-lucide="chevron-down" style="width:16px;height:16px;"></i>
+                    </button>
+                    <div class="home-dropdown-menu">
+                        <a href="/auth/register?role=donor" class="home-dropdown-item">
+                            <i data-lucide="droplet" style="width:18px;height:18px;color:#dc2626;"></i>
+                            Register as Donor
+                        </a>
+                        <a href="/auth/register?role=bloodbank" class="home-dropdown-item">
+                            <i data-lucide="hospital" style="width:18px;height:18px;color:#dc2626;"></i>
+                            Register as Blood Bank
+                        </a>
+                        <a href="/auth/register?role=camp" class="home-dropdown-item">
+                            <i data-lucide="tent" style="width:18px;height:18px;color:#dc2626;"></i>
+                            Register Blood Donation Camp
+                        </a>
+                    </div>
+                </div>
+
+                <a href="#services" class="home-subnav-link">Services</a>
+                <a href="#gallery" class="home-subnav-link">Gallery</a>
+            </div>
+
+            <button type="button" id="homeMobileNavToggle" class="home-subnav-mobile-toggle items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 bg-white" aria-label="Toggle menu">
+                <i data-lucide="menu" style="width:18px;height:18px;"></i>
+                Menu
+            </button>
+        </div>
+
+        <div id="homeMobileNav" class="home-mobile-nav">
+            <div class="flex flex-col gap-1">
+                <a href="#" class="home-subnav-link" data-scroll-top>Home</a>
+                <a href="#about" class="home-subnav-link">About RaktaSetu</a>
+                <button type="button" class="home-subnav-link border-0 bg-transparent text-start" data-scroll-find="bloodbanks">Find Blood — Banks</button>
+                <button type="button" class="home-subnav-link border-0 bg-transparent text-start" data-scroll-find="donors">Find Blood — Donors</button>
+                <a href="/auth/register?role=donor" class="home-subnav-link">Donate — Donor</a>
+                <a href="/auth/register?role=bloodbank" class="home-subnav-link">Donate — Blood Bank</a>
+                <a href="/auth/register?role=camp" class="home-subnav-link">Donate — Camp</a>
+                <a href="#services" class="home-subnav-link">Services</a>
+                <a href="#gallery" class="home-subnav-link">Gallery</a>
+            </div>
+        </div>
+    </div>
+</nav>

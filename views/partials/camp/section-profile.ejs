@@ -1,0 +1,35 @@
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="overview-panel cp-form-panel">
+            <div class="overview-panel-head"><div class="d-flex align-items-center gap-3">
+                <%- include('../shared/user-avatar', { user, avatarSize: 'md' }) %>
+                <div><h5 class="mb-0">Account profile</h5><p class="text-muted small mb-0">Login name, phone, city, and profile photo.</p></div>
+            </div></div>
+            <div class="overview-panel-body">
+                <% if (campProfile) { %>
+                <div class="mb-4 p-3 rounded-3" style="background:#f5f3ff">
+                    <h6 class="fw-bold"><%= campProfile.organizationName %></h6>
+                    <p class="small mb-1"><strong>Type:</strong> <%= campProfile.organizationType %></p>
+                    <p class="small mb-1"><strong>Organizer:</strong> <%= campProfile.organizerName %> · <%= campProfile.organizerMobile %></p>
+                    <p class="small mb-0"><strong>Status:</strong> <span class="text-capitalize"><%= campProfile.status %></span></p>
+                </div>
+                <% } %>
+                <form action="/auth/profile" method="POST" enctype="multipart/form-data" class="cp-form">
+                    <%- include('../shared/profile-photo-field', { user, photoFieldPrefix: 'cp' }) %>
+                    <div class="row g-3">
+                        <div class="col-md-4"><label class="form-label">Name</label><input type="text" name="name" class="form-control" value="<%= user.name %>" required></div>
+                        <div class="col-md-4"><label class="form-label">Phone</label><input type="tel" name="phone" class="form-control" value="<%= user.phone %>" required pattern="[6-9][0-9]{9}"></div>
+                        <div class="col-md-4"><label class="form-label">City</label><input type="text" name="city" class="form-control" value="<%= user.city %>" required></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3" style="background:#7c3aed;border-color:#6d28d9">Save profile</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="overview-panel"><div class="overview-panel-head"><h5>Password & recovery</h5></div><div class="overview-panel-body">
+            <p class="small text-muted">Use forgot password on the login page if you lose access. Change password below.</p>
+            <a href="#" class="btn btn-outline-primary btn-sm" data-cp-section="password" data-cp-label="Change Password">Change password</a>
+        </div></div>
+    </div>
+</div>

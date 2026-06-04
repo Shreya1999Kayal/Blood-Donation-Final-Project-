@@ -1,0 +1,204 @@
+<%
+function statusLabel(s) {
+    if (s === 'fulfilled') return 'received';
+    return s;
+}
+function statusBadge(s) {
+    const label = statusLabel(s);
+    const map = { active: 'warning', contacted: 'info', received: 'success', cancelled: 'secondary' };
+    return map[label] || 'secondary';
+}
+function urgencyClass(u) {
+    const level = String(u || 'High').toLowerCase();
+    if (level === 'critical') return 'critical';
+    if (level === 'normal') return 'normal';
+    return 'high';
+}
+function bannerImg(u) {
+    const level = urgencyClass(u);
+    if (level === 'critical') return 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=600&h=200&fit=crop&q=80';
+    if (level === 'normal') return 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&h=200&fit=crop&q=80';
+    return 'https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=600&h=200&fit=crop&q=80';
+}
+function filterStatus(s) {
+    const label = statusLabel(s);
+    if (['active', 'contacted'].includes(label)) return label;
+    return 'closed';
+}
+const showUrgency = typeof hideUrgency === 'undefined' ? true : !hideUrgency;
+%>
+
+<div class="req-board" id="reqBoard">
+    <% if (bloodRequests && bloodRequests.length > 0) { %>
+        <% bloodRequests.forEach(function(r) {
+            const label = statusLabel(r.status);
+            const urg = urgencyClass(r.urgencyLevel);
+            const isLive = ['active', 'contacted'].includes(label);
+            const searchText = [r.patientName, r.bloodGroup, r.hospitalName, r.city, r.contactName, r.contactPhone].join(' ').toLowerCase();
+            const matchedCount = (r.matchedDonors || []).length;
+            const responderCount = (r.contacts || []).length;
+        %>
+        <article
+            class="req-card<%= showUrgency ? ' req-card-' + urg : '' %><%= isLive ? '' : ' req-card-closed' %>"
+            data-req-item
+            data-status="<%= filterStatus(r.status) %>"
+            data-live="<%= isLive ? '1' : '0' %>"
+            <% if (showUrgency) { %>data-urgency="<%= urg %>"<% } %>
+            data-search="<%= searchText.replace(/"/g, '') %>"
+        >
+            <div class="req-card-banner">
+                <img src="<%= bannerImg(showUrgency ? r.urgencyLevel : 'normal') %>" alt="" loading="lazy">
+                <div class="req-card-banner-shade"></div>
+                <div class="req-card-blood"><%= r.bloodGroup %></div>
+                <div class="req-card-top-badges">
+                    <% if (showUrgency && r.urgencyLevel) { %>
+                    <span class="req-urgency-badge <%= urg %>"><%= r.urgencyLevel %></span>
+                    <% } %>
+                    <span class="req-status-badge <%= label %>"><%= label %></span>
+                </div>
+                <% if (r.isPriorityBoost) { %>
+                <span class="req-priority-flag"><i data-lucide="zap" style="width:12px;height:12px;"></i> Priority</span>
+                <% } %>
+            </div>
+
+            <div class="req-card-body">
+                <div class="req-card-head">
+                    <div>
+                        <h6 class="req-patient-name"><%= r.patientName %></h6>
+                        <p class="req-card-sub mb-0"><i data-lucide="building-2" style="width:13px;height:13px;"></i> <%= r.hospitalName %></p>
+                    </div>
+                    <div class="req-units-pill"><%= r.requiredUnits %> unit<%= r.requiredUnits !== 1 ? 's' : '' %></div>
+                </div>
+
+                <div class="req-meta-grid">
+                    <div class="req-meta-item">
+                        <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+                        <div><small>City</small><span><%= r.city %></span></div>
+                    </div>
+                    <div class="req-meta-item">
+                        <i data-lucide="phone" style="width:14px;height:14px;"></i>
+                        <div><small>Contact</small><span><a href="tel:<%= r.contactPhone %>"><%= r.contactPhone %></a></span></div>
+                    </div>
+                    <div class="req-meta-item">
+                        <i data-lucide="user" style="width:14px;height:14px;"></i>
+                        <div><small>Requested by</small><span><%= r.contactName %></span></div>
+                    </div>
+                    <div class="req-meta-item">
+                        <i data-lucide="clock" style="width:14px;height:14px;"></i>
+                        <div><small>Submitted</small><span><%= new Date(r.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) %></span></div>
+                    </div>
+                </div>
+
+                <% if (r.patientDocuments && (r.patientDocuments.bloodTestReportUrl || r.patientDocuments.prescriptionUrl)) { %>
+                <div class="req-docs-row">
+                    <span class="small fw-semibold text-muted">Patient docs</span>
+                    <% if (r.patientDocuments.bloodTestReportUrl) { %>
+                        <a href="<%= docUrl(r.patientDocuments.bloodTestReportUrl) %>" target="_blank" class="req-doc-link"><i data-lucide="file-text" style="width:13px;height:13px;"></i> Blood test</a>
+                    <% } %>
+                    <% if (r.patientDocuments.prescriptionUrl) { %>
+                        <a href="<%= docUrl(r.patientDocuments.prescriptionUrl) %>" target="_blank" class="req-doc-link"><i data-lucide="file-text" style="width:13px;height:13px;"></i> Prescription</a>
+                    <% } %>
+                </div>
+                <% } %>
+
+                <div class="row g-2 mt-1">
+                    <div class="col-md-6">
+                        <div class="req-sub-panel">
+                            <div class="req-sub-panel-head">
+                                <i data-lucide="heart-handshake" style="width:14px;height:14px;"></i>
+                                Matched donors <span class="badge bg-light text-dark border"><%= matchedCount %></span>
+                            </div>
+                            <% if (matchedCount) { %>
+                                <ul class="req-mini-list mb-0">
+                                    <% r.matchedDonors.slice(0, 4).forEach(function(d) { %>
+                                    <li>
+                                        <strong><%= d.userId ? d.userId.name : 'Donor' %></strong>
+                                        <span class="overview-blood-badge ms-1"><%= d.bloodGroup %></span>
+                                        <% if (d.userId && d.userId.phone) { %><br><small class="text-muted"><a href="tel:<%= d.userId.phone %>"><%= d.userId.phone %></a></small><% } %>
+                                    </li>
+                                    <% }); %>
+                                </ul>
+                            <% } else { %>
+                                <p class="small text-muted mb-0">No automatic matches yet.</p>
+                            <% } %>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="req-sub-panel">
+                            <div class="req-sub-panel-head">
+                                <i data-lucide="users" style="width:14px;height:14px;"></i>
+                                Responders <span class="badge bg-light text-dark border"><%= responderCount %></span>
+                            </div>
+                            <% if (responderCount) { %>
+                                <ul class="req-mini-list mb-0">
+                                    <% r.contacts.slice(0, 4).forEach(function(c) { %>
+                                    <li>
+                                        <strong><%= c.name %></strong> <span class="text-muted">(<%= c.role %>)</span>
+                                        <% if (c.phone) { %><br><small><a href="tel:<%= c.phone %>"><%= c.phone %></a></small><% } %>
+                                        <% if (c.note) { %><br><em class="small text-muted"><%= c.note %></em><% } %>
+                                    </li>
+                                    <% }); %>
+                                </ul>
+                            <% } else { %>
+                                <p class="small text-muted mb-0">No responders yet.</p>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+
+                <% if (r.receivedAt) { %>
+                <div class="req-received-note small text-success mt-2">
+                    <i data-lucide="check-circle" style="width:14px;height:14px;"></i>
+                    Received <%= new Date(r.receivedAt).toLocaleString() %>
+                    <% if (r.fulfilledBy && r.fulfilledBy.name) { %> — fulfilled by <strong><%= r.fulfilledBy.name %></strong> (<%= r.fulfilledBy.role %>)<% } %>
+                </div>
+                <% } %>
+            </div>
+
+            <div class="req-card-footer">
+                <% 
+                const canRespond = user.role === 'admin' ||
+                    (user.role === 'donor' && typeof donorProfile !== 'undefined' && donorProfile && donorProfile.status === 'approved') ||
+                    (user.role === 'bloodbank' && typeof bloodbank !== 'undefined' && bloodbank && bloodbank.status === 'approved');
+                %>
+                <% if (label !== 'received' && label !== 'cancelled' && canRespond) { %>
+                <form action="/request/<%= r._id %>/contact" method="POST" class="req-contact-form">
+                    <input type="text" name="note" class="form-control form-control-sm" placeholder="Optional coordination note…">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i data-lucide="message-circle" style="width:14px;height:14px;"></i> I contacted patient
+                    </button>
+                </form>
+                <div class="req-action-btns">
+                    <a href="tel:<%= r.contactPhone %>" class="btn btn-danger btn-sm">
+                        <i data-lucide="phone-call" style="width:14px;height:14px;"></i> Call
+                    </a>
+                    <% if (r.requestedBy && r.requestedBy._id) { %>
+                    <button type="button" class="btn btn-outline-primary btn-sm"
+                        onclick="window.location.href='/chat/<%= r.requestedBy._id %>'">
+                        <i data-lucide="messages-square" style="width:14px;height:14px;"></i> Chat
+                    </button>
+                    <% } %>
+                </div>
+                <% } else if (label !== 'received' && label !== 'cancelled' && !canRespond) { %>
+                <span class="text-muted small"><i data-lucide="shield-alert" style="width:14px;height:14px;"></i> Approval required before contacting patients</span>
+                <% } else { %>
+                <span class="text-muted small"><i data-lucide="lock" style="width:14px;height:14px;"></i> Request closed — no further actions</span>
+                <% } %>
+            </div>
+        </article>
+        <% }); %>
+    <% } else { %>
+        <div class="req-empty">
+            <img src="https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=400&h=260&fit=crop&q=80" alt="" loading="lazy">
+            <h5>No emergency requests yet</h5>
+            <p class="text-muted mb-0">When patients submit blood requests, they will appear here in real time.</p>
+        </div>
+    <% } %>
+</div>
+
+<div class="req-empty req-empty-filter d-none" id="reqEmptyFilter">
+    <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=260&fit=crop&q=80" alt="" loading="lazy">
+    <h5>No requests match your filters</h5>
+    <p class="text-muted mb-3">Try adjusting search or filter criteria.</p>
+    <button type="button" class="btn btn-outline-danger btn-sm" id="reqClearFilters">Clear all filters</button>
+</div>

@@ -1,0 +1,54 @@
+<section class="home-section home-section-alt" id="how-it-works">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-2xl mx-auto mb-10">
+            <span class="home-badge">Process</span>
+            <h2 class="home-section-title mt-4">How blood donation works</h2>
+            <p class="home-section-lead mx-auto">From voluntary donation to life-saving transfusion — a transparent, regulated journey supported by RaktaSetu at every step.</p>
+        </div>
+
+        <div class="home-flow-wrap mb-10">
+            <svg class="home-flow-svg" viewBox="0 0 900 180" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <!-- Blood bag -->
+                <g transform="translate(40, 30)">
+                    <path d="M30 8 Q30 0 38 0 L62 0 Q70 0 70 8 L70 90 Q70 110 50 120 Q30 110 30 90 Z" fill="none" stroke="#fff" stroke-width="3"/>
+                    <rect x="42" y="-12" width="16" height="14" rx="3" fill="none" stroke="#fff" stroke-width="2"/>
+                    <path d="M46 108 L54 108 L50 118 Z" fill="none" stroke="#fff" stroke-width="2"/>
+                    <rect x="34" y="45" width="32" height="55" rx="4" fill="#ef4444"/>
+                    <line x1="38" y1="55" x2="44" y2="55" stroke="#fff" stroke-width="2" opacity="0.7"/>
+                    <line x1="38" y1="65" x2="44" y2="65" stroke="#fff" stroke-width="2" opacity="0.7"/>
+                    <line x1="38" y1="75" x2="44" y2="75" stroke="#fff" stroke-width="2" opacity="0.7"/>
+                    <line x1="38" y1="85" x2="44" y2="85" stroke="#fff" stroke-width="2" opacity="0.7"/>
+                </g>
+
+                <!-- Dotted flow line with animated dot -->
+                <line x1="130" y1="90" x2="770" y2="90" stroke="#64748b" stroke-width="2" stroke-dasharray="8 10" opacity="0.8"/>
+                <circle r="6" fill="#ef4444">
+                    <animateMotion dur="4s" repeatCount="indefinite" path="M130,90 L770,90"/>
+                </circle>
+
+                <!-- Heart -->
+                <g transform="translate(790, 35)">
+                    <path d="M50 25 C50 10 35 0 25 0 C15 0 5 10 5 25 C5 45 25 65 50 85 C75 65 95 45 95 25 C95 10 85 0 75 0 C65 0 50 10 50 25 Z" fill="none" stroke="#fff" stroke-width="3"/>
+                    <path d="M50 45 C50 35 42 28 35 28 C28 28 22 35 22 45 C22 58 35 72 50 85 C65 72 78 58 78 45 C78 35 72 28 65 28 C58 28 50 35 50 45 Z" fill="#ef4444"/>
+                </g>
+            </svg>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-6">
+            <% const steps = [
+                { num: '01', title: 'Register', desc: 'Donor, patient, blood bank, or camp creates a verified account on RaktaSetu.' },
+                { num: '02', title: 'Screen & collect', desc: 'Medical screening at camp or blood bank; safe collection following national protocols.' },
+                { num: '03', title: 'Test & store', desc: 'Blood is tested, typed, and stored under regulated cold-chain conditions.' },
+                { num: '04', title: 'Match & dispatch', desc: 'Emergency requests trigger geo-matched alerts to compatible donors and banks.' },
+                { num: '05', title: 'Transfuse & save', desc: 'Hospital transfuses matched blood to the patient — one donation, multiple lives.' },
+            ]; %>
+            <% steps.forEach(function(step) { %>
+                <div class="home-flow-step">
+                    <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-brand-600 text-white font-bold text-sm mb-3"><%= step.num %></div>
+                    <strong><%= step.title %></strong>
+                    <span class="block mt-1 text-slate-500 text-xs leading-relaxed"><%= step.desc %></span>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+</section>

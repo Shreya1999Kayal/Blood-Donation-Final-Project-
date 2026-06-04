@@ -1,0 +1,6 @@
+<div class="overview-panel mb-4"><div class="overview-panel-head"><h5>Notifications</h5></div><div class="overview-panel-body">
+<% (notifications || []).forEach(function(n) { %>
+<div class="border-bottom py-3"><strong><%= n.title %></strong><p class="small text-muted mb-1"><%= n.message %></p><small class="text-muted"><%= new Date(n.createdAt).toLocaleString() %></small></div>
+<% }); %>
+<% if (!(notifications || []).length) { %><p class="text-muted mb-0">No notifications yet.</p><% } %>
+</div></div>

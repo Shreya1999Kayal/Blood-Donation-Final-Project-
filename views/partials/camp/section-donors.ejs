@@ -1,0 +1,140 @@
+<%
+const donors = campDonors || [];
+const approved = campProfile && campProfile.status === 'approved';
+const directoryAccess = !!campDonorDirectoryAccess;
+const directoryCount = campDonorDirectoryCount || donors.length || 0;
+const fees = campUnlockFees || { donorDirectory: 500, donorContact: 5, bloodbank: 1000 };
+const scheduledCamp = campScheduledEvent || null;
+
+function maskDisplay(value) {
+    if (value === null || value === undefined) return '—';
+    const s = String(value).trim();
+    if (!s) return '—';
+    if (s.length <= 2) return s.charAt(0) + '*'.repeat(Math.max(2, s.length));
+    return s.slice(0, 2) + '*'.repeat(Math.max(4, s.length - 2));
+}
+
+function donorName(d) { return d.unlocked ? (d.name || '—') : maskDisplay(d.name); }
+function donorBlood(d) { return d.unlocked ? (d.bloodGroup || '—') : maskDisplay(d.bloodGroup); }
+function donorCity(d) { return d.unlocked ? (d.city || '—') : maskDisplay(d.city); }
+function donorPhone(d) {
+    if (d.unlocked) return d.phone || '—';
+    return maskDisplay(d.phone || '0000000000');
+}
+function donorEmail(d) {
+    if (d.unlocked) return d.email || '—';
+    return maskDisplay(d.email || 'user@email.com');
+}
+%>
+
+<div class="cp-hero mb-4"><div class="cp-hero-bg" style="background-image:url('https://images.unsplash.com/photo-1615461066159-fa5966998606?w=1400&h=420&fit=crop&q=85');"></div><div class="cp-hero-overlay"></div><div class="cp-hero-content"><span class="cp-hero-badge"><i data-lucide="users" style="width:14px;height:14px;"></i> Verified donors</span><h3 class="cp-hero-title">Donor directory</h3><p class="cp-hero-sub mb-0">Only <strong>admin-verified</strong>, <strong>available</strong>, and <strong>eligible</strong> donors (outside the 90-day cooldown) appear here.<% if (directoryAccess) { %> Your directory is <strong>unlocked</strong> — all contacts, chat, and camp requests are available.<% } else { %> Pay <strong>₹<%= fees.donorDirectory %></strong> once to unlock every donor, or <strong>₹<%= fees.donorContact %></strong> per donor individually.<% } %></p></div></div>
+
+<% if (!approved) { %>
+<div class="alert alert-warning">Your camp must be approved by admin to access the donor directory.</div>
+<% } else { %>
+
+<% if (!directoryAccess) { %>
+<div class="alert alert-info d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <strong>Unlock full donor directory — ₹<%= fees.donorDirectory %> one-time</strong>
+        <span class="d-block small text-muted mt-1">Unlocks every eligible donor’s contact details, chat, and camp requests. Or pay ₹<%= fees.donorContact %> per donor below.</span>
+    </div>
+    <button type="button" class="btn btn-primary cp-directory-unlock-btn flex-shrink-0" style="background:#7c3aed;border-color:#6d28d9" data-purpose="camp_donor_directory">Pay ₹<%= fees.donorDirectory %> — Unlock all</button>
+</div>
+<% } else { %>
+<div class="alert alert-success d-flex align-items-center gap-2 mb-4 py-2">
+    <i data-lucide="badge-check" style="width:18px;height:18px;"></i>
+    <span><strong>Directory unlocked.</strong> All <%= donors.length %> donor contact<%= donors.length !== 1 ? 's are' : ' is' %> available for chat and camp requests.</span>
+</div>
+<% } %>
+
+<% if (!scheduledCamp) { %>
+<div class="alert alert-warning mb-4">Schedule a camp under <strong>Organize camp</strong> before you can send participation requests to donors.</div>
+<% } else { %>
+<div class="alert alert-light border mb-4 py-2 px-3 small">
+    Active camp for requests: <strong><%= scheduledCamp.campName %></strong>
+    · <%= scheduledCamp.proposedDate ? new Date(scheduledCamp.proposedDate).toLocaleDateString('en-IN') : '—' %>
+    · <%= scheduledCamp.city || '—' %>
+</div>
+<% } %>
+
+<div class="cp-shell overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm ring-1 ring-slate-900/5">
+    <div class="px-4 py-2 border-bottom bg-violet-50/60 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <span class="small fw-semibold text-violet-900"><%= donors.length || directoryCount %> eligible donor<%= (donors.length || directoryCount) !== 1 ? 's' : '' %></span>
+        <span class="small text-muted">Verified · available · outside 90-day cooldown</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm cp-donor-table">
+            <thead class="bg-gradient-to-r from-violet-50 via-slate-50 to-white"><tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Donor</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Blood</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">City</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Phone</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Email</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Payment</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Camp request</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold uppercase text-slate-500">Chat</th>
+            </tr></thead>
+            <tbody class="divide-y divide-slate-100">
+                <% if (donors.length) { donors.forEach(function(d) {
+                    const reqStatus = d.campRequestStatus;
+                    const donorUserId = d.userId && d.userId.toString ? d.userId.toString() : d.userId;
+                    const donorProfileId = d._id && d._id.toString ? d._id.toString() : d._id;
+                %>
+                <tr class="hover:bg-violet-50/40">
+                    <td class="px-4 py-3 font-semibold"><span class="<%= d.unlocked ? '' : 'cp-masked-text' %>"><%= donorName(d) %></span></td>
+                    <td class="px-4 py-3"><span class="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700 <%= d.unlocked ? '' : 'cp-masked-text' %>"><%= donorBlood(d) %></span></td>
+                    <td class="px-4 py-3"><span class="<%= d.unlocked ? '' : 'cp-masked-text' %>"><%= donorCity(d) %></span></td>
+                    <td class="px-4 py-3"><span class="<%= d.unlocked ? '' : 'cp-masked-text' %>"><%= donorPhone(d) %></span></td>
+                    <td class="px-4 py-3"><span class="<%= d.unlocked ? '' : 'cp-masked-text' %>"><%= donorEmail(d) %></span></td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <% if (d.unlocked) { %>
+                        <span class="cp-pay-badge"><%= directoryAccess ? 'Included' : 'Paid' %></span>
+                        <% } else if (donorUserId && donorProfileId) { %>
+                        <button type="button" class="btn btn-sm btn-success fw-semibold cp-unlock-btn cp-pay-donor-btn" data-purpose="camp_unlock_donor" data-target-user-id="<%= donorUserId %>" data-target-profile-id="<%= donorProfileId %>">Pay ₹<%= fees.donorContact %></button>
+                        <% } else { %>
+                        <span class="text-muted small">—</span>
+                        <% } %>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <% if (reqStatus === 'accepted') { %>
+                        <span class="cp-req-badge cp-req-badge--accepted">Accepted</span>
+                        <% } else if (reqStatus === 'rejected') { %>
+                        <span class="cp-req-badge cp-req-badge--rejected">Declined</span>
+                        <% if (d.unlocked && scheduledCamp && donorUserId) { %>
+                        <form action="/camp/participation/donor" method="POST" class="d-inline ms-1">
+                            <input type="hidden" name="targetUserId" value="<%= donorUserId %>">
+                            <input type="hidden" name="targetProfileId" value="<%= donorProfileId %>">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Resend</button>
+                        </form>
+                        <% } %>
+                        <% } else if (reqStatus === 'pending') { %>
+                        <span class="cp-req-badge cp-req-badge--pending">Pending</span>
+                        <% } else if (d.unlocked && scheduledCamp && donorUserId) { %>
+                        <form action="/camp/participation/donor" method="POST" class="d-inline">
+                            <input type="hidden" name="targetUserId" value="<%= donorUserId %>">
+                            <input type="hidden" name="targetProfileId" value="<%= donorProfileId %>">
+                            <button type="submit" class="btn btn-sm btn-outline-success">Send request</button>
+                        </form>
+                        <% } else if (d.unlocked && !scheduledCamp) { %>
+                        <span class="text-muted small">Schedule camp</span>
+                        <% } else { %>
+                        <span class="text-muted small">Pay ₹<%= fees.donorContact %> first</span>
+                        <% } %>
+                    </td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <% if (d.unlocked && d.chatUserId) { %>
+                        <button type="button" class="btn btn-sm btn-outline-primary cp-chat-btn" data-user-id="<%= d.chatUserId %>">Chat</button>
+                        <% } else { %>
+                        <span class="text-muted small">—</span>
+                        <% } %>
+                    </td>
+                </tr>
+                <% }); } else { %>
+                <tr><td colspan="8" class="px-4 py-8 text-center text-muted">No verified, available, and eligible donors are listed right now. Donors appear here after admin approval, when they mark themselves available, and when they are outside the 90-day donation cooldown.</td></tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+<% } %>

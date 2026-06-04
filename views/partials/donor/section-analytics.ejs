@@ -1,0 +1,101 @@
+<div class="cp-hero mb-4 dn-hero">
+    <div class="cp-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="cp-hero-overlay"></div>
+    <div class="cp-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="cp-hero-badge"><i data-lucide="bar-chart-3" style="width:14px;height:14px;"></i> Pro / Advanced insights</span>
+                <h3 class="cp-hero-title">Your analytics</h3>
+                <p class="cp-hero-sub mb-0">Track responses, donations, eligibility, and cooldown status for your donor account.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="cp-hero-meta">
+                    <div><small>Responses</small><strong><%= userAnalytics ? userAnalytics.responseCount : 0 %></strong></div>
+                    <div><small>Donations</small><strong><%= userAnalytics ? userAnalytics.totalDonations : 0 %></strong></div>
+                    <div><small>Eligible now</small><strong><%= userAnalytics && userAnalytics.eligibleNow ? 'Yes' : 'No' %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (!userAnalytics) { %>
+<div class="alert alert-info border-0 shadow-sm">Upgrade to Pro or Advanced to unlock donor analytics.</div>
+<% } else if (userAnalytics.message) { %>
+<div class="alert alert-warning"><%= userAnalytics.message %></div>
+<% } else { %>
+
+<div class="row g-3 mb-4">
+    <% [
+        { label: 'Responses', value: userAnalytics.responseCount, icon: 'phone-call', tone: 'blue' },
+        { label: 'Donations', value: userAnalytics.totalDonations, icon: 'heart-handshake', tone: 'green' },
+        { label: 'Eligible now', value: userAnalytics.eligibleNow ? 'Yes' : 'No', icon: 'shield-check', tone: 'rose' },
+        { label: 'Cooldown days', value: userAnalytics.cooldownDaysRemaining, icon: 'timer', tone: 'amber' },
+    ].forEach(function(stat) { %>
+    <div class="col-sm-6 col-xl-3">
+        <div class="overview-kpi overview-kpi-<%= stat.tone %>">
+            <div class="overview-kpi-body py-3 px-3">
+                <div class="overview-kpi-icon"><i data-lucide="<%= stat.icon %>" style="width:20px;height:20px;"></i></div>
+                <div class="overview-kpi-label"><%= stat.label %></div>
+                <div class="overview-kpi-value"><%= stat.value %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel">
+            <div class="overview-panel-head">
+                <h5>Donor activity</h5>
+                <p class="text-muted small mb-0">Overview of your emergency response activity</p>
+            </div>
+            <div class="overview-panel-body">
+                <div class="overview-chart-box">
+                    <canvas id="dnActivityChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="overview-panel h-100">
+            <div class="overview-panel-head"><h5>Summary</h5></div>
+            <div class="overview-panel-body pt-2">
+                <div class="dn-snapshot-row"><span>Donor</span><strong><%= user.name %></strong></div>
+                <div class="dn-snapshot-row"><span>Blood group</span><strong><%= donorProfile ? donorProfile.bloodGroup : '—' %></strong></div>
+                <div class="dn-snapshot-row"><span>Plan</span><strong class="text-capitalize"><%= (user.subscription && user.subscription.plan) || 'free' %></strong></div>
+                <div class="dn-snapshot-row"><span>Cooldown</span><strong><%= userAnalytics.cooldownDaysRemaining %> days</strong></div>
+                <% if (canExportData) { %>
+                <a href="/export/my-data" class="btn btn-outline-dark btn-sm w-100 mt-3">
+                    <i data-lucide="download" style="width:14px;height:14px;"></i> Export full report
+                </a>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    if (typeof Chart === 'undefined') return;
+    const el = document.getElementById('dnActivityChart');
+    if (!el) return;
+    new Chart(el, {
+        type: 'bar',
+        data: {
+            labels: ['Responses', 'Donations', 'Cooldown (days)'],
+            datasets: [{
+                label: 'Count',
+                data: [<%= userAnalytics.responseCount %>, <%= userAnalytics.totalDonations %>, <%= userAnalytics.cooldownDaysRemaining %>],
+                backgroundColor: ['#0284c7', '#dc2626', '#d97706'],
+            }],
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+        },
+    });
+})();
+</script>
+<% } %>

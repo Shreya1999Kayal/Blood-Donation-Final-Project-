@@ -1,0 +1,96 @@
+<div class="cp-hero mb-4 pt-hero">
+    <div class="cp-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="cp-hero-overlay"></div>
+    <div class="cp-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="cp-hero-badge"><i data-lucide="user-circle" style="width:14px;height:14px;"></i> Account details</span>
+                <h3 class="cp-hero-title">Your profile</h3>
+                <p class="cp-hero-sub mb-0">Keep your contact information up to date so donors and blood banks can reach you during emergencies.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="cp-hero-meta">
+                    <div><small>Name</small><strong class="text-truncate d-block"><%= user.name %></strong></div>
+                    <div><small>Email</small><strong class="text-truncate d-block" style="font-size:0.75rem;"><%= user.email %></strong></div>
+                    <div><small>Role</small><strong>Patient</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-7">
+        <div class="overview-panel cp-form-panel">
+            <div class="overview-panel-head">
+                <div class="d-flex align-items-center gap-3">
+                    <%- include('../shared/user-avatar', { user, avatarSize: 'md' }) %>
+                    <div>
+                        <h5 class="mb-0">Update profile</h5>
+                        <p class="text-muted small mb-0">Changes apply immediately across your requests and chats.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="overview-panel-body">
+                <form action="/auth/profile" method="POST" enctype="multipart/form-data" class="cp-form">
+                    <%- include('../shared/profile-photo-field', { user, photoFieldPrefix: 'pt' }) %>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="cp-field">
+                                <label for="ptName">Full name</label>
+                                <div class="cp-input-wrap">
+                                    <i data-lucide="user" style="width:16px;height:16px;"></i>
+                                    <input type="text" name="name" id="ptName" class="form-control" value="<%= user.name %>" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="cp-field">
+                                <label for="ptCity">City</label>
+                                <div class="cp-input-wrap">
+                                    <i data-lucide="map-pin" style="width:16px;height:16px;"></i>
+                                    <input type="text" name="city" id="ptCity" class="form-control" value="<%= user.city %>" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="cp-field">
+                                <label for="ptPhone">Phone</label>
+                                <div class="cp-input-wrap">
+                                    <i data-lucide="phone" style="width:16px;height:16px;"></i>
+                                    <input type="tel" name="phone" id="ptPhone" class="form-control" value="<%= user.phone %>" required pattern="[6-9][0-9]{9}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cp-actions mt-3">
+                        <button type="submit" class="btn btn-danger">
+                            <i data-lucide="save" style="width:16px;height:16px;"></i> Save profile
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="overview-panel mb-4">
+            <div class="overview-panel-head"><h5>Account snapshot</h5></div>
+            <div class="overview-panel-body pt-2">
+                <div class="pt-snapshot-row"><span>Email</span><strong style="font-size:0.8rem;"><%= user.email %></strong></div>
+                <div class="pt-snapshot-row"><span>Phone</span><strong><%= user.phone %></strong></div>
+                <div class="pt-snapshot-row"><span>City</span><strong><%= user.city %></strong></div>
+                <div class="pt-snapshot-row"><span>Plan</span><strong class="text-capitalize"><%= (user.subscription && user.subscription.plan) || 'free' %></strong></div>
+                <div class="pt-snapshot-row"><span>Member since</span><strong><%= user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—' %></strong></div>
+            </div>
+        </div>
+        <div class="overview-panel">
+            <div class="overview-panel-head"><h5>Security</h5></div>
+            <div class="overview-panel-body">
+                <p class="small text-muted">Update your password regularly to keep your account secure.</p>
+                <a href="#" class="btn btn-outline-danger btn-sm" data-pt-section="password" data-pt-label="Change Password">
+                    <i data-lucide="shield-check" style="width:14px;height:14px;"></i> Change password
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

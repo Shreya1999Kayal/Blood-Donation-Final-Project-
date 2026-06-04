@@ -1,0 +1,127 @@
+<div class="cp-hero mb-4 dn-hero">
+    <div class="cp-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1563986768494-4ccb4962f667?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="cp-hero-overlay"></div>
+    <div class="cp-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="cp-hero-badge"><i data-lucide="credit-card" style="width:14px;height:14px;"></i> Visibility & billing</span>
+                <h3 class="cp-hero-title">Plans & billing</h3>
+                <p class="cp-hero-sub mb-0">Free donors can respond after approval. Paid plans rank you higher in patient search and AI matching.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="cp-hero-meta">
+                    <div><small>Current plan</small><strong class="text-capitalize"><%= (user.subscription && user.subscription.plan) || 'free' %></strong></div>
+                    <div><small>Status</small><strong><%= hasActiveSubscription ? 'Active' : 'Free tier' %></strong></div>
+                    <% if (user.subscription && user.subscription.expiresAt && hasActiveSubscription) { %>
+                    <div><small>Expires</small><strong style="font-size:0.75rem;"><%= new Date(user.subscription.expiresAt).toLocaleDateString() %></strong></div>
+                    <% } else { %>
+                    <div><small>Verification fee</small><strong><%= user.donorVerificationFeePaid ? 'Paid' : 'Pending' %></strong></div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <% ['premium', 'pro', 'advanced'].forEach(function(planKey) { %>
+        <% const price = planPrices[planKey]; %>
+        <% const benefits = (planBenefits && planBenefits[planKey]) || []; %>
+        <% const isCurrent = user.subscription && user.subscription.plan === planKey && hasActiveSubscription; %>
+    <div class="col-md-4">
+        <div class="dn-plan-card <%= isCurrent ? 'dn-plan-current' : '' %> <%= planKey === 'pro' ? 'dn-plan-featured' : '' %>">
+            <% if (planKey === 'pro') { %><span class="dn-plan-ribbon">Most popular</span><% } %>
+            <div class="dn-plan-head">
+                <h5 class="text-capitalize mb-1"><%= price.label %></h5>
+                <div class="dn-plan-price">Rs <%= price.amountInr %><small> / <%= price.durationDays %> days</small></div>
+                <% if (isCurrent) { %><span class="badge bg-success">Active plan</span><% } %>
+            </div>
+            <ul class="dn-plan-benefits">
+                <% benefits.forEach(function(line) { %>
+                <li><i data-lucide="check" style="width:14px;height:14px;"></i> <%= line %></li>
+                <% }); %>
+            </ul>
+            <button class="btn btn-<%= planKey === 'pro' ? 'success' : 'outline-success' %> w-100 buy-plan-btn" data-plan="<%= planKey %>" <%= isCurrent ? 'disabled' : '' %>>
+                <%= isCurrent ? 'Current plan' : 'Subscribe to ' + price.label %>
+            </button>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<% if (typeof razorpayKeyId !== 'undefined' && razorpayKeyId && razorpayKeyId.indexOf('rzp_test_') === 0) { %>
+<div class="alert alert-info border-0 shadow-sm mb-4">
+    <strong>Test payment tip (Razorpay sandbox)</strong>
+    <p class="mb-2 small"><strong>UPI (easiest):</strong> enter <code>success@razorpay</code> → Pay (no OTP).</p>
+    <p class="mb-2 small"><strong>PNB / Netbanking:</strong> select Punjab National Bank → Razorpay opens a <strong>test page</strong> (not real PNB login) → click <strong>Success</strong>, not Failure. Allow pop-ups if the page does not open.</p>
+    <p class="mb-0 small">Test card: <code>5267 3181 8797 5449</code>. International cards are blocked in India test mode.</p>
+</div>
+<% } %>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel">
+            <div class="overview-panel-head"><h5>One-time payments</h5></div>
+            <div class="overview-panel-body">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 p-3 rounded-3 border bg-light">
+                    <div>
+                        <strong><%= oneTimePayments.donor_verification.label %></strong>
+                        <div class="small text-muted">Rs <%= oneTimePayments.donor_verification.amountInr %> — <%= oneTimePayments.donor_verification.description %></div>
+                    </div>
+                    <button class="btn btn-outline-success btn-sm pay-action-btn"
+                            data-purpose="donor_verification"
+                            <%= user.donorVerificationFeePaid ? 'disabled' : '' %>>
+                        <%= user.donorVerificationFeePaid ? 'Fee paid ✓' : 'Pay now' %>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="overview-panel mt-4">
+            <div class="overview-panel-head"><h5>Why upgrade?</h5></div>
+            <div class="overview-panel-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="dn-benefit-tile">
+                            <i data-lucide="search" style="width:24px;height:24px;"></i>
+                            <strong>Higher search ranking</strong>
+                            <p class="small text-muted mb-0">Appear first when patients search for nearby eligible donors.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="dn-benefit-tile">
+                            <i data-lucide="zap" style="width:24px;height:24px;"></i>
+                            <strong>Faster patient contact</strong>
+                            <p class="small text-muted mb-0">Get contacted sooner during critical emergencies.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="dn-benefit-tile">
+                            <i data-lucide="bar-chart-3" style="width:24px;height:24px;"></i>
+                            <strong>Advanced analytics</strong>
+                            <p class="small text-muted mb-0">Pro and Advanced unlock response and donation insights.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <% if (canExportData) { %>
+        <div class="overview-panel mb-4">
+            <div class="overview-panel-head"><h5>Advanced export</h5></div>
+            <div class="overview-panel-body">
+                <p class="small text-muted">Download a PDF report of your responses, donations, and activity.</p>
+                <a href="/export/my-data" class="btn btn-outline-dark w-100">
+                    <i data-lucide="download" style="width:16px;height:16px;"></i> Download my report
+                </a>
+            </div>
+        </div>
+        <% } %>
+        <div class="overview-panel overview-panel-accent">
+            <div class="overview-panel-head border-0 pb-0"><h5 class="text-white mb-0">Secure payments</h5></div>
+            <div class="overview-panel-body">
+                <p class="small mb-0" style="color:rgba(255,255,255,0.75);">All subscriptions are processed securely via Razorpay. Your plan activates immediately after successful payment.</p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,112 @@
+<%
+const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const inventory = userAnalytics && userAnalytics.inventory ? userAnalytics.inventory : (bloodbank && bloodbank.inventory) || {};
+%>
+
+<div class="cp-hero mb-4">
+    <div class="cp-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="cp-hero-overlay"></div>
+    <div class="cp-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="cp-hero-badge"><i data-lucide="bar-chart-3" style="width:14px;height:14px;"></i> Pro / Advanced insights</span>
+                <h3 class="cp-hero-title">Hospital analytics</h3>
+                <p class="cp-hero-sub mb-0">Track inventory levels, emergency response activity, and fulfillment outcomes for your blood bank operations.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="cp-hero-meta">
+                    <div><small>Total stock</small><strong><%= userAnalytics ? userAnalytics.totalInventoryUnits : 0 %> units</strong></div>
+                    <div><small>Contacted</small><strong><%= userAnalytics ? userAnalytics.requestsContacted : 0 %></strong></div>
+                    <div><small>Fulfilled</small><strong><%= userAnalytics ? userAnalytics.fulfilledRequests : 0 %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (!userAnalytics) { %>
+<div class="alert alert-info">Upgrade to Pro or Advanced to unlock hospital analytics.</div>
+<% } else if (userAnalytics.message) { %>
+<div class="alert alert-warning"><%= userAnalytics.message %></div>
+<% } else { %>
+
+<div class="row g-3 mb-4">
+    <% [
+        { label: 'Total inventory', value: userAnalytics.totalInventoryUnits + ' units', icon: 'flask-conical', tone: 'rose' },
+        { label: 'Requests contacted', value: userAnalytics.requestsContacted, icon: 'phone-call', tone: 'blue' },
+        { label: 'Active emergencies', value: userAnalytics.activeEmergencies, icon: 'siren', tone: 'red' },
+        { label: 'Fulfilled requests', value: userAnalytics.fulfilledRequests, icon: 'check-circle', tone: 'green' },
+    ].forEach(function(stat) { %>
+    <div class="col-sm-6 col-xl-3">
+        <div class="overview-kpi overview-kpi-<%= stat.tone %>">
+            <div class="overview-kpi-body py-3 px-3">
+                <div class="overview-kpi-icon"><i data-lucide="<%= stat.icon %>" style="width:20px;height:20px;"></i></div>
+                <div class="overview-kpi-label"><%= stat.label %></div>
+                <div class="overview-kpi-value"><%= stat.value %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel">
+            <div class="overview-panel-head">
+                <h5>Inventory distribution</h5>
+                <p class="text-muted small mb-0">Units available by blood group</p>
+            </div>
+            <div class="overview-panel-body">
+                <div class="overview-chart-box">
+                    <canvas id="bbInventoryChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="overview-panel h-100">
+            <div class="overview-panel-head"><h5>Response summary</h5></div>
+            <div class="overview-panel-body pt-2">
+                <div class="bb-snapshot-row"><span>Hospital</span><strong><%= userAnalytics.hospitalName || (bloodbank && bloodbank.hospitalName) || '—' %></strong></div>
+                <div class="bb-snapshot-row"><span>Verification</span><strong class="text-capitalize"><%= userAnalytics.status || (bloodbank && bloodbank.status) %></strong></div>
+                <div class="bb-snapshot-row"><span>Contact rate</span><strong><%= userAnalytics.requestsContacted %> patients</strong></div>
+                <div class="bb-snapshot-row"><span>Completion</span><strong><%= userAnalytics.fulfilledRequests %> fulfilled</strong></div>
+                <% if (canExportData) { %>
+                <a href="/export/my-data" class="btn btn-outline-dark btn-sm w-100 mt-3">
+                    <i data-lucide="download" style="width:14px;height:14px;"></i> Export full report
+                </a>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const inventory = <%- JSON.stringify(inventory) %>;
+        const el = document.getElementById('bbInventoryChart');
+        if (!el || typeof Chart === 'undefined') return;
+        const groups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+        Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, sans-serif";
+        new Chart(el, {
+            type: 'bar',
+            data: {
+                labels: groups,
+                datasets: [{
+                    label: 'Units',
+                    data: groups.map(function (g) { return Number(inventory[g] || 0); }),
+                    backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#14b8a6', '#64748b'],
+                    borderRadius: 8,
+                }],
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.15)' } },
+                    x: { grid: { display: false } },
+                },
+            },
+        });
+    })();
+</script>
+<% } %>

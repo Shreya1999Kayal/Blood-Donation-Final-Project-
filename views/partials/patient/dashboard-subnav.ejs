@@ -1,0 +1,17 @@
+<nav class="dashboard-subnav" aria-label="Dashboard sections">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="dashboard-subnav-scroll">
+            <a href="/" class="dashboard-subnav-link">Home</a>
+            <a href="#" class="dashboard-subnav-link active dashboard-section-link admin-nav-link" data-pt-section="overview" data-pt-label="Overview">Overview</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-pt-section="create-request" data-pt-label="Create Request">Create request</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-pt-section="requests" data-pt-label="My Requests">My requests<% if (activeRequests > 0) { %> <span class="badge bg-danger rounded-pill"><%= activeRequests %></span><% } %></a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-pt-section="donors" data-pt-label="Find Donors">Donors</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-pt-section="bloodbanks" data-pt-label="Blood Banks">Blood banks</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-pt-section="messages" data-pt-label="Messages">Messages<% if (inboxCount > 0) { %> <span class="badge bg-danger rounded-pill"><%= inboxCount %></span><% } %></a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-pt-section="subscription" data-pt-label="Plans & Billing">Plans</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-pt-section="feedback" data-pt-label="Feedback">Feedback</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-pt-section="notifications" data-pt-label="Notifications">Alerts</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-pt-section="profile" data-pt-label="Profile">Profile</a>
+        </div>
+    </div>
+</nav>

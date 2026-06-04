@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blood Bank Dashboard — RaktaSetu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/admin-ui.css" rel="stylesheet">
+    <link href="/css/bloodbank-ui.css" rel="stylesheet">
+    <link href="/css/feedback-ui.css" rel="stylesheet">
+    <link href="/css/home.css" rel="stylesheet">
+    <link href="/css/dashboard-home-shell.css" rel="stylesheet">
+    <%- include('partials/shared/tailwind-bb-head') %>
+    <%- include('partials/home/tailwind-head') %>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="admin-shell bb-shell dashboard-home-shell">
+
+<%- include('partials/bloodbank/dashboard-home-chrome', { user, bloodRequests }) %>
+
+<%
+const bbMessageNotifCount = (notifications || []).filter(function(n) {
+    return n.type === 'message' || n.type === 'contact' || (n.link && String(n.link).indexOf('/chat/') === 0);
+}).length;
+%>
+
+<div class="admin-overlay" id="bbOverlay"></div>
+
+<%- include('partials/bloodbank/sidebar', { user, bloodbank, bloodRequests, userAnalytics, bloodIssueHistory }) %>
+
+<div class="admin-main">
+    <header class="admin-topbar">
+        <button type="button" class="admin-hamburger" id="bbHamburger" aria-label="Menu">
+            <i data-lucide="menu" style="width:20px;height:20px;"></i>
+        </button>
+        <div class="bb-topbar-title-wrap">
+            <h2 id="bbPageTitle">Overview</h2>
+            <span class="bb-topbar-sub">Inventory · emergencies · patient coordination</span>
+        </div>
+        <div class="ms-auto d-flex align-items-center gap-2">
+            <span class="bb-role-badge d-none d-md-inline">
+                <i data-lucide="building-2" style="width:13px;height:13px;"></i> Blood bank
+            </span>
+            <a href="#" class="btn btn-outline-danger btn-sm d-none d-md-inline-flex align-items-center gap-1 position-relative" data-bb-section="notifications" data-bb-label="Notifications">
+                <i data-lucide="bell" style="width:14px;height:14px;"></i> Alerts
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="bbTopbarNotifBadge">0</span>
+            </a>
+            <a href="/dashboard#section-messages" class="btn btn-outline-danger btn-sm d-none d-md-inline-flex align-items-center gap-1">
+                <i data-lucide="messages-square" style="width:14px;height:14px;"></i> Messages
+            </a>
+            <%- include('partials/shared/topbar-user', { user }) %>
+        </div>
+    </header>
+
+    <main class="admin-content">
+        <% if (typeof flash !== 'undefined' && flash) { %>
+            <% if (flash.msg === 'contact_recorded') { %><div class="alert alert-success alert-dismissible fade show">Contact recorded on request.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'bloodbank_submitted') { %><div class="alert alert-info alert-dismissible fade show">Blood bank submitted with certificate. Waiting for admin approval.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'bloodbank_certificate_updated') { %><div class="alert alert-info alert-dismissible fade show">Registration certificate updated.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'bloodbank_certificate_reverify') { %><div class="alert alert-warning alert-dismissible fade show">Certificate updated. Your blood bank must be re-verified by admin.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'bloodbank_approved') { %><div class="alert alert-success alert-dismissible fade show">Blood bank approved — you can now contact patients.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'bloodbank_rejected') { %><div class="alert alert-warning alert-dismissible fade show">Blood bank registration was not approved.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'bloodbank_profile_updated') { %><div class="alert alert-success alert-dismissible fade show">Hospital profile updated.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'profile_updated') { %><div class="alert alert-success alert-dismissible fade show">Account profile updated.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'subscription_activated') { %><div class="alert alert-success alert-dismissible fade show">Subscription activated successfully.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'payment_success') { %><div class="alert alert-success alert-dismissible fade show">Payment recorded successfully.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'feedback_submitted') { %><div class="alert alert-success alert-dismissible fade show">Thank you! Your feedback was submitted for review.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'camp_request_accepted') { %><div class="alert alert-success alert-dismissible fade show">You accepted the camp blood collection request.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'camp_request_rejected') { %><div class="alert alert-info alert-dismissible fade show">You declined the camp blood collection request.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.error === 'feedback_submit_failed') { %><div class="alert alert-danger alert-dismissible fade show">Could not submit feedback. Please try again.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.error === 'bloodbank_not_approved') { %><div class="alert alert-warning alert-dismissible fade show">Your blood bank must be approved before contacting patients.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.error === 'bloodbank_certificate_required') { %><div class="alert alert-danger alert-dismissible fade show">Please upload your registered blood bank certificate.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.error === 'request_closed') { %><div class="alert alert-warning alert-dismissible fade show">This request is already closed.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.error === 'bloodbank_not_found') { %><div class="alert alert-warning alert-dismissible fade show">Could not update blood bank inventory for this request.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.error && !['bloodbank_not_approved','bloodbank_certificate_required','request_closed','upload_invalid_type','upload_file_too_large','upload_processing_failed'].includes(flash.error)) { %><div class="alert alert-danger alert-dismissible fade show"><%= flash.error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+        <% } %>
+
+        <div id="section-overview" class="admin-panel-section active">
+            <%- include('partials/bloodbank/section-overview', { user, bloodbank, bloodRequests, userAnalytics, canExportData, flash }) %>
+        </div>
+        <div id="section-requests" class="admin-panel-section">
+            <%- include('partials/bloodbank/section-requests', { bloodRequests, user, bloodbank }) %>
+        </div>
+        <div id="section-inventory" class="admin-panel-section">
+            <%- include('partials/bloodbank/section-inventory', { bloodbank }) %>
+        </div>
+        <div id="section-history" class="admin-panel-section">
+            <%- include('partials/bloodbank/section-history', { bloodIssueHistory, bloodbank }) %>
+        </div>
+        <div id="section-profile" class="admin-panel-section">
+            <%- include('partials/bloodbank/section-profile', { user, bloodbank }) %>
+        </div>
+        <div id="section-certificate" class="admin-panel-section">
+            <%- include('partials/bloodbank/section-certificate', { bloodbank }) %>
+        </div>
+        <div id="section-messages" class="admin-panel-section">
+            <%- include('partials/bloodbank/section-messages', { user, bloodbank, inbox, isFullPage: false }) %>
+        </div>
+        <div id="section-subscription" class="admin-panel-section">
+            <%- include('partials/bloodbank/section-subscription', { user, planBenefits, planPrices, hasActiveSubscription, canExportData }) %>
+        </div>
+        <% if (userAnalytics) { %>
+        <div id="section-analytics" class="admin-panel-section">
+            <%- include('partials/bloodbank/section-analytics', { userAnalytics, bloodbank, canExportData }) %>
+        </div>
+        <% } %>
+        <div id="section-notifications" class="admin-panel-section">
+            <%- include('partials/shared/camp-participation-requests', { campParticipationRequests }) %>
+            <%- include('partials/bloodbank/section-notifications', { notifications, user, bloodRequests }) %>
+        </div>
+        <div id="section-feedback" class="admin-panel-section">
+            <%- include('partials/shared/section-feedback', { user, userFeedback, feedbackRoleLabels, feedbackCategoryLabels, feedbackPrefix: 'bb' }) %>
+        </div>
+        <div id="section-password" class="admin-panel-section">
+            <%- include('partials/bloodbank/section-password', { user, flash }) %>
+        </div>
+    </main>
+</div>
+
+<!-- Chat modal -->
+<div class="modal fade" id="chatModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable" style="max-width:520px">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-semibold">
+                    <span id="chatWithName">—</span>
+                    <span id="chatPresenceStatus" class="chat-presence is-offline d-block mt-1">Offline</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light" id="chatMessages" style="min-height:300px;max-height:55vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;"></div>
+            <div class="modal-footer bg-white">
+                <form id="chatForm" class="w-100 d-flex gap-2">
+                    <input id="chatInput" class="form-control" placeholder="Type a message…" autocomplete="off" maxlength="2000" />
+                    <button class="btn btn-danger px-4" type="submit">Send</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1100">
+    <div id="chatToast" class="toast align-items-center text-bg-danger border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body" id="chatToastBody">New message received.</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+<button id="chatUnreadBtn" class="btn btn-danger rounded-circle shadow-lg d-none bb-chat-fab" title="Open chat">
+    <i data-lucide="messages-square" style="width:22px;height:22px;"></i>
+    <span id="chatUnreadBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">0</span>
+</button>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="/js/bloodbank-ui.js"></script>
+<script src="/js/change-password-form.js"></script>
+<script src="/js/feedback-ui.js"></script>
+<script src="/js/profile-photo-preview.js"></script>
+<script>window.__RAZORPAY_KEY__ = <%- JSON.stringify(razorpayKeyId || '') %>;</script>
+<script src="/js/razorpay-checkout.js?v=6"></script>
+<script src="/js/chat-presence.js"></script>
+
+<script>
+    const socket = io({ transports: ['websocket', 'polling'] });
+    const presenceWatcher = window.ChatPresence?.createWatcher(socket);
+    const city = "<%= user.city %>";
+    const currentUser = { id: "<%= user._id %>", role: "<%= user.role %>", city };
+    const initialMessageNotifCount = <%= bbMessageNotifCount %>;
+
+    function escHtml(s) {
+        return (s || '').toString()
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function parseChatLink(link, title) {
+        if (!link || link.indexOf('/chat/') !== 0) return null;
+        const userId = link.replace('/chat/', '').split('?')[0].trim();
+        if (!/^[a-f0-9]{24}$/i.test(userId)) return null;
+        const nameMatch = (title || '').match(/^New message from (.+)$/i);
+        return {
+            userId: userId,
+            name: nameMatch ? nameMatch[1] : 'Patient',
+            role: 'user',
+        };
+    }
+
+    function normalizeNotifType(type) {
+        if (type === 'contact') return 'message';
+        return type || 'system';
+    }
+
+    function pushNotification(opts) {
+        const list = document.getElementById('notificationList');
+        if (!list) return;
+        const title = escHtml(opts.title || 'Notification');
+        const message = escHtml(opts.message || '');
+        const type = normalizeNotifType(opts.type || 'system');
+        const href = opts.link || '/dashboard';
+        const time = opts.time || new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+        const chatMeta = parseChatLink(href, opts.title);
+        const meta = {
+            request: { icon: 'siren', tone: 'danger', label: 'Request', img: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=120&h=120&fit=crop&q=80' },
+            critical: { icon: 'alert-triangle', tone: 'danger', label: 'Critical', img: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=120&h=120&fit=crop&q=80' },
+            message: { icon: 'messages-square', tone: 'blue', label: 'Message', img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=120&h=120&fit=crop&q=80' },
+            match: { icon: 'heart-handshake', tone: 'success', label: 'Match', img: 'https://images.unsplash.com/photo-1615461066159-fa5966998606?w=120&h=120&fit=crop&q=80' },
+            approval: { icon: 'badge-check', tone: 'blue', label: 'Approval', img: 'https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=120&h=120&fit=crop&q=80' },
+            received: { icon: 'check-circle', tone: 'green', label: 'Received', img: 'https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=120&h=120&fit=crop&q=80' },
+            system: { icon: 'bell', tone: 'slate', label: 'System', img: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=120&h=120&fit=crop&q=80' },
+        };
+        const m = meta[type] || meta.system;
+        const filterType = (type === 'request' || type === 'critical') ? type
+            : (type === 'message' ? 'message'
+            : (['approval', 'match', 'received'].includes(type) ? 'approval' : 'system'));
+        const search = [opts.title, opts.message, m.label].filter(Boolean).join(' ').toLowerCase().replace(/"/g, '');
+        const placeholder = document.getElementById('notifPlaceholder');
+        if (placeholder) placeholder.remove();
+        const item = document.createElement('a');
+        item.href = chatMeta ? '#' : href;
+        item.className = 'nt-card nt-card-' + m.tone + ' nt-card-live';
+        item.dataset.notifItem = '';
+        item.dataset.type = filterType;
+        item.dataset.when = 'today';
+        item.dataset.search = search;
+        if (chatMeta) {
+            item.dataset.chatOpen = '1';
+            item.dataset.chatUserId = chatMeta.userId;
+            item.dataset.chatUserName = chatMeta.name;
+            item.dataset.chatUserRole = chatMeta.role;
+        }
+        item.innerHTML =
+            '<div class="nt-card-thumb"><img src="' + m.img + '" alt="" loading="lazy">' +
+            '<span class="nt-type-icon"><i data-lucide="' + m.icon + '" style="width:16px;height:16px;"></i></span></div>' +
+            '<div class="nt-card-body"><div class="nt-card-head"><div>' +
+            '<span class="nt-type-badge nt-type-' + m.tone + '">' + m.label + '</span>' +
+            '<h6 class="nt-title">' + title + '</h6></div>' +
+            '<time class="nt-time">' + escHtml(time) + '</time></div>' +
+            '<p class="nt-message mb-0">' + message + '</p></div>' +
+            '<div class="nt-card-arrow"><i data-lucide="chevron-right" style="width:18px;height:18px;"></i></div>';
+        list.prepend(item);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        if (typeof window.applyNtFilters === 'function') window.applyNtFilters();
+        const feedCount = document.getElementById('ntFeedCount');
+        const feedTotal = document.getElementById('ntFeedTotal');
+        const count = list.querySelectorAll('[data-notif-item]').length;
+        if (feedCount) feedCount.textContent = String(count);
+        if (feedTotal) feedTotal.textContent = String(count);
+    }
+
+    socket.on('connect', () => {
+        socket.emit('join_context', { userId: currentUser.id });
+        socket.emit('join_city', city);
+        const status = document.getElementById('ntConnStatus');
+        if (status) { status.textContent = 'Live'; status.className = 'text-success'; }
+    });
+
+    socket.on('disconnect', () => {
+        const status = document.getElementById('ntConnStatus');
+        if (status) { status.textContent = 'Offline'; status.className = 'text-warning'; }
+    });
+
+    socket.on('notification:new', (data) => {
+        const notifUserId = data.userId ? data.userId.toString() : null;
+        const forUser = notifUserId === currentUser.id;
+        const roleMatch = Array.isArray(data.roles) && data.roles.includes(currentUser.role);
+        const cityMatch = data.city && data.city.toLowerCase() === city.toLowerCase();
+        const broadcast = !notifUserId && (!data.roles || data.roles.length === 0) && !data.city;
+        if (!(forUser || roleMatch || cityMatch || broadcast)) return;
+        pushNotification({
+            title: data.title || 'Notification',
+            message: data.message || '',
+            type: data.type || 'system',
+            link: data.link || '/dashboard#section-notifications',
+        });
+    });
+
+    socket.on('critical_alert', (data) => {
+        pushNotification({
+            title: 'Critical alert',
+            message: (data.bloodGroup || '') + ' needed at ' + (data.hospitalName || 'hospital'),
+            type: 'critical',
+            link: '/dashboard#section-requests',
+        });
+    });
+
+    socket.on('request_created', (data) => {
+        pushNotification({
+            title: 'New blood request',
+            message: (data.bloodGroup || '') + ' — ' + (data.patientName || 'Patient'),
+            type: 'request',
+            link: '/dashboard#section-requests',
+        });
+    });
+
+    socket.on('new_blood_request', (data) => {
+        pushNotification({
+            title: 'Emergency request',
+            message: (data.bloodGroup || '') + ' needed at ' + (data.hospitalName || 'hospital'),
+            type: 'request',
+            link: '/dashboard#section-requests',
+        });
+    });
+
+    socket.on('donor_matched', (data) => {
+        pushNotification({
+            title: 'Donors matched',
+            message: (data.matchedDonors || 0) + ' donor(s) matched in ' + (data.city || 'your city'),
+            type: 'match',
+            link: '/dashboard#section-requests',
+        });
+    });
+
+    socket.on('request_resolved', (data) => {
+        pushNotification({
+            title: 'Request resolved',
+            message: (data.bloodGroup || '') + ' at ' + (data.hospitalName || 'hospital') + ' was fulfilled.',
+            type: 'system',
+            link: '/dashboard#section-requests',
+        });
+    });
+</script>
+
+<script>
+(function () {
+    'use strict';
+    const chatModalEl = document.getElementById('chatModal');
+    const chatMessagesEl = document.getElementById('chatMessages');
+    const chatWithNameEl = document.getElementById('chatWithName');
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+    const toastEl = document.getElementById('chatToast');
+    const toastBodyEl = document.getElementById('chatToastBody');
+    const unreadBtn = document.getElementById('chatUnreadBtn');
+    const unreadBadgeEl = document.getElementById('chatUnreadBadge');
+    const chatModal = chatModalEl ? new bootstrap.Modal(chatModalEl) : null;
+    const chatToast = toastEl ? new bootstrap.Toast(toastEl, { delay: 5000 }) : null;
+    let activeChat = null;
+    let lastIncomingChat = null;
+    let unreadMessageCount = typeof initialMessageNotifCount === 'number' ? initialMessageNotifCount : 0;
+    let modalOpen = false;
+
+    chatModalEl?.addEventListener('show.bs.modal', () => { modalOpen = true; });
+    chatModalEl?.addEventListener('hidden.bs.modal', () => {
+        modalOpen = false;
+        presenceWatcher?.unwatch();
+    });
+
+    function esc(s) {
+        return (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function updateMessageBadges() {
+        ['notifBadge', 'bbNotifBadge', 'bbTopbarNotifBadge'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (unreadMessageCount > 0) {
+                el.textContent = String(unreadMessageCount);
+                el.style.display = 'inline';
+                el.classList.remove('d-none');
+            } else {
+                el.textContent = '0';
+                el.style.display = 'none';
+                el.classList.add('d-none');
+            }
+        });
+        if (unreadBadgeEl) unreadBadgeEl.textContent = String(unreadMessageCount);
+        unreadBtn?.classList.toggle('d-none', unreadMessageCount === 0);
+    }
+
+    function showNewMessageAlert(senderName, senderId, senderRole) {
+        unreadMessageCount += 1;
+        if (senderId) {
+            lastIncomingChat = {
+                userId: String(senderId),
+                name: senderName || 'Patient',
+                role: senderRole || 'user',
+            };
+        }
+        updateMessageBadges();
+        if (chatToast && toastBodyEl) {
+            toastBodyEl.textContent = senderName
+                ? 'New message received from ' + senderName
+                : 'New message received';
+            chatToast.show();
+        }
+    }
+
+    window.bbClearMessageAlerts = function () {
+        unreadMessageCount = 0;
+        lastIncomingChat = null;
+        updateMessageBadges();
+    };
+
+    function showChatError(message) {
+        if (window.Swal) Swal.fire({ icon: 'error', title: 'Cannot open chat', text: message || 'Chat error', confirmButtonColor: '#dc3545' });
+        else alert(message);
+    }
+
+    function scrollDown() {
+        if (chatMessagesEl) chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    }
+
+    function renderBubble(msg) {
+        const mine = String(msg.fromUserId) === String(currentUser.id);
+        const wrap = document.createElement('div');
+        wrap.className = 'd-flex align-items-end gap-2 ' + (mine ? 'flex-row-reverse' : '');
+        const bubble = document.createElement('div');
+        bubble.className = 'px-3 py-2 rounded-3 ' + (mine ? 'bg-danger text-white' : 'bg-white border text-dark');
+        bubble.style.cssText = 'max-width:78%;word-break:break-word;font-size:.92rem;';
+        const time = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+        bubble.innerHTML = '<div style="white-space:pre-wrap;">' + esc(msg.message || msg.text || '') + '</div>' +
+            '<div class="mt-1 ' + (mine ? 'text-white-50' : 'text-muted') + '" style="font-size:.7rem;">' + time + '</div>';
+        wrap.appendChild(bubble);
+        return wrap;
+    }
+
+    function clearUnread() {
+        unreadMessageCount = 0;
+        lastIncomingChat = null;
+        updateMessageBadges();
+    }
+
+    function openChat(userId, name, role) {
+        if (!chatModal || !userId) return;
+        if (!/^[a-f0-9]{24}$/i.test(String(userId))) {
+            showChatError('Invalid patient chat link. Open Messages and select the conversation from your inbox.');
+            return;
+        }
+        activeChat = { userId: String(userId), name, role, conversationId: null };
+        if (chatWithNameEl) chatWithNameEl.textContent = name + ' · ' + (role === 'user' ? 'Patient' : role);
+        presenceWatcher?.watch(userId, document.getElementById('chatPresenceStatus'));
+        if (chatMessagesEl) chatMessagesEl.innerHTML = '<div class="text-muted small text-center py-4">Loading messages…</div>';
+        clearUnread();
+        chatModal.show();
+        socket.emit('chat:history', { withUserId: userId, limit: 50 }, (resp) => {
+            if (!resp || !resp.ok) {
+                if (chatMessagesEl) chatMessagesEl.innerHTML = '<div class="text-danger small text-center py-4">' + esc(resp?.error || 'Unable to open chat') + '</div>';
+                return;
+            }
+            activeChat.conversationId = resp.conversationId;
+            if (chatMessagesEl) chatMessagesEl.innerHTML = '';
+            if (!resp.messages?.length) {
+                const p = document.createElement('div');
+                p.className = 'text-muted small text-center py-4';
+                p.textContent = 'No messages yet. Say hello!';
+                chatMessagesEl?.appendChild(p);
+            } else {
+                resp.messages.forEach((m) => chatMessagesEl?.appendChild(renderBubble(m)));
+            }
+            scrollDown();
+        });
+    }
+
+    window.bbOpenChat = openChat;
+
+    document.getElementById('notificationList')?.addEventListener('click', function (e) {
+        const card = e.target.closest('[data-chat-open]');
+        if (!card) return;
+        e.preventDefault();
+        openChat(card.dataset.chatUserId, card.dataset.chatUserName || 'Patient', card.dataset.chatUserRole || 'user');
+    });
+
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.chat-btn');
+        if (!btn) return;
+        e.preventDefault();
+        openChat(btn.dataset.userId, btn.dataset.userName || 'User', btn.dataset.userRole || 'user');
+    });
+
+    unreadBtn?.addEventListener('click', () => {
+        const target = lastIncomingChat || activeChat;
+        if (target?.userId) openChat(target.userId, target.name, target.role);
+    });
+
+    chatForm?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!activeChat?.userId) return;
+        const text = (chatInput?.value || '').trim();
+        if (!text) return;
+        const optimistic = renderBubble({ fromUserId: currentUser.id, message: text, createdAt: new Date() });
+        chatMessagesEl?.appendChild(optimistic);
+        scrollDown();
+        socket.emit('chat:send', { toUserId: activeChat.userId, text, conversationId: activeChat.conversationId || undefined }, (resp) => {
+            if (!resp || !resp.ok) { optimistic.remove(); showChatError(resp?.error || 'Failed to send message'); }
+        });
+        if (chatInput) { chatInput.value = ''; chatInput.focus(); }
+    });
+
+    socket.on('chat:message', (msg) => {
+        if (String(msg.fromUserId) === String(currentUser.id)) return;
+        const isActive = activeChat?.userId && (String(msg.fromUserId) === String(activeChat.userId) || String(msg.toUserId) === String(activeChat.userId));
+        if (isActive && modalOpen) {
+            chatMessagesEl?.appendChild(renderBubble(msg));
+            scrollDown();
+        } else {
+            showNewMessageAlert(msg.senderName || 'Someone', msg.fromUserId, 'user');
+        }
+    });
+
+    const prevShowSection = window.bbShowSection;
+    window.bbShowSection = function (id, label) {
+        if (typeof prevShowSection === 'function') prevShowSection(id, label);
+        if (id === 'notifications') bbClearMessageAlerts();
+    };
+
+    const onNotificationsSection =
+        window.location.hash === '#section-notifications'
+        || document.getElementById('section-notifications')?.classList.contains('active');
+
+    if (onNotificationsSection) {
+        bbClearMessageAlerts();
+    } else {
+        updateMessageBadges();
+    }
+})();
+</script>
+
+<% if (flash && flash.error && ['upload_invalid_type', 'upload_file_too_large', 'upload_processing_failed'].includes(flash.error)) { %>
+<script>
+(function () {
+    const map = {
+        upload_invalid_type: { title: 'Invalid file type', text: 'Please upload only JPG, PNG, WEBP, or PDF documents.' },
+        upload_file_too_large: { title: 'File too large', text: 'Each document must be 10 MB or smaller.' },
+        upload_processing_failed: { title: 'Upload failed', text: 'We could not process your document. Please try again.' },
+    };
+    const cfg = map["<%= flash.error %>"];
+    if (cfg && window.Swal) Swal.fire({ icon: 'error', title: cfg.title, text: cfg.text, confirmButtonColor: '#dc3545' });
+})();
+</script>
+<% } %>
+
+</body>
+</html>

@@ -1,0 +1,207 @@
+<%
+const banks = allBloodBanks || [];
+const pendingList = banks.filter(function(b) { return b.status === 'pending'; });
+const approvedList = banks.filter(function(b) { return b.status === 'approved'; });
+const rejectedList = banks.filter(function(b) { return b.status === 'rejected'; });
+const withCertList = banks.filter(function(b) { return b.registrationCertificateUrl; });
+const stockUtil = typeof bloodBankStock !== 'undefined' ? bloodBankStock : null;
+const bloodGroups = stockUtil ? stockUtil.BLOOD_GROUPS : ['O+','O-','A+','A-','B+','B-','AB+','AB-'];
+const lowStockThreshold = stockUtil ? stockUtil.LOW_STOCK_TOTAL_THRESHOLD : 60;
+
+function totalInventory(bb) {
+    if (stockUtil) return stockUtil.totalInventory(bb);
+    return bloodGroups.reduce(function(sum, g) { return sum + Number((bb.inventory || {})[g] || 0); }, 0);
+}
+function stockKey(bb) {
+    if (stockUtil) return stockUtil.getStockLevel(bb);
+    const total = totalInventory(bb);
+    if (total === 0) return 'empty';
+    if (total < lowStockThreshold) return 'low';
+    return 'stocked';
+}
+const lowStockList = banks.filter(function(b) { return stockKey(b) === 'low'; });
+const platformStock = banks.reduce(function(sum, bb) { return sum + totalInventory(bb); }, 0);
+
+const bbStats = [
+    { label: 'Total blood banks', value: banks.length, icon: 'building-2', tone: 'slate', img: 'https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=400&h=260&fit=crop&q=80' },
+    { label: 'Pending review', value: pendingList.length, icon: 'clipboard-list', tone: 'amber', img: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=260&fit=crop&q=80' },
+    { label: 'Verified banks', value: approvedList.length, icon: 'badge-check', tone: 'blue', img: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=260&fit=crop&q=80' },
+    { label: 'Low stock banks', value: lowStockList.length, icon: 'alert-triangle', tone: 'amber', img: 'https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=400&h=260&fit=crop&q=80' },
+];
+%>
+
+<!-- Hero -->
+<div class="bb-hero mb-4">
+    <div class="bb-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="bb-hero-overlay"></div>
+    <div class="bb-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="bb-hero-badge"><span class="pulse-dot"></span> Hospital & inventory hub</span>
+                <h3 class="bb-hero-title">Blood bank management</h3>
+                <p class="bb-hero-sub mb-0">Verify hospital registrations, review certificates, and monitor blood inventory across every partner facility on the platform.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="bb-hero-meta">
+                    <div><small>Pending review</small><strong class="<%= pendingList.length ? 'text-warning' : 'text-success' %>"><%= pendingList.length %></strong></div>
+                    <div><small>Verified</small><strong><%= approvedList.length %></strong></div>
+                    <div><small>Total units</small><strong><%= platformStock %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (pendingList.length > 0) { %>
+<div class="bb-pending-strip mb-4">
+    <div class="bb-pending-strip-icon">
+        <img src="https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=100&h=100&fit=crop&q=80" alt="" loading="lazy">
+    </div>
+    <div class="flex-grow-1">
+        <h6 class="mb-1"><i data-lucide="building-2" style="width:16px;height:16px;"></i> <%= pendingList.length %> blood bank<%= pendingList.length !== 1 ? 's' : '' %> awaiting verification</h6>
+        <p class="mb-0 small text-muted">Review registration certificates before approving hospitals for emergency supply.</p>
+    </div>
+    <button type="button" class="btn btn-primary btn-sm" id="bbFilterPending">Show pending only</button>
+</div>
+<% } %>
+
+<% if (pendingList.some(function(b) { return !b.registrationCertificateUrl; })) { %>
+<div class="bb-cert-alert mb-4">
+    <i data-lucide="alert-triangle" style="width:18px;height:18px;"></i>
+    <span>Some pending banks have not uploaded a registration certificate — approval is blocked until uploaded.</span>
+</div>
+<% } %>
+
+<!-- KPI row -->
+<div class="row g-3 mb-4">
+    <% bbStats.forEach(function(stat) { %>
+    <div class="col-sm-6 col-xl-3">
+        <div class="overview-kpi overview-kpi-<%= stat.tone %>">
+            <div class="overview-kpi-visual">
+                <img src="<%= stat.img %>" alt="" loading="lazy">
+                <div class="overview-kpi-visual-shade"></div>
+            </div>
+            <div class="overview-kpi-body">
+                <div class="overview-kpi-icon"><i data-lucide="<%= stat.icon %>" style="width:20px;height:20px;"></i></div>
+                <div class="overview-kpi-label"><%= stat.label %></div>
+                <div class="overview-kpi-value"><%= stat.value %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel">
+            <div class="overview-panel-head flex-wrap">
+                <div>
+                    <h5>Blood bank registry</h5>
+                    <p class="text-muted small mb-0"><span id="bbVisibleCount"><%= banks.length %></span> of <%= banks.length %> bank(s) shown</p>
+                </div>
+                <div class="btn-group btn-group-sm bb-view-toggle" role="group">
+                    <button type="button" class="btn btn-danger active" data-bb-view="cards" title="Card view"><i data-lucide="layout-grid" style="width:14px;height:14px;"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" data-bb-view="table" title="Table view"><i data-lucide="table" style="width:14px;height:14px;"></i></button>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm ms-2" data-admin-create="bloodbank"><i data-lucide="plus" style="width:14px;height:14px;"></i> Add blood bank</button>
+            </div>
+
+            <div class="bb-toolbar">
+                <div class="bb-search-wrap">
+                    <i data-lucide="search" style="width:16px;height:16px;"></i>
+                    <input type="search" class="form-control form-control-sm" id="bbSearch" placeholder="Search hospital, contact, city…" autocomplete="off">
+                </div>
+                <div class="bb-filter-group">
+                    <span class="bb-filter-label">Status</span>
+                    <div class="bb-pills" id="bbStatusFilters">
+                        <button type="button" class="bb-pill active" data-bb-status="all">All</button>
+                        <button type="button" class="bb-pill" data-bb-status="pending">Pending</button>
+                        <button type="button" class="bb-pill" data-bb-status="approved">Approved</button>
+                        <button type="button" class="bb-pill" data-bb-status="rejected">Rejected</button>
+                    </div>
+                </div>
+                <div class="bb-filter-group">
+                    <span class="bb-filter-label">Stock <small class="text-muted fw-normal">(&lt; <%= lowStockThreshold %> units total = low)</small></span>
+                    <div class="bb-pills" id="bbStockFilters">
+                        <button type="button" class="bb-pill active" data-bb-stock="all">All</button>
+                        <button type="button" class="bb-pill" data-bb-stock="stocked">Stocked</button>
+                        <button type="button" class="bb-pill" data-bb-stock="low">Low stock</button>
+                        <button type="button" class="bb-pill" data-bb-stock="empty">Empty</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overview-panel-body pt-0">
+                <div id="bbCardsView">
+                    <%- include('bloodbanks-board', { allBloodBanks: banks, totalInventory, stockKey, bloodGroups }) %>
+                </div>
+                <div id="bbTableView" class="d-none">
+                    <%- include('bloodbanks-table-advanced', { allBloodBanks: banks, totalInventory, stockKey }) %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <% if (typeof analytics !== 'undefined' && analytics && analytics.bloodbanksByStatus) { %>
+        <div class="overview-panel mb-4">
+            <div class="overview-panel-head">
+                <div>
+                    <h5>Verification pipeline</h5>
+                    <p class="text-muted small mb-0">Blood banks by approval status</p>
+                </div>
+            </div>
+            <div class="overview-panel-body">
+                <div class="overview-chart-box">
+                    <canvas id="bbSectionStatusChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <% if (typeof analytics !== 'undefined' && analytics && analytics.inventoryTotals) { %>
+        <div class="overview-panel mb-4">
+            <div class="overview-panel-head">
+                <div>
+                    <h5>Network inventory</h5>
+                    <p class="text-muted small mb-0"><%= platformStock %> units across all banks</p>
+                </div>
+            </div>
+            <div class="overview-panel-body overview-stock-list">
+                <% bloodGroups.forEach(function(group) {
+                    const units = analytics.inventoryTotals[group] || 0;
+                    const pct = platformStock ? Math.round((units / platformStock) * 100) : 0;
+                    const level = units <= 5 ? 'critical' : units <= 15 ? 'low' : 'ok';
+                %>
+                <div class="overview-stock-row">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="overview-blood-badge"><%= group %></span>
+                        <span class="small fw-semibold"><%= units %> u</span>
+                    </div>
+                    <div class="overview-stock-bar"><span class="overview-stock-fill <%= level %>" style="width:<%= Math.max(pct, units > 0 ? 8 : 0) %>%"></span></div>
+                </div>
+                <% }); %>
+            </div>
+        </div>
+        <% } %>
+
+        <div class="overview-panel overview-panel-accent">
+            <div class="overview-panel-head border-0 pb-0">
+                <h5 class="text-white mb-0">Supply snapshot</h5>
+            </div>
+            <div class="overview-panel-body">
+                <div class="bb-live-stat"><span>Registered hospitals</span><strong><%= banks.length %></strong></div>
+                <div class="bb-live-stat"><span>Active partners</span><strong><%= approvedList.length %></strong></div>
+                <div class="bb-live-stat"><span>With certificate</span><strong><%= withCertList.length %></strong></div>
+                <div class="bb-live-stat mb-0"><span>Total blood units</span><strong><%= platformStock %></strong></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bb-empty bb-empty-filter d-none" id="bbEmptyFilter">
+    <img src="https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=400&h=260&fit=crop&q=80" alt="" loading="lazy">
+    <h5>No blood banks match your filters</h5>
+    <p class="text-muted mb-3">Try adjusting search or filter criteria.</p>
+    <button type="button" class="btn btn-outline-primary btn-sm" id="bbClearFilters">Clear all filters</button>
+</div>

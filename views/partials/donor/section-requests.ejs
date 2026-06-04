@@ -1,0 +1,122 @@
+<%
+function statusLabel(s) {
+    if (s === 'fulfilled') return 'received';
+    return s;
+}
+const requests = bloodRequests || [];
+const activeList = requests.filter(function(r) { return ['active', 'contacted'].includes(r.status); });
+const contactedCount = requests.filter(function(r) { return r.status === 'contacted'; }).length;
+const totalUnits = activeList.reduce(function(sum, r) { return sum + Number(r.requiredUnits || 0); }, 0);
+function donorCooldownDays(d) {
+    if (!d || !d.lastDonationDate) return 999;
+    return Math.floor((Date.now() - new Date(d.lastDonationDate).getTime()) / (1000 * 60 * 60 * 24));
+}
+function donorCooldownRemaining(d) {
+    return Math.max(0, 90 - donorCooldownDays(d));
+}
+const canRespond = donorProfile && donorProfile.status === 'approved' && donorCooldownRemaining(donorProfile) === 0;
+
+const reqStats = [
+    { label: 'Total requests', value: requests.length, icon: 'clipboard-list', tone: 'slate', img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=260&fit=crop&q=80' },
+    { label: 'Live emergencies', value: activeList.length, icon: 'siren', tone: 'red', img: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=400&h=260&fit=crop&q=80' },
+    { label: 'Units needed (live)', value: totalUnits, icon: 'droplets', tone: 'green', img: 'https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=400&h=260&fit=crop&q=80' },
+];
+%>
+
+<div class="req-hero mb-4 dn-hero">
+    <div class="req-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1615461066159-fa5966998606?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="req-hero-overlay"></div>
+    <div class="req-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="req-hero-badge"><span class="pulse-dot"></span> Emergency response board</span>
+                <h3 class="req-hero-title">Emergency blood requests</h3>
+                <p class="req-hero-sub mb-0">Review live patient cases, contact families, and coordinate life-saving donations in your city.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="req-hero-meta">
+                    <div><small>Total</small><strong><%= requests.length %></strong></div>
+                    <div><small>Active</small><strong class="text-danger"><%= activeList.length %></strong></div>
+                    <div><small>In progress</small><strong><%= contactedCount %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (!canRespond) { %>
+<div class="dn-gate-banner mb-4">
+    <i data-lucide="shield-alert" style="width:22px;height:22px;"></i>
+    <div>
+        <strong>Contact actions locked</strong>
+        <p class="mb-0 small"><%= !donorProfile ? 'Upload medical documents to register as a donor.' : donorProfile.status !== 'approved' ? 'Admin must approve your documents before you can contact patients.' : 'You are in the 90-day cooldown period after your last donation.' %></p>
+    </div>
+    <% if (!donorProfile || donorProfile.status !== 'approved') { %>
+    <a href="#" class="btn btn-success btn-sm ms-auto" data-dn-section="documents" data-dn-label="Medical Documents">Complete setup</a>
+    <% } %>
+</div>
+<% } %>
+
+<div class="row g-3 mb-4">
+    <% reqStats.forEach(function(stat) { %>
+    <div class="col-sm-6 col-xl-4">
+        <div class="overview-kpi overview-kpi-<%= stat.tone %>">
+            <div class="overview-kpi-visual">
+                <img src="<%= stat.img %>" alt="" loading="lazy">
+                <div class="overview-kpi-visual-shade"></div>
+            </div>
+            <div class="overview-kpi-body">
+                <div class="overview-kpi-icon"><i data-lucide="<%= stat.icon %>" style="width:20px;height:20px;"></i></div>
+                <div class="overview-kpi-label"><%= stat.label %></div>
+                <div class="overview-kpi-value"><%= stat.value %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="overview-panel">
+            <div class="overview-panel-head flex-wrap">
+                <div>
+                    <h5>Request board</h5>
+                    <p class="text-muted small mb-0"><span id="reqVisibleCount"><%= requests.length %></span> of <%= requests.length %> request(s) shown</p>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <a href="/request" class="btn btn-outline-success btn-sm">Full list page</a>
+                    <div class="btn-group btn-group-sm req-view-toggle" role="group">
+                        <button type="button" class="btn btn-success active" data-req-view="cards" title="Card view"><i data-lucide="layout-grid" style="width:14px;height:14px;"></i></button>
+                        <button type="button" class="btn btn-outline-secondary" data-req-view="table" title="Table view"><i data-lucide="table" style="width:14px;height:14px;"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="req-toolbar">
+                <div class="req-search-wrap">
+                    <i data-lucide="search" style="width:16px;height:16px;"></i>
+                    <input type="search" class="form-control form-control-sm" id="reqSearch" placeholder="Search patient, hospital, city, blood type…" autocomplete="off">
+                </div>
+                <div class="req-filter-group">
+                    <span class="req-filter-label">Status</span>
+                    <div class="req-pills" id="reqStatusFilters">
+                        <button type="button" class="req-pill active" data-req-status="all">All</button>
+                        <button type="button" class="req-pill" data-req-status="live">Live</button>
+                        <button type="button" class="req-pill" data-req-status="active">Active</button>
+                        <button type="button" class="req-pill" data-req-status="contacted">Contacted</button>
+                        <button type="button" class="req-pill" data-req-status="closed">Closed</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overview-panel-body pt-0">
+                <div id="reqCardsView">
+                    <%- include('../admin/blood-requests-admin', { bloodRequests: requests, user, bloodbank: null, donorProfile, hideUrgency: true }) %>
+                </div>
+                <div id="reqTableView" class="d-none">
+                    <%- include('../shared/advanced-blood-requests-table', { bloodRequests: requests, user, donorProfile, bloodbank: null, twTheme: 'donor' }) %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

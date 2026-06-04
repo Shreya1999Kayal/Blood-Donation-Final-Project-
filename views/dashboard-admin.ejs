@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — RaktaSetu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/admin-ui.css" rel="stylesheet">
+    <link href="/css/feedback-ui.css" rel="stylesheet">
+    <%- include('partials/shared/tailwind-admin-head') %>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="admin-shell">
+<%
+function donorCooldownDays(donor) {
+    if (!donor || !donor.lastDonationDate) return 999;
+    return Math.floor((Date.now() - new Date(donor.lastDonationDate).getTime()) / (1000 * 60 * 60 * 24));
+}
+function donorCooldownRemaining(donor) {
+    return Math.max(0, 90 - donorCooldownDays(donor));
+}
+function donorEligibilityLabel(donor) {
+    if (!donor || donor.status !== 'approved') return 'Pending approval';
+    const remaining = donorCooldownRemaining(donor);
+    if (remaining > 0) return 'Not eligible (' + remaining + ' days left)';
+    if (!donor.isAvailable) return 'Unavailable';
+    return 'Eligible';
+}
+function donorEligibilityBadge(donor) {
+    if (!donor || donor.status !== 'approved') return 'warning';
+    if (donorCooldownRemaining(donor) > 0) return 'danger';
+    if (!donor.isAvailable) return 'secondary';
+    return 'success';
+}
+%>
+
+<div class="admin-overlay" id="adminOverlay"></div>
+
+<%- include('partials/admin/sidebar', { user, analytics, allBloodBanks, bloodRequests, allCamps, feedbackStats }) %>
+
+<div class="admin-main">
+    <header class="admin-topbar">
+        <button type="button" class="admin-hamburger" id="adminHamburger" aria-label="Menu">
+            <i data-lucide="menu" style="width:20px;height:20px;"></i>
+        </button>
+        <div class="admin-topbar-title-wrap">
+            <h2 id="adminPageTitle">Overview</h2>
+            <span class="admin-topbar-sub">Users · donors · banks · emergencies</span>
+        </div>
+        <div class="ms-auto d-flex align-items-center gap-2">
+            <span class="admin-role-badge d-none d-md-inline">
+                <i data-lucide="shield" style="width:13px;height:13px;"></i> Admin
+            </span>
+            <%- include('partials/shared/topbar-user', { user }) %>
+        </div>
+    </header>
+
+    <main class="admin-content">
+        <% if (typeof flash !== 'undefined' && flash) { %>
+            <% if (flash.msg === 'donor_approved') { %><div class="alert alert-success alert-dismissible fade show">Donor approved.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'donor_rejected') { %><div class="alert alert-warning alert-dismissible fade show">Donor rejected.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'donor_created') { %><div class="alert alert-success alert-dismissible fade show">Donor created successfully.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'donor_updated') { %><div class="alert alert-success alert-dismissible fade show">Donor updated successfully.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'donor_deleted') { %><div class="alert alert-warning alert-dismissible fade show">Donor deleted.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'bloodbank_approved') { %><div class="alert alert-success alert-dismissible fade show">Blood bank approved.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'bloodbank_rejected') { %><div class="alert alert-warning alert-dismissible fade show">Blood bank rejected.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'bloodbank_created') { %><div class="alert alert-success alert-dismissible fade show">Blood bank created successfully.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'bloodbank_updated') { %><div class="alert alert-success alert-dismissible fade show">Blood bank updated successfully.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'bloodbank_deleted') { %><div class="alert alert-warning alert-dismissible fade show">Blood bank deleted.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'camp_approved') { %><div class="alert alert-success alert-dismissible fade show">Camp organization approved.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'camp_rejected') { %><div class="alert alert-warning alert-dismissible fade show">Camp organization rejected.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'camp_created') { %><div class="alert alert-success alert-dismissible fade show">Camp organization created successfully.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'camp_updated') { %><div class="alert alert-success alert-dismissible fade show">Camp organization updated successfully.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'camp_deleted') { %><div class="alert alert-warning alert-dismissible fade show">Camp organization deleted.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'patient_created') { %><div class="alert alert-success alert-dismissible fade show">Patient created successfully.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'patient_updated') { %><div class="alert alert-success alert-dismissible fade show">Patient updated successfully.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'patient_deleted') { %><div class="alert alert-warning alert-dismissible fade show">Patient deleted.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'profile_updated') { %><div class="alert alert-success alert-dismissible fade show">Profile updated successfully.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'feedback_published') { %><div class="alert alert-success alert-dismissible fade show">Feedback published.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.msg === 'feedback_hidden') { %><div class="alert alert-warning alert-dismissible fade show">Feedback hidden.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.error === 'bloodbank_certificate_missing') { %><div class="alert alert-danger alert-dismissible fade show">Cannot approve blood bank without certificate.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+            <% if (flash.error && flash.error !== 'bloodbank_certificate_missing') { %><div class="alert alert-danger alert-dismissible fade show"><%= flash.error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+        <% } %>
+
+        <div id="section-overview" class="admin-panel-section active">
+            <%- include('partials/admin/section-overview', { analytics, allBloodBanks, bloodRequests, user }) %>
+        </div>
+        <div id="section-requests" class="admin-panel-section">
+            <%- include('partials/admin/section-requests', { bloodRequests, user, analytics }) %>
+        </div>
+        <div id="section-donors" class="admin-panel-section">
+            <%- include('partials/admin/section-donors', { allDonors, donorEligibilityLabel, donorEligibilityBadge, analytics }) %>
+        </div>
+        <div id="section-bloodbanks" class="admin-panel-section">
+            <%- include('partials/admin/section-bloodbanks', { allBloodBanks, analytics, bloodBankStock }) %>
+        </div>
+        <div id="section-camps" class="admin-panel-section">
+            <%- include('partials/admin/section-camps', { allCamps }) %>
+        </div>
+        <div id="section-patients" class="admin-panel-section">
+            <%- include('partials/admin/section-patients', { allUsers, bloodRequests, analytics }) %>
+        </div>
+        <div id="section-notifications" class="admin-panel-section">
+            <%- include('partials/admin/section-notifications', { notifications, analytics, user }) %>
+        </div>
+        <div id="section-feedback" class="admin-panel-section">
+            <%- include('partials/admin/section-feedback', { allFeedback, feedbackStats, feedbackRoleLabels, feedbackCategoryLabels, user }) %>
+        </div>
+        <div id="section-profile" class="admin-panel-section">
+            <%- include('partials/admin/section-profile', { user }) %>
+        </div>
+        <div id="section-password" class="admin-panel-section">
+            <%- include('partials/admin/section-change-password', { user, flash }) %>
+        </div>
+    </main>
+</div>
+
+<%- include('partials/admin/admin-crud-modals', { organizationTypes: typeof campOrgTypes !== 'undefined' ? campOrgTypes : [] }) %>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="/js/admin-ui.js"></script>
+<script src="/js/change-password-form.js"></script>
+<script src="/js/admin-crud.js"></script>
+<script src="/js/profile-photo-preview.js"></script>
+
+<script>
+    const socket = io({ transports: ['websocket', 'polling'] });
+    const city = "<%= user.city %>";
+    const currentUser = { id: "<%= user._id %>", role: "<%= user.role %>", city };
+
+    function escHtml(s) {
+        return (s || '').toString()
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function pushNotification(opts) {
+        const list = document.getElementById('notificationList');
+        if (!list) return;
+        const title = escHtml(opts.title || 'Notification');
+        const message = escHtml(opts.message || '');
+        const type = opts.type || 'system';
+        const href = opts.link || '/dashboard';
+        const time = opts.time || new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+        const meta = {
+            request: { icon: 'siren', tone: 'danger', label: 'Request', img: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=120&h=120&fit=crop&q=80' },
+            critical: { icon: 'alert-triangle', tone: 'danger', label: 'Critical', img: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=120&h=120&fit=crop&q=80' },
+            match: { icon: 'heart-handshake', tone: 'success', label: 'Match', img: 'https://images.unsplash.com/photo-1615461066159-fa5966998606?w=120&h=120&fit=crop&q=80' },
+            approval: { icon: 'badge-check', tone: 'blue', label: 'Approval', img: 'https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=120&h=120&fit=crop&q=80' },
+            contact: { icon: 'phone', tone: 'info', label: 'Contact', img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=120&h=120&fit=crop&q=80' },
+            received: { icon: 'check-circle', tone: 'green', label: 'Received', img: 'https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=120&h=120&fit=crop&q=80' },
+            system: { icon: 'bell', tone: 'slate', label: 'System', img: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=120&h=120&fit=crop&q=80' },
+        };
+        const m = meta[type] || meta.system;
+        const search = [opts.title, opts.message, m.label].filter(Boolean).join(' ').toLowerCase().replace(/"/g, '');
+        const placeholder = document.getElementById('notifPlaceholder');
+        if (placeholder) placeholder.remove();
+        const item = document.createElement('a');
+        item.href = href;
+        item.className = 'nt-card nt-card-' + m.tone + ' nt-card-live';
+        item.dataset.notifItem = '';
+        item.dataset.type = type;
+        item.dataset.when = 'today';
+        item.dataset.search = search;
+        item.innerHTML =
+            '<div class="nt-card-thumb"><img src="' + m.img + '" alt="" loading="lazy">' +
+            '<span class="nt-type-icon"><i data-lucide="' + m.icon + '" style="width:16px;height:16px;"></i></span></div>' +
+            '<div class="nt-card-body"><div class="nt-card-head"><div>' +
+            '<span class="nt-type-badge nt-type-' + m.tone + '">' + m.label + '</span>' +
+            '<h6 class="nt-title">' + title + '</h6></div>' +
+            '<time class="nt-time">' + escHtml(time) + '</time></div>' +
+            '<p class="nt-message mb-0">' + message + '</p></div>' +
+            '<div class="nt-card-arrow"><i data-lucide="chevron-right" style="width:18px;height:18px;"></i></div>';
+        list.prepend(item);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        if (typeof window.applyNtFilters === 'function') window.applyNtFilters();
+        const feedCount = document.getElementById('ntFeedCount');
+        const feedTotal = document.getElementById('ntFeedTotal');
+        const summaryTotal = document.getElementById('ntSummaryTotal');
+        const count = list.querySelectorAll('[data-notif-item]').length;
+        if (feedCount) feedCount.textContent = String(count);
+        if (feedTotal) feedTotal.textContent = String(count);
+        if (summaryTotal) summaryTotal.textContent = String(count);
+        const badge = document.getElementById('notifBadge');
+        if (badge) { badge.style.display = 'inline'; badge.textContent = 'new'; }
+        while (list.querySelectorAll('[data-notif-item]').length > 30) {
+            const items = list.querySelectorAll('[data-notif-item]');
+            items[items.length - 1].remove();
+        }
+    }
+
+    socket.on('connect', () => {
+        socket.emit('join_context', { userId: currentUser.id });
+        socket.emit('join_city', city);
+        const status = document.getElementById('ntConnStatus');
+        if (status) { status.textContent = 'Live'; status.className = 'text-success'; }
+    });
+
+    socket.on('disconnect', () => {
+        const status = document.getElementById('ntConnStatus');
+        if (status) { status.textContent = 'Offline'; status.className = 'text-warning'; }
+    });
+
+    socket.on('notification:new', (data) => {
+        const notifUserId = data.userId ? data.userId.toString() : null;
+        const forUser = notifUserId === currentUser.id;
+        const roleMatch = Array.isArray(data.roles) && data.roles.includes(currentUser.role);
+        const cityMatch = data.city && data.city.toLowerCase() === city.toLowerCase();
+        const broadcast = !notifUserId && (!data.roles || data.roles.length === 0) && !data.city;
+        if (!(forUser || roleMatch || cityMatch || broadcast)) return;
+        pushNotification({
+            title: data.title || 'Notification',
+            message: data.message || '',
+            type: data.type || 'system',
+            link: data.link || '/dashboard',
+            time: new Date(data.createdAt || Date.now()).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }),
+        });
+    });
+
+    socket.on('critical_alert', (data) => {
+        pushNotification({
+            title: 'Critical alert',
+            message: (data.bloodGroup || '') + ' needed at ' + (data.hospitalName || 'hospital'),
+            type: 'critical',
+            link: '/dashboard#section-requests',
+        });
+    });
+
+    socket.on('request_created', (data) => {
+        pushNotification({
+            title: 'New blood request',
+            message: (data.bloodGroup || '') + ' — ' + (data.patientName || 'Patient'),
+            type: 'request',
+            link: '/dashboard#section-requests',
+        });
+    });
+</script>
+
+<% if (analytics) { %>
+<script>
+    const analytics = <%- JSON.stringify(analytics) %>;
+    Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, sans-serif";
+    Chart.defaults.color = '#64748b';
+
+    function makeChart(id, source, type) {
+        const el = document.getElementById(id);
+        if (!el || !source || !Object.keys(source).length) return;
+        const palette = ['#ef4444', '#22c55e', '#f59e0b', '#3b82f6', '#8b5cf6', '#14b8a6', '#64748b'];
+        const dataset = {
+            data: Object.values(source),
+            borderWidth: type === 'line' ? 2 : 0,
+            borderColor: '#ef4444',
+            tension: 0.35,
+            fill: type === 'line',
+            backgroundColor: type === 'line' ? 'rgba(239,68,68,0.15)' : palette,
+        };
+        new Chart(el, {
+            type,
+            data: { labels: Object.keys(source), datasets: [dataset] },
+            options: {
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12, font: { size: 11 } } } },
+                scales: (type === 'line' || type === 'bar') ? {
+                    y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.15)' } },
+                    x: { grid: { display: false } },
+                } : {},
+            },
+        });
+    }
+    makeChart('donorStatusChart', analytics.donorsByStatus, 'doughnut');
+    makeChart('requestUrgencyChart', analytics.requestsByUrgency, 'bar');
+    makeChart('inventoryChart', analytics.inventoryTotals, 'polarArea');
+    makeChart('requestStatusChart', analytics.requestsByStatus, 'line');
+    makeChart('aiEligibilityChart', analytics.aiEligibilityCounts, 'doughnut');
+    makeChart('aiRiskChart', analytics.aiRiskDistribution, 'bar');
+    makeChart('reqSectionUrgencyChart', analytics.requestsByUrgency, 'doughnut');
+    makeChart('donSectionStatusChart', analytics.donorsByStatus, 'doughnut');
+    makeChart('bbSectionStatusChart', analytics.bloodbanksByStatus, 'doughnut');
+    makeChart('ptSectionPlanChart', analytics.patientsByPlan, 'doughnut');
+    makeChart('ntSectionTypeChart', analytics.notificationsByType, 'doughnut');
+</script>
+<% } %>
+</body>
+</html>

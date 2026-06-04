@@ -1,0 +1,122 @@
+<%
+function isPdfUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    return /\.pdf($|\?|#)/i.test(url) || (url.includes('cloudinary.com') && url.includes('/raw/upload/'));
+}
+const certUrl = bloodbank && bloodbank.registrationCertificateUrl ? docUrl(bloodbank.registrationCertificateUrl) : null;
+const isPdf = certUrl && isPdfUrl(certUrl);
+%>
+
+<div class="cp-hero mb-4">
+    <div class="cp-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="cp-hero-overlay"></div>
+    <div class="cp-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="cp-hero-badge"><i data-lucide="file-badge" style="width:14px;height:14px;"></i> Official documentation</span>
+                <h3 class="cp-hero-title">Registration certificate</h3>
+                <p class="cp-hero-sub mb-0">Upload your government-registered blood bank certificate for admin verification. Required before you can respond to patient emergencies.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="cp-hero-meta">
+                    <div><small>Certificate</small><strong><%= certUrl ? 'Uploaded' : 'Missing' %></strong></div>
+                    <div><small>Verification</small><strong class="text-capitalize"><%= bloodbank ? bloodbank.status : '—' %></strong></div>
+                    <div><small>Hospital</small><strong class="text-truncate d-block"><%= bloodbank ? bloodbank.hospitalName : '—' %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (!bloodbank) { %>
+<div class="alert alert-warning">Complete <a href="/bloodbank/setup">blood bank setup</a> to upload your certificate.</div>
+<% } else { %>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-7">
+        <div class="overview-panel">
+            <div class="overview-panel-head">
+                <h5>Upload or replace certificate</h5>
+                <p class="text-muted small mb-0">Accepted formats: PDF, JPG, PNG, WEBP (max 10 MB)</p>
+            </div>
+            <div class="overview-panel-body">
+                <form action="/bloodbank/certificate" method="POST" enctype="multipart/form-data" class="cp-form">
+                    <div class="cp-field">
+                        <label for="bbCertFile">Registration certificate file</label>
+                        <input type="file" name="registrationCertificate" id="bbCertFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+                    </div>
+                    <% if (bloodbank.status === 'approved') { %>
+                    <div class="alert alert-warning small py-2">
+                        <i data-lucide="alert-triangle" style="width:14px;height:14px;"></i>
+                        Replacing an approved certificate will reset your status to pending and require admin re-verification.
+                    </div>
+                    <% } %>
+                    <div class="cp-actions">
+                        <button type="submit" class="btn btn-danger">
+                            <i data-lucide="upload" style="width:16px;height:16px;"></i> Upload certificate
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="overview-panel h-100">
+            <div class="overview-panel-head"><h5>Current certificate</h5></div>
+            <div class="overview-panel-body">
+                <% if (certUrl) { %>
+                <div class="bb-cert-preview">
+                    <% if (isPdf) { %>
+                    <div class="bb-cert-pdf">
+                        <i data-lucide="file-text" style="width:48px;height:48px;"></i>
+                        <p class="mb-2">PDF document on file</p>
+                        <a href="<%= certUrl %>" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i data-lucide="external-link" style="width:14px;height:14px;"></i> Open PDF
+                        </a>
+                    </div>
+                    <% } else { %>
+                    <a href="<%= certUrl %>" target="_blank" class="bb-cert-image-link">
+                        <img src="<%= certUrl %>" alt="Registration certificate" loading="lazy">
+                    </a>
+                    <% } %>
+                </div>
+                <% } else { %>
+                <div class="bb-cert-empty">
+                    <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=260&fit=crop&q=80" alt="" loading="lazy">
+                    <h6>No certificate uploaded</h6>
+                    <p class="text-muted small mb-0">Upload your registered blood bank certificate to begin admin verification.</p>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="overview-panel">
+    <div class="overview-panel-head"><h5>Verification checklist</h5></div>
+    <div class="overview-panel-body pt-2">
+        <div class="cp-tip">
+            <img src="https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+            <div>
+                <strong>Official registration document</strong>
+                <p class="small text-muted mb-0">Must show valid blood bank / hospital registration from a recognized authority.</p>
+            </div>
+        </div>
+        <div class="cp-tip">
+            <img src="https://images.unsplash.com/photo-1563986768494-4ccb4962f667?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+            <div>
+                <strong>Clear and readable scan</strong>
+                <p class="small text-muted mb-0">Ensure text, seals, and expiry dates are visible in the upload.</p>
+            </div>
+        </div>
+        <div class="cp-tip mb-0">
+            <img src="https://images.unsplash.com/photo-1633265486064-086b219458ec?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+            <div>
+                <strong>Admin review timeline</strong>
+                <p class="small text-muted mb-0">You'll receive a notification once your blood bank is approved or if changes are needed.</p>
+            </div>
+        </div>
+    </div>
+</div>
+<% } %>

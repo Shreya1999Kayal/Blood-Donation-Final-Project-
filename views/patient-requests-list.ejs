@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Blood Requests — RaktaSetu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/admin-ui.css" rel="stylesheet">
+    <link href="/css/patient-ui.css" rel="stylesheet">
+    <%- include('partials/patient/tailwind-head') %>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="admin-shell pt-shell pt-req-page min-h-screen bg-slate-50">
+
+<%
+function statusLabel(s) {
+    if (s === 'fulfilled') return 'received';
+    return s;
+}
+const reqList = typeof requests !== 'undefined' ? requests : [];
+const activeList = reqList.filter(function(r) { return ['active', 'contacted'].includes(r.status); });
+const contactedList = reqList.filter(function(r) { return r.status === 'contacted'; });
+const receivedList = reqList.filter(function(r) { return ['received', 'fulfilled'].includes(r.status); });
+const liveCount = activeList.length;
+const notifs = notifications || [];
+%>
+
+<header class="pt-req-topbar sticky top-0 z-40 border-b border-rose-100/80 bg-white/90 backdrop-blur-md">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        <div class="flex min-w-0 items-center gap-3">
+            <a href="/dashboard#section-requests" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-red-700 text-white shadow-lg shadow-rose-500/25 no-underline transition hover:scale-105">
+                <i data-lucide="droplets" style="width:20px;height:20px;"></i>
+            </a>
+            <div class="min-w-0">
+                <nav class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    <a href="/dashboard" class="text-slate-500 no-underline hover:text-rose-600">Dashboard</a>
+                    <span>/</span>
+                    <span class="text-rose-600">My requests</span>
+                </nav>
+                <h1 class="truncate text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl">Emergency blood requests</h1>
+            </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="/dashboard#section-messages" class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 no-underline shadow-sm transition hover:border-rose-200 hover:text-rose-700">
+                <i data-lucide="messages-square" style="width:14px;height:14px;"></i>
+                Messages
+            </a>
+            <a href="/dashboard#section-create-request" class="inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-4 py-2 text-xs font-bold text-white no-underline shadow-md shadow-rose-600/30 transition hover:bg-rose-700">
+                <i data-lucide="plus" style="width:14px;height:14px;"></i>
+                New request
+            </a>
+            <%- include('partials/shared/topbar-user', { user }) %>
+        </div>
+    </div>
+</header>
+
+<main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+
+    <div class="req-hero mb-6 pt-hero rounded-2xl overflow-hidden">
+        <div class="req-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1584982751661-6085a089094a?w=1400&h=420&fit=crop&q=85');"></div>
+        <div class="req-hero-overlay"></div>
+        <div class="req-hero-content">
+            <div class="row align-items-end g-3">
+                <div class="col-lg-8">
+                    <span class="req-hero-badge"><span class="pulse-dot"></span> Full request registry</span>
+                    <h2 class="req-hero-title">Track every emergency request</h2>
+                    <p class="req-hero-sub mb-0">Monitor live status, responder contacts, matched donors, medical documents, and mark blood as received — all in one place.</p>
+                </div>
+                <div class="col-lg-4">
+                    <div class="req-hero-meta">
+                        <div><small>Total</small><strong><%= reqList.length %></strong></div>
+                        <div><small>Live</small><strong class="text-danger"><%= liveCount %></strong></div>
+                        <div><small>Received</small><strong class="text-success"><%= receivedList.length %></strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div class="pt-req-kpi">
+            <div class="pt-req-kpi-icon pt-req-kpi-icon--slate"><i data-lucide="clipboard-list" style="width:18px;height:18px;"></i></div>
+            <div>
+                <div class="pt-req-kpi-label">All requests</div>
+                <div class="pt-req-kpi-value"><%= reqList.length %></div>
+            </div>
+        </div>
+        <div class="pt-req-kpi pt-req-kpi--live">
+            <div class="pt-req-kpi-icon pt-req-kpi-icon--rose"><i data-lucide="radio" style="width:18px;height:18px;"></i></div>
+            <div>
+                <div class="pt-req-kpi-label">Live now</div>
+                <div class="pt-req-kpi-value text-rose-600"><%= liveCount %></div>
+            </div>
+        </div>
+        <div class="pt-req-kpi">
+            <div class="pt-req-kpi-icon pt-req-kpi-icon--sky"><i data-lucide="phone-call" style="width:18px;height:18px;"></i></div>
+            <div>
+                <div class="pt-req-kpi-label">Contacted</div>
+                <div class="pt-req-kpi-value text-sky-700"><%= contactedList.length %></div>
+            </div>
+        </div>
+        <div class="pt-req-kpi">
+            <div class="pt-req-kpi-icon pt-req-kpi-icon--green"><i data-lucide="check-circle-2" style="width:18px;height:18px;"></i></div>
+            <div>
+                <div class="pt-req-kpi-label">Blood received</div>
+                <div class="pt-req-kpi-value text-emerald-700"><%= receivedList.length %></div>
+            </div>
+        </div>
+    </div>
+
+    <% if (notifs.length) { %>
+    <div class="mb-6 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm ring-1 ring-slate-900/5">
+        <div class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-rose-50/90 to-white px-4 py-3">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex h-2 w-2 animate-pulse rounded-full bg-rose-500"></span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-600">Live activity</span>
+            </div>
+            <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600"><%= notifs.length %> update<%= notifs.length === 1 ? '' : 's' %></span>
+        </div>
+        <div class="max-h-48 divide-y divide-slate-100 overflow-y-auto" id="notificationList">
+            <% notifs.slice(0, 8).forEach(function(n) { %>
+                <a href="<%= n.link || '/request' %>" class="flex items-start gap-3 px-4 py-3 no-underline transition hover:bg-slate-50">
+                    <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+                        <i data-lucide="<%= n.type === 'contact' ? 'phone' : n.type === 'match' ? 'heart-handshake' : 'bell' %>" style="width:15px;height:15px;"></i>
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-start justify-between gap-2">
+                            <strong class="text-sm text-slate-900"><%= n.title %></strong>
+                            <time class="shrink-0 text-[10px] font-medium text-slate-400"><%= new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %></time>
+                        </div>
+                        <p class="mb-0 mt-0.5 line-clamp-2 text-xs text-slate-500"><%= n.message %></p>
+                    </div>
+                </a>
+            <% }); %>
+        </div>
+    </div>
+    <% } %>
+
+    <div class="overview-panel overflow-hidden rounded-2xl border border-slate-200/80 shadow-sm">
+        <div class="overview-panel-head flex-wrap border-b border-slate-100 bg-white px-4 py-4 sm:px-5">
+            <div>
+                <h5 class="mb-0 text-base font-bold text-slate-900">Request board</h5>
+                <p class="mb-0 text-sm text-slate-500"><span id="reqVisibleCount"><%= reqList.length %></span> of <%= reqList.length %> request(s) shown</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="/dashboard#section-requests" class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 no-underline transition hover:border-rose-200 hover:text-rose-700">
+                    <i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i>
+                    Dashboard view
+                </a>
+            </div>
+        </div>
+
+        <div class="req-toolbar border-b border-slate-100 bg-slate-50/80 px-4 py-3 sm:px-5">
+            <div class="req-search-wrap">
+                <i data-lucide="search" style="width:16px;height:16px;"></i>
+                <input type="search" class="form-control form-control-sm" id="reqSearch" placeholder="Search hospital, blood group, city, contact…" autocomplete="off">
+            </div>
+            <div class="req-filter-group">
+                <span class="req-filter-label">Filter</span>
+                <div class="req-pills" id="reqStatusFilters">
+                    <button type="button" class="req-pill active" data-req-status="all">All</button>
+                    <button type="button" class="req-pill" data-req-status="live">Live</button>
+                    <button type="button" class="req-pill" data-req-status="active">Active</button>
+                    <button type="button" class="req-pill" data-req-status="contacted">Contacted</button>
+                    <button type="button" class="req-pill" data-req-status="closed">Closed</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="overview-panel-body bg-slate-50/50 p-4 sm:p-5" id="reqBoard">
+            <%- include('partials/patient/blood-requests-table', { bloodRequests: reqList, user }) %>
+        </div>
+
+        <div class="req-empty req-empty-filter hidden border-t border-slate-100 bg-white px-4 py-12 text-center" id="reqEmptyFilter">
+            <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-500">
+                <i data-lucide="filter-x" style="width:28px;height:28px;"></i>
+            </div>
+            <h5 class="font-bold text-slate-800">No requests match your filters</h5>
+            <p class="text-sm text-slate-500">Try a different search term or status filter.</p>
+            <button type="button" class="btn btn-outline-danger btn-sm mt-3" id="reqClearFilters">Clear filters</button>
+        </div>
+    </div>
+
+    <% if (!reqList.length) { %>
+    <div class="mt-6 rounded-2xl border border-dashed border-rose-200 bg-gradient-to-br from-rose-50/50 to-white px-6 py-12 text-center">
+        <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-rose-500 shadow-sm ring-1 ring-rose-100">
+            <i data-lucide="heart-pulse" style="width:32px;height:32px;"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-900">No blood requests yet</h3>
+        <p class="mx-auto mt-2 max-w-md text-sm text-slate-500">Post an emergency request to alert verified donors and blood banks in your city.</p>
+        <a href="/dashboard#section-create-request" class="mt-5 inline-flex items-center gap-2 rounded-full bg-rose-600 px-6 py-2.5 text-sm font-bold text-white no-underline shadow-lg shadow-rose-600/25 transition hover:bg-rose-700">
+            <i data-lucide="plus" style="width:16px;height:16px;"></i>
+            Create first request
+        </a>
+    </div>
+    <% } %>
+</main>
+
+<div class="modal fade" id="chatModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable" style="max-width:520px">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-semibold">
+                    <span id="chatWithName">—</span>
+                    <span id="chatPresenceStatus" class="chat-presence is-offline d-block mt-1">Offline</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light" id="chatMessages" style="min-height:300px;max-height:55vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;"></div>
+            <div class="modal-footer bg-white">
+                <form id="chatForm" class="w-100 d-flex gap-2">
+                    <input id="chatInput" class="form-control" placeholder="Type a message…" autocomplete="off" maxlength="2000">
+                    <button class="btn btn-danger px-4" type="submit">Send</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="/js/patient-requests-list.js"></script>
+<script src="/js/chat-presence.js"></script>
+<script>
+    const socket = io({ transports: ['websocket', 'polling'] });
+    const presenceWatcher = window.ChatPresence?.createWatcher(socket);
+    const currentUser = { id: '<%= user._id %>', role: '<%= user.role %>', city: '<%= user.city %>' };
+    socket.emit('join', { userId: currentUser.id, role: currentUser.role, city: currentUser.city });
+    socket.emit('join_city', currentUser.city);
+    socket.emit('join_context', currentUser);
+
+    function pushNotification(html) {
+        const list = document.getElementById('notificationList');
+        if (!list) return;
+        const item = document.createElement('a');
+        item.href = '/request';
+        item.className = 'flex items-start gap-3 px-4 py-3 no-underline transition hover:bg-slate-50 border-b border-slate-100';
+        item.innerHTML = html;
+        list.prepend(item);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    socket.on('notification:new', function(data) {
+        const notificationUserId = data.userId ? data.userId.toString() : null;
+        const forUser = notificationUserId === currentUser.id;
+        const roleMatch = Array.isArray(data.roles) && data.roles.includes(currentUser.role);
+        const cityMatch = data.city && data.city.toLowerCase() === currentUser.city.toLowerCase();
+        const broadcast = !notificationUserId && (!data.roles || data.roles.length === 0) && !data.city;
+        if (!(forUser || roleMatch || cityMatch || broadcast)) return;
+        const time = data.createdAt ? new Date(data.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        pushNotification(
+            '<span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600"><i data-lucide="bell" style="width:15px;height:15px;"></i></span>' +
+            '<div class="min-w-0 flex-1"><div class="flex justify-between gap-2"><strong class="text-sm text-slate-900">' + (data.title || 'Update') + '</strong><time class="text-[10px] text-slate-400">' + time + '</time></div>' +
+            '<p class="mb-0 mt-0.5 text-xs text-slate-500">' + (data.message || '') + '</p></div>'
+        );
+    });
+</script>
+<script>
+(function () {
+    'use strict';
+    const chatModalEl = document.getElementById('chatModal');
+    const chatMessagesEl = document.getElementById('chatMessages');
+    const chatWithNameEl = document.getElementById('chatWithName');
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+    const chatModal = chatModalEl ? new bootstrap.Modal(chatModalEl) : null;
+    let activeChat = null;
+
+    chatModalEl?.addEventListener('hidden.bs.modal', () => {
+        presenceWatcher?.unwatch();
+    });
+
+    function roleDisplay(role) {
+        if (role === 'donor') return 'Donor';
+        if (role === 'bloodbank') return 'Blood bank';
+        return role || 'Contact';
+    }
+
+    function esc(s) {
+        return (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function showChatError(message) {
+        if (window.Swal) Swal.fire({ icon: 'error', title: 'Cannot open chat', text: message || 'Chat error', confirmButtonColor: '#dc3545' });
+        else alert(message);
+    }
+
+    function renderBubble(msg) {
+        const mine = String(msg.fromUserId) === String(currentUser.id);
+        const wrap = document.createElement('div');
+        wrap.className = 'd-flex align-items-end gap-2 ' + (mine ? 'flex-row-reverse' : '');
+        const bubble = document.createElement('div');
+        bubble.className = 'px-3 py-2 rounded-3 ' + (mine ? 'bg-danger text-white' : 'bg-white border text-dark');
+        bubble.style.cssText = 'max-width:78%;word-break:break-word;font-size:.92rem;';
+        const time = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        bubble.innerHTML = '<div style="white-space:pre-wrap;">' + esc(msg.message || msg.text || '') + '</div>' +
+            '<div class="mt-1 ' + (mine ? 'text-white-50' : 'text-muted') + '" style="font-size:.7rem;">' + time + '</div>';
+        wrap.appendChild(bubble);
+        return wrap;
+    }
+
+    function openChat(userId, name, role) {
+        if (!chatModal || !userId) return;
+        if (!/^[a-f0-9]{24}$/i.test(String(userId))) {
+            showChatError('Invalid chat link.');
+            return;
+        }
+        activeChat = { userId: String(userId), name, role, conversationId: null };
+        if (chatWithNameEl) chatWithNameEl.textContent = name + ' · ' + roleDisplay(role);
+        presenceWatcher?.watch(userId, document.getElementById('chatPresenceStatus'));
+        if (chatMessagesEl) chatMessagesEl.innerHTML = '<div class="text-muted small text-center py-4">Loading messages…</div>';
+        chatModal.show();
+        socket.emit('chat:history', { withUserId: userId, limit: 50 }, function(resp) {
+            if (!resp || !resp.ok) {
+                if (chatMessagesEl) chatMessagesEl.innerHTML = '<div class="text-danger small text-center py-4">' + esc(resp?.error || 'Unable to open chat') + '</div>';
+                return;
+            }
+            activeChat.conversationId = resp.conversationId;
+            if (chatMessagesEl) chatMessagesEl.innerHTML = '';
+            if (!resp.messages?.length) {
+                const p = document.createElement('div');
+                p.className = 'text-muted small text-center py-4';
+                p.textContent = 'No messages yet. Say hello!';
+                chatMessagesEl?.appendChild(p);
+            } else {
+                resp.messages.forEach(function(m) { chatMessagesEl?.appendChild(renderBubble(m)); });
+            }
+            if (chatMessagesEl) chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.chat-btn');
+        if (!btn) return;
+        e.preventDefault();
+        openChat(btn.dataset.userId, btn.dataset.userName || 'User', btn.dataset.userRole || 'donor');
+    });
+
+    chatForm?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (!activeChat?.userId) return;
+        const text = (chatInput?.value || '').trim();
+        if (!text) return;
+        const optimistic = renderBubble({ fromUserId: currentUser.id, message: text, createdAt: new Date() });
+        chatMessagesEl?.appendChild(optimistic);
+        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+        socket.emit('chat:send', { toUserId: activeChat.userId, text, conversationId: activeChat.conversationId || undefined }, function(resp) {
+            if (!resp || !resp.ok) { optimistic.remove(); showChatError(resp?.error || 'Failed to send message'); }
+        });
+        if (chatInput) { chatInput.value = ''; chatInput.focus(); }
+    });
+
+    socket.on('chat:message', function(msg) {
+        if (String(msg.fromUserId) === String(currentUser.id)) return;
+        const isActive = activeChat?.userId && (String(msg.fromUserId) === String(activeChat.userId) || String(msg.toUserId) === String(activeChat.userId));
+        if (isActive && chatModalEl?.classList.contains('show')) {
+            chatMessagesEl?.appendChild(renderBubble(msg));
+            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+        }
+    });
+})();
+</script>
+<%- include('partials/shared/help-chatbot', { user }) %>
+</body>
+</html>

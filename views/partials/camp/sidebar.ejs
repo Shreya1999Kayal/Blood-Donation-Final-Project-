@@ -1,0 +1,43 @@
+<%
+const inboxCount = (inbox || []).length;
+const msgNotifs = (notifications || []).filter(function(n) {
+    return n.type === 'message' || n.type === 'contact' || (n.link && String(n.link).indexOf('/chat/') === 0);
+}).length;
+const status = campProfile ? campProfile.status : 'setup';
+const orgName = campProfile ? campProfile.organizationName : user.name;
+%>
+<aside class="admin-sidebar cp-sidebar" id="cpSidebar">
+    <div class="admin-sidebar-brand">
+        <div class="d-flex align-items-start gap-3">
+            <div class="logo"><i data-lucide="tent" style="width:22px;height:22px;color:#fff;"></i></div>
+            <div>
+                <h1>RaktaSetu</h1>
+                <p class="cp-portal-subtitle">Coordinate donation camps</p>
+                <span class="cp-portal-tag">Camp portal</span>
+            </div>
+        </div>
+    </div>
+    <nav class="admin-nav">
+        <a href="#" class="admin-nav-link active" data-cp-section="overview" data-cp-label="Overview"><i data-lucide="layout-dashboard" style="width:18px;height:18px;"></i> Overview</a>
+        <a href="#" class="admin-nav-link" data-cp-section="donors" data-cp-label="Donor Directory"><i data-lucide="users" style="width:18px;height:18px;"></i> Donors <span class="badge bg-light text-dark ms-1"><%= (campDonors || []).length %></span></a>
+        <a href="#" class="admin-nav-link" data-cp-section="bloodbanks" data-cp-label="Blood Banks"><i data-lucide="building-2" style="width:18px;height:18px;"></i> Blood banks <span class="badge bg-light text-dark ms-1"><%= (campBloodBanks || []).length %></span></a>
+        <a href="#" class="admin-nav-link" data-cp-section="organize" data-cp-label="Organize Camp"><i data-lucide="calendar-plus" style="width:18px;height:18px;"></i> Organize camp</a>
+        <a href="#" class="admin-nav-link" data-cp-section="history" data-cp-label="Camp History"><i data-lucide="history" style="width:18px;height:18px;"></i> Camp history</a>
+        <a href="#" class="admin-nav-link" data-cp-section="payments" data-cp-label="Payment History"><i data-lucide="receipt" style="width:18px;height:18px;"></i> Payments</a>
+        <a href="#" class="admin-nav-link" data-cp-section="messages" data-cp-label="Messages"><i data-lucide="messages-square" style="width:18px;height:18px;"></i> Messages <% if (inboxCount > 0) { %><span class="badge-count"><%= inboxCount %></span><% } %></a>
+        <a href="#" class="admin-nav-link" data-cp-section="notifications" data-cp-label="Notifications"><i data-lucide="bell" style="width:18px;height:18px;"></i> Notifications <% if (msgNotifs > 0) { %><span class="badge-count"><%= msgNotifs %></span><% } %></a>
+        <a href="#" class="admin-nav-link" data-cp-section="profile" data-cp-label="Profile"><i data-lucide="user-circle" style="width:18px;height:18px;"></i> Profile</a>
+        <a href="#" class="admin-nav-link" data-cp-section="feedback" data-cp-label="Feedback"><i data-lucide="message-square-heart" style="width:18px;height:18px;"></i> Feedback</a>
+        <a href="#" class="admin-nav-link" data-cp-section="password" data-cp-label="Change Password"><i data-lucide="shield-check" style="width:18px;height:18px;"></i> Password</a>
+    </nav>
+    <div class="admin-sidebar-footer">
+        <div class="admin-profile-chip">
+            <%- include('../shared/user-avatar', { user, avatarSize: 'sm' }) %>
+            <div class="admin-profile-meta">
+                <strong class="text-truncate d-block"><%= orgName %></strong>
+                <span class="text-truncate d-block text-capitalize"><%= status %></span>
+            </div>
+        </div>
+        <a href="/auth/logout" class="admin-logout-link"><i data-lucide="log-out" style="width:16px;height:16px;"></i> Sign out</a>
+    </div>
+</aside>

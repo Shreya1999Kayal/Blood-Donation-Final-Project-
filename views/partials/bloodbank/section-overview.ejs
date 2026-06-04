@@ -1,0 +1,229 @@
+<%
+const requests = bloodRequests || [];
+const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const activeList = requests.filter(function(r) { return ['active', 'contacted'].includes(r.status); });
+const criticalList = requests.filter(function(r) {
+    return String(r.urgencyLevel).toLowerCase() === 'critical' && !['received', 'fulfilled', 'cancelled'].includes(r.status);
+});
+const totalStock = bloodbank && bloodbank.inventory
+    ? bloodGroups.reduce(function(sum, g) { return sum + Number(bloodbank.inventory[g] || 0); }, 0)
+    : 0;
+const lowStockGroups = bloodbank && bloodbank.inventory
+    ? bloodGroups.filter(function(g) { return Number(bloodbank.inventory[g] || 0) <= 5; })
+    : [];
+const contacted = userAnalytics ? userAnalytics.requestsContacted : 0;
+const fulfilled = userAnalytics ? userAnalytics.fulfilledRequests : 0;
+const hour = new Date().getHours();
+const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+const hospitalName = bloodbank ? bloodbank.hospitalName : user.name;
+
+const kpis = [
+    { label: 'Total stock', value: totalStock + ' units', icon: 'flask-conical', tone: 'rose', img: 'https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=400&h=260&fit=crop&q=80' },
+    { label: 'Live emergencies', value: activeList.length, icon: 'siren', tone: 'red', img: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=400&h=260&fit=crop&q=80' },
+    { label: 'Critical cases', value: criticalList.length, icon: 'alert-triangle', tone: 'amber', img: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=400&h=260&fit=crop&q=80' },
+    { label: 'Patients contacted', value: contacted, icon: 'phone-call', tone: 'blue', img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=260&fit=crop&q=80' },
+    { label: 'Requests fulfilled', value: fulfilled, icon: 'check-circle', tone: 'green', img: 'https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=400&h=260&fit=crop&q=80' },
+    { label: 'Verification', value: bloodbank ? bloodbank.status : 'setup', icon: 'badge-check', tone: bloodbank && bloodbank.status === 'approved' ? 'green' : 'slate', img: 'https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=400&h=260&fit=crop&q=80' },
+];
+%>
+
+<div class="overview-hero mb-4 bb-hero">
+    <div class="overview-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="overview-hero-overlay"></div>
+    <div class="overview-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="overview-hero-badge"><span class="pulse-dot"></span> <%= bloodbank && bloodbank.status === 'approved' ? 'Verified & operational' : 'Registration in progress' %></span>
+                <h3 class="overview-hero-title"><%= greeting %>, <%= hospitalName %></h3>
+                <p class="overview-hero-sub mb-0">Manage hospital inventory, respond to emergency blood requests, and coordinate with patients across <%= user.city %>.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="overview-hero-aside">
+                    <%- include('../shared/user-avatar', { user, avatarSize: 'lg', avatarClass: 'overview-hero-avatar' }) %>
+                    <div class="overview-hero-meta">
+                    <div><small>Blood stock</small><strong><%= totalStock %> units</strong></div>
+                    <div><small>Live cases</small><strong class="text-danger"><%= activeList.length %></strong></div>
+                    <div><small>Plan</small><strong class="text-capitalize"><%= (user.subscription && user.subscription.plan) || 'free' %></strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (!bloodbank) { %>
+<div class="overview-action-banner mb-4">
+    <div class="overview-action-banner-icon">
+        <img src="https://images.unsplash.com/photo-1584982751661-6085a089094a?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
+    </div>
+    <div class="flex-grow-1">
+        <h6 class="mb-1">Complete your blood bank registration</h6>
+        <p class="mb-0 small text-muted">Upload your hospital certificate and profile details to begin verification.</p>
+    </div>
+    <a href="/bloodbank/setup" class="btn btn-danger btn-sm">Complete setup</a>
+</div>
+<% } else if (bloodbank.status === 'pending') { %>
+<div class="overview-action-banner mb-4">
+    <div class="overview-action-banner-icon">
+        <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
+    </div>
+    <div class="flex-grow-1">
+        <h6 class="mb-1">Awaiting admin verification</h6>
+        <p class="mb-0 small text-muted">Your registration is under review. You can update inventory after approval.</p>
+    </div>
+    <a href="#" class="btn btn-outline-danger btn-sm" data-bb-section="certificate" data-bb-label="Registration Certificate">View certificate</a>
+</div>
+<% } else if (bloodbank.status === 'rejected') { %>
+<div class="overview-action-banner mb-4 border-danger">
+    <div class="overview-action-banner-icon">
+        <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
+    </div>
+    <div class="flex-grow-1">
+        <h6 class="mb-1 text-danger">Registration not approved</h6>
+        <p class="mb-0 small text-muted">Update your certificate and contact support if you believe this is an error.</p>
+    </div>
+    <a href="#" class="btn btn-danger btn-sm" data-bb-section="certificate" data-bb-label="Registration Certificate">Update certificate</a>
+</div>
+<% } else if (lowStockGroups.length > 0) { %>
+<div class="overview-action-banner mb-4">
+    <div class="overview-action-banner-icon">
+        <img src="https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
+    </div>
+    <div class="flex-grow-1">
+        <h6 class="mb-1">Low stock alert</h6>
+        <p class="mb-0 small text-muted"><%= lowStockGroups.join(', ') %> — at or below 5 units. Update inventory to stay visible to patients.</p>
+    </div>
+    <a href="#" class="btn btn-danger btn-sm" data-bb-section="inventory" data-bb-label="Inventory">Update stock</a>
+</div>
+<% } %>
+
+<div class="row g-3 mb-4">
+    <% kpis.forEach(function(kpi) { %>
+    <div class="col-sm-6 col-xl-4">
+        <div class="overview-kpi overview-kpi-<%= kpi.tone %>">
+            <div class="overview-kpi-visual">
+                <img src="<%= kpi.img %>" alt="" loading="lazy">
+                <div class="overview-kpi-visual-shade"></div>
+            </div>
+            <div class="overview-kpi-body">
+                <div class="overview-kpi-icon"><i data-lucide="<%= kpi.icon %>" style="width:20px;height:20px;"></i></div>
+                <div class="overview-kpi-label"><%= kpi.label %></div>
+                <div class="overview-kpi-value text-capitalize"><%= kpi.value %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel h-100">
+            <div class="overview-panel-head">
+                <div>
+                    <h5>Quick actions</h5>
+                    <p class="text-muted small mb-0">Jump to the most common hospital workflows</p>
+                </div>
+            </div>
+            <div class="overview-panel-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <a href="#" class="bb-quick-action" data-bb-section="requests" data-bb-label="Emergency Requests">
+                            <img src="https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
+                            <div>
+                                <strong>Respond to emergencies</strong>
+                                <p class="small text-muted mb-0">View live patient requests and record contact.</p>
+                            </div>
+                            <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="#" class="bb-quick-action" data-bb-section="inventory" data-bb-label="Inventory">
+                            <img src="https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
+                            <div>
+                                <strong>Update inventory</strong>
+                                <p class="small text-muted mb-0">Keep blood group stock accurate for patient matching.</p>
+                            </div>
+                            <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="#" class="bb-quick-action" data-bb-section="messages" data-bb-label="Messages">
+                            <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
+                            <div>
+                                <strong>Open messages</strong>
+                                <p class="small text-muted mb-0">Chat with patients who need blood coordination.</p>
+                            </div>
+                            <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="#" class="bb-quick-action" data-bb-section="history" data-bb-label="Records">
+                            <img src="https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
+                            <div>
+                                <strong>Blood issue records</strong>
+                                <p class="small text-muted mb-0">See patients who received blood from your hospital.</p>
+                            </div>
+                            <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="#" class="bb-quick-action" data-bb-section="feedback" data-bb-label="Feedback">
+                            <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
+                            <div>
+                                <strong>Submit feedback</strong>
+                                <p class="small text-muted mb-0">Share reviews about RaktaSetu and emergency coordination.</p>
+                            </div>
+                            <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="overview-panel mb-4">
+            <div class="overview-panel-head"><h5>Hospital snapshot</h5></div>
+            <div class="overview-panel-body pt-2">
+                <div class="bb-snapshot-row">
+                    <span>Hospital</span><strong><%= hospitalName %></strong>
+                </div>
+                <div class="bb-snapshot-row">
+                    <span>City</span><strong><%= user.city %></strong>
+                </div>
+                <div class="bb-snapshot-row">
+                    <span>Phone</span><strong><a href="tel:<%= user.phone %>"><%= user.phone %></a></strong>
+                </div>
+                <div class="bb-snapshot-row">
+                    <span>Status</span><strong class="text-capitalize bb-status-text-<%= bloodbank ? bloodbank.status : 'setup' %>"><%= bloodbank ? bloodbank.status : 'Not registered' %></strong>
+                </div>
+                <% if (canExportData) { %>
+                <div class="mt-3">
+                    <a href="/export/my-data" class="btn btn-outline-dark btn-sm w-100">
+                        <i data-lucide="download" style="width:14px;height:14px;"></i> Download report (PDF)
+                    </a>
+                </div>
+                <% } %>
+            </div>
+        </div>
+        <% if (bloodbank && bloodbank.inventory && bloodbank.status === 'approved') { %>
+        <div class="overview-panel">
+            <div class="overview-panel-head"><h5>Stock by group</h5></div>
+            <div class="overview-panel-body pt-0">
+                <div class="bb-mini-inventory">
+                    <% bloodGroups.forEach(function(g) {
+                        const count = Number(bloodbank.inventory[g] || 0);
+                        const maxVal = Math.max.apply(null, bloodGroups.map(function(x) { return Number(bloodbank.inventory[x] || 0); }).concat([1]));
+                        const pct = Math.round((count / maxVal) * 100);
+                    %>
+                    <div class="bb-mini-inv-row">
+                        <span class="overview-blood-badge"><%= g %></span>
+                        <div class="bb-mini-inv-bar"><span style="width:<%= pct %>%" class="bb-bar-<%= count <= 0 ? 'critical' : count <= 5 ? 'low' : 'ok' %>"></span></div>
+                        <strong><%= count %></strong>
+                    </div>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+        <% } %>
+    </div>
+</div>

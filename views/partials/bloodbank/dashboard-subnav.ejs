@@ -1,0 +1,16 @@
+<nav class="dashboard-subnav" aria-label="Dashboard sections">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="dashboard-subnav-scroll">
+            <a href="/" class="dashboard-subnav-link">Home</a>
+            <a href="#" class="dashboard-subnav-link active dashboard-section-link admin-nav-link" data-bb-section="overview" data-bb-label="Overview">Overview</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-bb-section="requests" data-bb-label="Emergency Requests">Requests<% if (activeRequests > 0) { %> <span class="badge bg-danger rounded-pill"><%= activeRequests %></span><% } %></a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-bb-section="inventory" data-bb-label="Inventory">Inventory</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-bb-section="profile" data-bb-label="Hospital Profile">Profile</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-bb-section="messages" data-bb-label="Messages">Messages</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-bb-section="notifications" data-bb-label="Notifications">Alerts</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-bb-section="subscription" data-bb-label="Plans & Billing">Plans</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-bb-section="history" data-bb-label="Records">Records</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-bb-section="feedback" data-bb-label="Feedback">Feedback</a>
+        </div>
+    </div>
+</nav>

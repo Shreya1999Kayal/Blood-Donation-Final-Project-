@@ -1,0 +1,48 @@
+<section class="home-carousel" id="homeCarousel" aria-label="Featured highlights" tabindex="0">
+    <div class="home-carousel-track" id="homeCarouselTrack">
+        <% (carouselSlides || []).forEach(function(slide, index) { %>
+            <div class="home-carousel-slide">
+                <div class="home-carousel-media-wrap">
+                    <% if (slide.type === 'video') { %>
+                        <video class="home-carousel-media home-carousel-media--video" src="<%= slide.src %>" muted loop playsinline preload="auto" data-carousel-video></video>
+                    <% } else { %>
+                        <img class="home-carousel-media home-carousel-media--image" src="<%= slide.src %>" alt="<%= slide.title || 'RaktaSetu highlight' %>" loading="<%= index === 0 ? 'eager' : 'lazy' %>">
+                    <% } %>
+                </div>
+                <div class="home-carousel-overlay"></div>
+                <div class="home-carousel-content">
+                    <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+                        <span class="home-badge mb-4">
+                            <span class="inline-block w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+                            RaktaSetu Initiative
+                        </span>
+                        <h1 class="text-white font-extrabold text-3xl sm:text-4xl lg:text-5xl max-w-2xl leading-tight tracking-tight"><%= slide.title %></h1>
+                        <p class="text-slate-200 text-base sm:text-lg mt-4 max-w-xl"><%= slide.subtitle %></p>
+                        <div class="flex flex-wrap gap-3 mt-8">
+                            <a href="/auth/register?role=donor" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm no-underline shadow-lg shadow-brand-600/30 transition-colors">
+                                <i data-lucide="heart" style="width:18px;height:18px;"></i>
+                                Become a Donor
+                            </a>
+                            <a href="#find-blood" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/25 text-white font-bold text-sm no-underline transition-colors">
+                                <i data-lucide="search" style="width:18px;height:18px;"></i>
+                                Find Blood
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+
+    <% if ((carouselSlides || []).length > 0) { %>
+        <button type="button" class="home-carousel-btn prev" id="homeCarouselPrev" aria-label="Previous slide">
+            <i data-lucide="chevron-left" style="width:22px;height:22px;"></i>
+        </button>
+        <button type="button" class="home-carousel-btn next" id="homeCarouselNext" aria-label="Next slide">
+            <i data-lucide="chevron-right" style="width:22px;height:22px;"></i>
+        </button>
+        <% if (carouselSlides.length > 1) { %>
+            <div class="home-carousel-dots" id="homeCarouselDots"></div>
+        <% } %>
+    <% } %>
+</section>

@@ -1,0 +1,56 @@
+<%
+const aboutImg = typeof aboutImageSrc !== 'undefined' && aboutImageSrc
+    ? aboutImageSrc
+    : 'https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=900&h=700&fit=crop&q=85';
+%>
+<section class="home-section" id="about">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <div>
+                <span class="home-badge">About RaktaSetu</span>
+                <h2 class="home-section-title mt-4">Bridging donors, blood banks, and patients when every minute counts</h2>
+                <p class="home-section-lead">
+                    RaktaSetu is a national blood coordination platform inspired by public health initiatives. We connect verified donors, licensed blood banks, patients, and donation camps through real-time matching, secure verification, and transparent availability data.
+                </p>
+                <ul class="mt-8 space-y-4">
+                    <li class="flex items-start gap-3">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-lg bg-brand-100 text-brand-700 flex items-center justify-center">
+                            <i data-lucide="shield-check" style="width:18px;height:18px;"></i>
+                        </span>
+                        <div>
+                            <strong class="block text-slate-900">Verified network</strong>
+                            <span class="text-slate-600 text-sm">Donors and blood banks undergo document verification before going live on the platform.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-lg bg-brand-100 text-brand-700 flex items-center justify-center">
+                            <i data-lucide="zap" style="width:18px;height:18px;"></i>
+                        </span>
+                        <div>
+                            <strong class="block text-slate-900">Real-time coordination</strong>
+                            <span class="text-slate-600 text-sm">Emergency requests, instant notifications, and live chat between verified stakeholders.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-lg bg-brand-100 text-brand-700 flex items-center justify-center">
+                            <i data-lucide="map-pin" style="width:18px;height:18px;"></i>
+                        </span>
+                        <div>
+                            <strong class="block text-slate-900">Location-aware matching</strong>
+                            <span class="text-slate-600 text-sm">Find the nearest compatible donors and blood banks based on city and blood group.</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="relative">
+                <div class="rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/15 border border-slate-200">
+                    <img src="<%= aboutImg %>" alt="Blood donation coordination" class="w-full h-auto block" loading="lazy">
+                </div>
+                <div class="absolute -bottom-6 -left-4 sm:left-6 bg-white rounded-2xl shadow-xl border border-slate-100 p-5 max-w-xs">
+                    <div class="text-brand-600 font-extrabold text-2xl">24×7</div>
+                    <div class="text-slate-600 text-sm font-semibold mt-1">Emergency blood request coordination across India</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

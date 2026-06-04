@@ -1,0 +1,128 @@
+<%
+const roleLabel = feedbackRoleLabels && feedbackRoleLabels[user.role]
+    ? feedbackRoleLabels[user.role]
+    : 'User';
+const myFeedback = userFeedback || [];
+const categories = feedbackCategoryLabels || {};
+const prefix = typeof feedbackPrefix !== 'undefined' ? feedbackPrefix : 'fb';
+%>
+
+<div class="fb-hero mb-4">
+    <div class="fb-hero-bg"></div>
+    <div class="fb-hero-overlay"></div>
+    <div class="fb-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="fb-hero-badge"><i data-lucide="message-square-heart" style="width:14px;height:14px;"></i> Your voice matters</span>
+                <h3 class="fb-hero-title">Feedback & reviews</h3>
+                <p class="fb-hero-sub mb-0">Share your experience as a <%= roleLabel.toLowerCase() %>. Rate RaktaSetu, describe what worked well<% if (user.role === 'bloodbank') { %>, and optionally attach one photo from hospital operations or patient coordination<% } else { %>, and optionally attach one photo from camps or coordination<% } %>.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="fb-hero-meta">
+                    <div><small>Your submissions</small><strong><%= myFeedback.length %></strong></div>
+                    <div><small>Photo</small><strong>Optional · 1 max</strong></div>
+                    <div><small>Status</small><strong class="text-success">Open</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="overview-panel fb-form-panel">
+            <div class="overview-panel-head">
+                <div>
+                    <h5 class="mb-0">Submit feedback</h5>
+                    <p class="text-muted small mb-0">Reviews are visible to admins immediately and may be published on the platform after moderation.</p>
+                </div>
+            </div>
+            <div class="overview-panel-body">
+                <form action="/feedback" method="POST" enctype="multipart/form-data" class="fb-form" id="<%= prefix %>FeedbackForm">
+                    <div class="fb-field">
+                        <label>Overall rating <span class="text-danger">*</span></label>
+                        <div class="fb-star-rating" data-fb-stars>
+                            <input type="hidden" name="rating" value="" required data-fb-rating-input>
+                            <% for (let star = 1; star <= 5; star += 1) { %>
+                                <button type="button" class="fb-star" data-value="<%= star %>" aria-label="<%= star %> star<%= star > 1 ? 's' : '' %>">
+                                    <i data-lucide="star" style="width:22px;height:22px;"></i>
+                                </button>
+                            <% } %>
+                            <span class="fb-star-label text-muted small ms-2" data-fb-star-label>Select a rating</span>
+                        </div>
+                    </div>
+
+                    <div class="fb-field">
+                        <label for="<%= prefix %>Category">Category <span class="text-danger">*</span></label>
+                        <select name="category" id="<%= prefix %>Category" class="form-select" required>
+                            <option value="">Choose a topic…</option>
+                            <% Object.keys(categories).forEach(function(key) { %>
+                                <option value="<%= key %>"><%= categories[key] %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <div class="fb-field">
+                        <label for="<%= prefix %>Review">Your review <span class="text-danger">*</span></label>
+                        <textarea name="reviewText" id="<%= prefix %>Review" class="form-control" rows="5" minlength="10" maxlength="2000" required placeholder="Tell us about your experience — matching speed, communication, camp organization, verification, etc."></textarea>
+                        <div class="form-text">Minimum 10 characters. Be respectful and specific.</div>
+                    </div>
+
+                    <div class="fb-field">
+                        <label for="<%= prefix %>Photos">Photo <span class="text-muted">(optional)</span></label>
+                        <input type="file" name="photos" id="<%= prefix %>Photos" class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" data-fb-photo-input>
+                        <div class="form-text">JPG, PNG, or WEBP — max 5 MB.</div>
+                        <div class="fb-photo-preview row g-2 mt-2" data-fb-photo-preview hidden></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success px-4">
+                        <i data-lucide="send" style="width:16px;height:16px;"></i> Submit feedback
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="overview-panel h-100">
+            <div class="overview-panel-head">
+                <div>
+                    <h5 class="mb-0">Your previous feedback</h5>
+                    <p class="text-muted small mb-0"><%= myFeedback.length ? 'Track status of your submissions.' : 'No feedback submitted yet.' %></p>
+                </div>
+            </div>
+            <div class="overview-panel-body fb-history">
+                <% if (!myFeedback.length) { %>
+                    <div class="fb-empty">
+                        <i data-lucide="inbox" style="width:36px;height:36px;"></i>
+                        <p class="mb-0">Once you submit a review, it will appear here with its moderation status.</p>
+                    </div>
+                <% } else { %>
+                    <% myFeedback.forEach(function(item) { %>
+                        <article class="fb-history-item">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <div class="fb-history-stars" aria-label="<%= item.rating %> out of 5 stars">
+                                    <% for (let s = 1; s <= 5; s += 1) { %>
+                                        <i data-lucide="star" class="<%= s <= item.rating ? 'fb-star-filled' : 'fb-star-empty' %>" style="width:14px;height:14px;"></i>
+                                    <% } %>
+                                </div>
+                                <span class="badge <%= item.status === 'published' ? 'bg-success' : (item.status === 'hidden' ? 'bg-secondary' : 'bg-warning text-dark') %>"><%= item.status %></span>
+                            </div>
+                            <div class="small text-muted mb-1"><%= categories[item.category] || item.category %> · <%= new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %></div>
+                            <p class="fb-history-text mb-2"><%= item.reviewText %></p>
+                            <% if (item.photoUrls && item.photoUrls.length) { %>
+                                <div class="fb-history-photos">
+                                    <% item.photoUrls.forEach(function(url) { %>
+                                        <a href="<%= url %>" target="_blank" rel="noopener" class="fb-history-photo">
+                                            <img src="<%= url %>" alt="Feedback photo" loading="lazy">
+                                        </a>
+                                    <% }); %>
+                                </div>
+                            <% } %>
+                        </article>
+                    <% }); %>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>

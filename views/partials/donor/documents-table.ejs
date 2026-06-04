@@ -1,0 +1,91 @@
+<%
+const myDocs = donorProfile && donorProfile.medicalReports ? donorProfile.medicalReports : {};
+const docRows = [
+    { key: 'bloodGroupReportUrl', label: 'Blood group report', desc: 'Official blood group certificate', icon: 'droplets' },
+    { key: 'bloodTestReportUrl', label: 'Blood test report', desc: 'Recent lab results', icon: 'flask-conical' },
+    { key: 'fitnessCertificateUrl', label: 'Fitness certificate', desc: 'Medical fitness for donation', icon: 'heart-pulse' },
+    { key: 'identityProofUrl', label: 'Identity proof', desc: 'Government-issued ID', icon: 'badge-check' },
+];
+const uploadedCount = docRows.filter(function(d) { return myDocs[d.key]; }).length;
+const progressPct = Math.round((uploadedCount / docRows.length) * 100);
+const profileStatus = donorProfile ? donorProfile.status : 'not registered';
+const statusClass = profileStatus === 'approved' ? 'is-approved' : profileStatus === 'rejected' ? 'is-rejected' : profileStatus === 'pending' ? 'is-pending' : 'is-setup';
+%>
+
+<div class="dn-doc-registry">
+    <div class="dn-doc-registry-header">
+        <div class="dn-doc-registry-intro">
+            <span class="dn-doc-registry-eyebrow">
+                <i data-lucide="folder-lock" style="width:14px;height:14px;"></i>
+                Secure document vault
+            </span>
+            <h4 class="dn-doc-registry-title">Uploaded medical documents</h4>
+            <p class="dn-doc-registry-sub">All four documents are required before admin verification can begin.</p>
+        </div>
+        <div class="dn-doc-registry-stats">
+            <div class="dn-doc-progress-ring" style="--dn-doc-pct: <%= progressPct %>;">
+                <svg viewBox="0 0 36 36" aria-hidden="true">
+                    <path class="dn-doc-progress-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                    <path class="dn-doc-progress-fill" stroke-dasharray="<%= progressPct %>, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                </svg>
+                <div class="dn-doc-progress-label">
+                    <strong><%= uploadedCount %><span class="dn-doc-progress-of">/<%= docRows.length %></span></strong>
+                    <small>uploaded</small>
+                </div>
+            </div>
+            <div class="dn-doc-verification-pill <%= statusClass %>">
+                <span class="dn-doc-verification-dot"></span>
+                <span class="text-capitalize"><%= profileStatus %></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="dn-doc-registry-grid">
+        <% docRows.forEach(function(doc, index) {
+            const url = myDocs[doc.key];
+            const hasFile = !!url;
+        %>
+        <article class="dn-doc-card <%= hasFile ? 'is-uploaded' : 'is-missing' %>">
+            <div class="dn-doc-card-top">
+                <div class="dn-doc-card-icon">
+                    <i data-lucide="<%= doc.icon %>" style="width:18px;height:18px;"></i>
+                </div>
+                <span class="dn-doc-card-index"><%= String(index + 1).padStart(2, '0') %></span>
+            </div>
+            <div class="dn-doc-card-body">
+                <h5 class="dn-doc-card-title"><%= doc.label %></h5>
+                <p class="dn-doc-card-desc"><%= doc.desc %></p>
+            </div>
+            <div class="dn-doc-card-footer">
+                <% if (hasFile) { %>
+                <span class="dn-doc-status dn-doc-status--ok">
+                    <i data-lucide="check-circle-2" style="width:14px;height:14px;"></i> Uploaded
+                </span>
+                <a href="<%= docUrl(url) %>" target="_blank" rel="noopener" class="dn-doc-view-btn">
+                    <i data-lucide="external-link" style="width:14px;height:14px;"></i> View file
+                </a>
+                <% } else { %>
+                <span class="dn-doc-status dn-doc-status--missing">
+                    <i data-lucide="alert-circle" style="width:14px;height:14px;"></i> Required
+                </span>
+                <span class="dn-doc-pending-hint">Use the form to upload</span>
+                <% } %>
+            </div>
+        </article>
+        <% }); %>
+    </div>
+
+    <div class="dn-doc-registry-footer">
+        <div class="dn-doc-registry-note">
+            <i data-lucide="shield-check" style="width:16px;height:16px;"></i>
+            <span>Documents are encrypted in transit and reviewed only by verified RaktaSetu admins.</span>
+        </div>
+        <% if (uploadedCount < docRows.length) { %>
+        <span class="dn-doc-registry-action"><%= docRows.length - uploadedCount %> document<%= (docRows.length - uploadedCount) !== 1 ? 's' : '' %> remaining</span>
+        <% } else if (profileStatus === 'pending') { %>
+        <span class="dn-doc-registry-action is-complete">All documents submitted — awaiting review</span>
+        <% } else if (profileStatus === 'approved') { %>
+        <span class="dn-doc-registry-action is-complete">Verification complete</span>
+        <% } %>
+    </div>
+</div>

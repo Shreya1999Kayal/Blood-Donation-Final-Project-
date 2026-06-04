@@ -1,0 +1,210 @@
+<%
+function bannerForStatus(status) {
+    if (status === 'approved') return 'https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=600&h=200&fit=crop&q=80';
+    if (status === 'rejected') return 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&h=200&fit=crop&q=80';
+    return 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&h=200&fit=crop&q=80';
+}
+function initials(name) {
+    if (!name) return '?';
+    return name.split(' ').map(function(p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
+}
+function isPdfUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    return /\.pdf($|\?|#)/i.test(url) || (url.includes('cloudinary.com') && url.includes('/raw/upload/'));
+}
+function docSlots(docs) {
+    return [
+        { key: 'bloodGroupReportUrl', label: 'Blood group', icon: 'droplets' },
+        { key: 'bloodTestReportUrl', label: 'Blood test', icon: 'flask-conical' },
+        { key: 'fitnessCertificateUrl', label: 'Fitness', icon: 'heart-pulse' },
+        { key: 'identityProofUrl', label: 'ID proof', icon: 'id-card' },
+    ];
+}
+%>
+
+<div class="don-board" id="donBoard">
+    <% if (allDonors && allDonors.length) { %>
+        <% allDonors.forEach(function(d) {
+            const user = d.userId || {};
+            const docs = d.medicalReports || {};
+            const allDocSlots = docSlots(docs);
+            const uploadedDocs = allDocSlots.filter(function(doc) { return docs && docs[doc.key]; });
+            const eligKey = donorEligibilityKey(d);
+            const searchText = [user.name, user.email, user.phone, user.city, d.bloodGroup].filter(Boolean).join(' ').toLowerCase();
+            const ai = d.aiRiskAnalysis || {};
+        %>
+        <article
+            class="don-card don-card-<%= d.status %>"
+            data-donor-item
+            data-status="<%= d.status %>"
+            data-elig="<%= eligKey %>"
+            data-search="<%= searchText.replace(/"/g, '') %>"
+        >
+            <div class="don-card-top">
+                <div class="don-card-cover">
+                    <img src="<%= bannerForStatus(d.status) %>" alt="" loading="lazy">
+                    <div class="don-card-cover-shade"></div>
+                </div>
+                <div class="don-card-identity">
+                    <%- include('../shared/card-avatar', { contactUser: user, cardAvatarClass: 'don-card-avatar' }) %>
+                    <div class="don-card-identity-main">
+                        <span class="don-card-blood"><%= d.bloodGroup %></span>
+                        <div class="don-card-top-badges">
+                            <span class="don-status-badge <%= d.status %>"><%= d.status %></span>
+                            <% if (user.donorVerificationFeePaid) { %>
+                            <span class="don-fee-badge"><i data-lucide="badge-check" style="width:11px;height:11px;"></i> Fee paid</span>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="don-card-body">
+                <div class="don-card-head">
+                    <div>
+                        <h6 class="don-name"><%= user.name || 'Unknown donor' %></h6>
+                        <p class="don-email mb-0"><%= user.email || '—' %></p>
+                    </div>
+                    <span class="badge bg-<%= donorEligibilityBadge(d) %> don-elig-badge"><%= donorEligibilityLabel(d) %></span>
+                </div>
+
+                <div class="don-meta-grid">
+                    <div class="don-meta-item">
+                        <i data-lucide="phone" style="width:14px;height:14px;"></i>
+                        <div><small>Phone</small><span><% if (user.phone) { %><a href="tel:<%= user.phone %>"><%= user.phone %></a><% } else { %>—<% } %></span></div>
+                    </div>
+                    <div class="don-meta-item">
+                        <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+                        <div><small>City</small><span><%= user.city || '—' %></span></div>
+                    </div>
+                    <div class="don-meta-item">
+                        <i data-lucide="calendar" style="width:14px;height:14px;"></i>
+                        <div><small>Registered</small><span><%= new Date(d.createdAt).toLocaleDateString([], { dateStyle: 'medium' }) %></span></div>
+                    </div>
+                    <div class="don-meta-item">
+                        <i data-lucide="activity" style="width:14px;height:14px;"></i>
+                        <div><small>Responses</small><span><%= d.responseCount || 0 %> emergency<%= (d.responseCount || 0) !== 1 ? 'ies' : 'y' %></span></div>
+                    </div>
+                </div>
+
+                <% if (ai.eligibility && ai.eligibility !== 'Pending') { %>
+                <div class="don-ai-panel <%= ai.eligibility === 'Recommended' ? 'don-ai-ok' : 'don-ai-warn' %>">
+                    <div class="don-ai-head">
+                        <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
+                        AI screening: <strong><%= ai.eligibility %></strong>
+                        <% if (ai.riskScore != null) { %><span class="ms-1 text-muted">(score <%= ai.riskScore %>)</span><% } %>
+                    </div>
+                    <% if (ai.detectedDiseases && ai.detectedDiseases.length) { %>
+                    <p class="small mb-0 text-muted">Flags: <%= ai.detectedDiseases.join(', ') %></p>
+                    <% } %>
+                    <% if (ai.bloodGroupMismatch) { %>
+                    <p class="small mb-0 text-danger">Blood group mismatch detected in documents.</p>
+                    <% } %>
+                </div>
+                <% } %>
+
+                <div class="don-docs-section">
+                    <div class="don-docs-head">
+                        <i data-lucide="folder-open" style="width:14px;height:14px;"></i>
+                        Medical documents
+                        <span class="badge bg-light text-dark border"><%= uploadedDocs.length %>/4</span>
+                    </div>
+                    <% if (uploadedDocs.length) { %>
+                    <div class="don-docs-grid">
+                        <% allDocSlots.forEach(function(doc) {
+                            const rawUrl = docs[doc.key];
+                            const fileUrl = rawUrl ? docUrl(rawUrl) : null;
+                            const isPdf = fileUrl && isPdfUrl(fileUrl);
+                        %>
+                        <% if (fileUrl) { %>
+                        <a href="<%= fileUrl %>" target="_blank" rel="noopener" class="don-doc-tile" title="Open <%= doc.label %>">
+                            <div class="don-doc-preview<%= isPdf ? ' don-doc-preview-pdf' : '' %>">
+                                <% if (isPdf) { %>
+                                    <i data-lucide="file-text" style="width:22px;height:22px;"></i>
+                                    <span class="don-doc-ext">PDF</span>
+                                <% } else { %>
+                                    <img src="<%= fileUrl %>" alt="<%= doc.label %>" loading="lazy" onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none'); if(typeof lucide!=='undefined') lucide.createIcons();">
+                                    <div class="don-doc-preview-fallback d-none"><i data-lucide="<%= doc.icon %>" style="width:20px;height:20px;"></i></div>
+                                <% } %>
+                            </div>
+                            <span class="don-doc-label"><i data-lucide="<%= doc.icon %>" style="width:12px;height:12px;"></i> <%= doc.label %></span>
+                        </a>
+                        <% } else { %>
+                        <div class="don-doc-tile don-doc-tile-empty" title="<%= doc.label %> not uploaded">
+                            <div class="don-doc-preview don-doc-preview-empty">
+                                <i data-lucide="<%= doc.icon %>" style="width:20px;height:20px;"></i>
+                            </div>
+                            <span class="don-doc-label"><%= doc.label %></span>
+                        </div>
+                        <% } %>
+                        <% }); %>
+                    </div>
+                    <% } else { %>
+                    <p class="small text-muted mb-0">No documents uploaded yet.</p>
+                    <% } %>
+                </div>
+
+                <div class="don-flags-row">
+                    <span class="don-flag <%= d.isAvailable ? 'on' : 'off' %>">
+                        <i data-lucide="<%= d.isAvailable ? 'check-circle' : 'x-circle' %>" style="width:13px;height:13px;"></i>
+                        <%= d.isAvailable ? 'Available' : 'Unavailable' %>
+                    </span>
+                    <% if (d.lastDonationDate) { %>
+                    <span class="don-flag neutral">
+                        <i data-lucide="history" style="width:13px;height:13px;"></i>
+                        Last donation <%= new Date(d.lastDonationDate).toLocaleDateString() %>
+                    </span>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="don-card-footer">
+                <a href="/admin/medical-review/<%= d._id %>" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">
+                    <i data-lucide="scan-search" style="width:14px;height:14px;"></i> AI review
+                </a>
+                <% if (d.status !== 'approved') { %>
+                <form action="/admin/donor/<%= d._id %>/approve" method="POST" class="don-action-form">
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i data-lucide="check" style="width:14px;height:14px;"></i> Approve donor
+                    </button>
+                </form>
+                <% } else { %>
+                <span class="don-approved-label text-success small">
+                    <i data-lucide="shield-check" style="width:14px;height:14px;"></i> Verified donor
+                </span>
+                <% } %>
+                <% if (d.status !== 'rejected') { %>
+                <form action="/admin/donor/<%= d._id %>/reject" method="POST" class="don-action-form">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i data-lucide="x" style="width:14px;height:14px;"></i> Reject
+                    </button>
+                </form>
+                <% } %>
+                <%- include('admin-crud-actions', {
+                    entity: 'donor',
+                    payloadObj: {
+                        id: d._id,
+                        name: user.name || '',
+                        email: user.email || '',
+                        phone: user.phone || '',
+                        city: user.city || '',
+                        bloodGroup: d.bloodGroup,
+                        status: d.status,
+                        isAvailable: d.isAvailable,
+                        emailVerified: user.emailVerified,
+                        coords: d.location && d.location.coordinates ? d.location.coordinates : null
+                    },
+                    deleteUrl: '/admin/donor/' + d._id + '/delete',
+                    confirmLabel: user.name || 'this donor'
+                }) %>
+            </div>
+        </article>
+        <% }); %>
+    <% } else { %>
+        <div class="don-empty">
+            <img src="https://images.unsplash.com/photo-1615461066159-fa5966998606?w=400&h=260&fit=crop&q=80" alt="" loading="lazy">
+            <h5>No donors registered yet</h5>
+            <p class="text-muted mb-0">New donor registrations will appear here for review.</p>
+        </div>
+    <% } %>
+</div>

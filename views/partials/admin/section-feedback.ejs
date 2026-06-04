@@ -1,0 +1,135 @@
+<%
+const items = allFeedback || [];
+const categories = feedbackCategoryLabels || {};
+const roles = feedbackRoleLabels || {};
+const stats = feedbackStats || { total: 0, pending: 0, avgRating: 0 };
+const pendingItems = items.filter(function(f) { return f.status === 'pending'; });
+%>
+
+<div class="fb-hero mb-4 fb-hero-admin">
+    <div class="fb-hero-bg"></div>
+    <div class="fb-hero-overlay"></div>
+    <div class="fb-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="fb-hero-badge"><i data-lucide="messages-square" style="width:14px;height:14px;"></i> Community feedback</span>
+                <h3 class="fb-hero-title">Feedback moderation</h3>
+                <p class="fb-hero-sub mb-0">Review ratings and comments from donors, patients, blood banks, and camp organizers. Publish helpful feedback or hide inappropriate content.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="fb-hero-meta">
+                    <div><small>Total</small><strong><%= stats.total %></strong></div>
+                    <div><small>Pending</small><strong><%= stats.pending %></strong></div>
+                    <div><small>Avg rating</small><strong><%= stats.avgRating || '—' %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="overview-kpi overview-kpi-slate">
+            <div class="overview-kpi-body">
+                <div class="overview-kpi-label">All feedback</div>
+                <div class="overview-kpi-value"><%= stats.total %></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="overview-kpi overview-kpi-amber">
+            <div class="overview-kpi-body">
+                <div class="overview-kpi-label">Awaiting review</div>
+                <div class="overview-kpi-value"><%= stats.pending %></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="overview-kpi overview-kpi-green">
+            <div class="overview-kpi-body">
+                <div class="overview-kpi-label">Average rating</div>
+                <div class="overview-kpi-value"><%= stats.avgRating ? stats.avgRating + '/5' : '—' %></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="overview-panel">
+    <div class="overview-panel-head flex-wrap">
+        <div>
+            <h5>All submissions</h5>
+            <p class="text-muted small mb-0"><%= pendingItems.length %> pending · <%= items.length %> total</p>
+        </div>
+    </div>
+    <div class="overview-panel-body p-0">
+        <% if (!items.length) { %>
+            <div class="fb-empty p-4">
+                <i data-lucide="inbox" style="width:36px;height:36px;"></i>
+                <p class="mb-0">No feedback submitted yet.</p>
+            </div>
+        <% } else { %>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 fb-admin-table">
+                    <thead>
+                        <tr>
+                            <th>Author</th>
+                            <th>Rating</th>
+                            <th>Category</th>
+                            <th>Review</th>
+                            <th>Photos</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% items.forEach(function(item) {
+                            const author = item.authorId || {};
+                        %>
+                            <tr>
+                                <td>
+                                    <strong class="d-block"><%= author.name || 'Unknown' %></strong>
+                                    <span class="small text-muted"><%= roles[item.authorRole] || item.authorRole %><% if (author.city) { %> · <%= author.city %><% } %></span>
+                                </td>
+                                <td>
+                                    <span class="fb-admin-rating"><%= item.rating %>/5</span>
+                                </td>
+                                <td><span class="small"><%= categories[item.category] || item.category %></span></td>
+                                <td style="max-width:280px;">
+                                    <p class="small mb-0 text-truncate-3"><%= item.reviewText %></p>
+                                </td>
+                                <td>
+                                    <% if (item.photoUrls && item.photoUrls.length) { %>
+                                        <div class="fb-admin-photo-stack">
+                                            <% item.photoUrls.slice(0, 1).forEach(function(url) { %>
+                                                <a href="<%= url %>" target="_blank" rel="noopener"><img src="<%= url %>" alt="" loading="lazy"></a>
+                                            <% }); %>
+                                        </div>
+                                    <% } else { %>
+                                        <span class="text-muted small">—</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <span class="badge <%= item.status === 'published' ? 'bg-success' : (item.status === 'hidden' ? 'bg-secondary' : 'bg-warning text-dark') %>"><%= item.status %></span>
+                                </td>
+                                <td class="small text-nowrap"><%= new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %></td>
+                                <td class="text-nowrap">
+                                    <% if (item.status !== 'published') { %>
+                                        <form action="/admin/feedback/<%= item._id %>/publish" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-success">Publish</button>
+                                        </form>
+                                    <% } %>
+                                    <% if (item.status !== 'hidden') { %>
+                                        <form action="/admin/feedback/<%= item._id %>/hide" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">Hide</button>
+                                        </form>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+    </div>
+</div>

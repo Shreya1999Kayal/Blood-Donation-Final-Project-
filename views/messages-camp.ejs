@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Messages — RaktaSetu Camp</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="/css/admin-ui.css" rel="stylesheet">
+
+    <link href="/css/camp-ui.css" rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+</head>
+
+<body class="admin-shell cp-shell">
+
+<div class="container py-4" style="max-width:880px">
+
+    <div class="d-flex align-items-center gap-2 mb-3">
+
+        <a href="/dashboard#section-messages" class="btn btn-outline-primary btn-sm">← Dashboard</a>
+
+        <h4 class="mb-0">Camp messages</h4>
+
+    </div>
+
+    <%- include('partials/camp/section-messages', { inbox: inbox || [] }) %>
+
+</div>
+
+<script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+
+</body>
+
+</html>
+
+

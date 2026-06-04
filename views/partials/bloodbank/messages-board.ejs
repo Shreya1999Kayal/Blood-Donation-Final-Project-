@@ -1,0 +1,97 @@
+<%
+const items = inbox || [];
+const isFullPageMode = typeof isFullPage !== 'undefined' ? !!isFullPage : false;
+const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+
+function initials(name) {
+    if (!name) return '?';
+    return name.split(' ').map(function(p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
+}
+function roleLabel(role) {
+    if (role === 'user') return 'Patient';
+    if (role === 'donor') return 'Donor';
+    if (role === 'bloodbank') return 'Blood bank';
+    return role || 'User';
+}
+function roleTone(role) {
+    if (role === 'user') return 'patient';
+    if (role === 'donor') return 'donor';
+    return 'other';
+}
+function isTodayDate(d) {
+    return d && new Date(d) >= todayStart;
+}
+function previewText(item) {
+    const text = item.lastMessage && item.lastMessage.text ? item.lastMessage.text : '';
+    return text.length > 120 ? text.slice(0, 117) + '…' : text;
+}
+%>
+
+<div class="msg-board" id="msgBoard">
+    <div class="msg-feed" id="msgFeed">
+        <% if (items.length) { %>
+            <% items.forEach(function(item) {
+                const other = item.otherUser || {};
+                const searchText = [other.name, other.city, other.phone, roleLabel(other.role), previewText(item)].filter(Boolean).join(' ').toLowerCase();
+                const when = isTodayDate(item.updatedAt) ? 'today' : 'older';
+                const hasPreview = !!(item.lastMessage && item.lastMessage.text);
+            %>
+            <a href="/chat/<%= other._id %>" class="msg-card msg-card-<%= roleTone(other.role) %>"
+                data-msg-item
+                data-role="<%= other.role === 'user' ? 'patient' : 'other' %>"
+                data-when="<%= when %>"
+                data-has-msg="<%= hasPreview ? '1' : '0' %>"
+                data-search="<%= searchText.replace(/"/g, '') %>">
+                <%- include('../shared/card-avatar', { contactUser: other, cardAvatarClass: 'msg-card-avatar' }) %>
+                <div class="msg-card-body">
+                    <div class="msg-card-head">
+                        <div>
+                            <span class="msg-role-badge msg-role-<%= roleTone(other.role) %>"><%= roleLabel(other.role) %></span>
+                            <h6 class="msg-name"><%= other.name || 'User' %></h6>
+                        </div>
+                        <time class="msg-time"><%= item.updatedAt ? new Date(item.updatedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '' %></time>
+                    </div>
+                    <% if (hasPreview) { %>
+                    <p class="msg-preview mb-0"><%= previewText(item) %></p>
+                    <% } else { %>
+                    <p class="msg-preview msg-preview-empty mb-0">No messages yet — start the conversation</p>
+                    <% } %>
+                    <div class="msg-meta-row">
+                        <% if (other.city) { %>
+                        <span><i data-lucide="map-pin" style="width:12px;height:12px;"></i> <%= other.city %></span>
+                        <% } %>
+                        <% if (other.phone) { %>
+                        <span><i data-lucide="phone" style="width:12px;height:12px;"></i> <%= other.phone %></span>
+                        <% } %>
+                    </div>
+                </div>
+                <div class="msg-card-actions">
+                    <% if (other.phone) { %>
+                    <span class="msg-call-btn" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='tel:<%= other.phone %>';" title="Call">
+                        <i data-lucide="phone-call" style="width:16px;height:16px;"></i>
+                    </span>
+                    <% } %>
+                    <span class="msg-open-btn"><i data-lucide="chevron-right" style="width:18px;height:18px;"></i></span>
+                </div>
+            </a>
+            <% }); %>
+        <% } else { %>
+            <div class="msg-empty-state" id="msgEmptyState">
+                <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=260&fit=crop&q=80" alt="" loading="lazy">
+                <h5>No conversations yet</h5>
+                <p class="text-muted mb-3">Start chatting with patients from live emergency requests — click <strong>Chat</strong> on any active case.</p>
+                <a href="<%= isFullPageMode ? '/dashboard#section-requests' : '#' %>"
+                   class="btn btn-danger btn-sm"
+                   <% if (!isFullPageMode) { %>data-bb-section="requests" data-bb-label="Emergency Requests"<% } %>>
+                    <i data-lucide="siren" style="width:14px;height:14px;"></i> View emergency requests
+                </a>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<div class="msg-empty msg-empty-filter d-none" id="msgEmptyFilter">
+    <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=260&fit=crop&q=80" alt="" loading="lazy">
+    <h5>No conversations match your filters</h5>
+    <button type="button" class="btn btn-outline-danger btn-sm" id="msgClearFilters">Clear filters</button>
+</div>

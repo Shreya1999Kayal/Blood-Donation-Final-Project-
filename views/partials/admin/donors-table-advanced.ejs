@@ -1,0 +1,127 @@
+<%
+function twInitials(name) {
+    if (!name) return '?';
+    return name.split(' ').map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
+}
+function twBadgeBase() {
+    return 'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset';
+}
+function twBloodTw() {
+    return twBadgeBase() + ' bg-rose-50 text-rose-700 ring-rose-600/20';
+}
+function twStatusTw(status) {
+    const map = {
+        approved: 'bg-emerald-50 text-emerald-800 ring-emerald-600/20',
+        rejected: 'bg-rose-50 text-rose-800 ring-rose-600/20',
+        pending: 'bg-amber-50 text-amber-800 ring-amber-600/20',
+    };
+    return twBadgeBase() + ' ' + (map[status] || map.pending);
+}
+function twEligTw(kind) {
+    const map = {
+        success: 'bg-emerald-50 text-emerald-800 ring-emerald-600/20',
+        danger: 'bg-rose-50 text-rose-800 ring-rose-600/20',
+        warning: 'bg-amber-50 text-amber-800 ring-amber-600/20',
+        secondary: 'bg-slate-100 text-slate-600 ring-slate-500/20',
+    };
+    return twBadgeBase() + ' ' + (map[kind] || map.secondary);
+}
+function twThClass() {
+    return 'px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap';
+}
+function twTdClass() {
+    return 'px-4 py-3.5 align-middle text-slate-700';
+}
+function twRowClass() {
+    return 'transition-colors hover:bg-slate-50/90';
+}
+const donors = allDonors || [];
+%>
+
+<div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm ring-1 ring-slate-900/5">
+    <div class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-rose-50/80 via-white to-slate-50/50 px-4 py-3">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Donor verification registry</span>
+        <span class="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-amber-600/20"><%= donors.length %> donors</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-gradient-to-r from-rose-50 via-slate-50 to-white">
+                <tr>
+                    <th class="<%= twThClass() %>">Donor</th>
+                    <th class="<%= twThClass() %>">Blood</th>
+                    <th class="<%= twThClass() %>">Status</th>
+                    <th class="<%= twThClass() %>">Eligibility</th>
+                    <th class="<%= twThClass() %>">Documents</th>
+                    <th class="<%= twThClass() %> text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+                <% if (donors.length) { %>
+                    <% donors.forEach(function(d) {
+                        const user = d.userId || {};
+                        const searchText = [d.userId && d.userId.name, d.userId && d.userId.email, d.userId && d.userId.city, d.bloodGroup].filter(Boolean).join(' ').toLowerCase();
+                        const eligKey = donorEligibilityKey(d);
+                        const name = user.name || '—';
+                        const docs = d.medicalReports || {};
+                    %>
+                    <tr class="<%= twRowClass() %>" data-donor-item data-status="<%= d.status %>" data-elig="<%= eligKey %>" data-search="<%= searchText.replace(/"/g, '') %>">
+                        <td class="<%= twTdClass() %> whitespace-nowrap">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-700 text-[11px] font-bold text-white ring-2 ring-white"><%= twInitials(name) %></div>
+                                <div>
+                                    <div class="font-semibold text-slate-900"><%= name %></div>
+                                    <div class="text-xs text-slate-500"><%= user.email || '' %></div>
+                                    <% if (user.donorVerificationFeePaid) { %>
+                                        <span class="<%= twBadgeBase() %> bg-sky-50 text-sky-700 ring-sky-600/20 mt-0.5">Fee paid</span>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="<%= twTdClass() %>"><span class="<%= twBloodTw() %>"><%= d.bloodGroup %></span></td>
+                        <td class="<%= twTdClass() %>"><span class="<%= twStatusTw(d.status) %>"><%= d.status %></span></td>
+                        <td class="<%= twTdClass() %>"><span class="<%= twEligTw(donorEligibilityBadge(d)) %>"><%= donorEligibilityLabel(d) %></span></td>
+                        <td class="<%= twTdClass() %> text-xs whitespace-nowrap">
+                            <div class="flex flex-col gap-0.5">
+                                <% if (docs.bloodGroupReportUrl) { %><a href="<%= docUrl(docs.bloodGroupReportUrl) %>" target="_blank" class="font-medium text-sky-700 hover:text-sky-900">Blood group</a><% } %>
+                                <% if (docs.bloodTestReportUrl) { %><a href="<%= docUrl(docs.bloodTestReportUrl) %>" target="_blank" class="font-medium text-sky-700 hover:text-sky-900">Blood test</a><% } %>
+                                <% if (docs.fitnessCertificateUrl) { %><a href="<%= docUrl(docs.fitnessCertificateUrl) %>" target="_blank" class="font-medium text-sky-700 hover:text-sky-900">Fitness</a><% } %>
+                                <% if (docs.identityProofUrl) { %><a href="<%= docUrl(docs.identityProofUrl) %>" target="_blank" class="font-medium text-sky-700 hover:text-sky-900">ID proof</a><% } %>
+                                <% if (!docs.bloodGroupReportUrl && !docs.bloodTestReportUrl) { %><span class="text-slate-400">—</span><% } %>
+                            </div>
+                        </td>
+                        <td class="<%= twTdClass() %> text-right whitespace-nowrap">
+                            <div class="flex flex-wrap justify-end gap-1 align-items-center">
+                                <% if (d.status !== 'approved') { %>
+                                    <form action="/admin/donor/<%= d._id %>/approve" method="POST"><button class="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Approve</button></form>
+                                <% } %>
+                                <% if (d.status !== 'rejected') { %>
+                                    <form action="/admin/donor/<%= d._id %>/reject" method="POST"><button class="rounded-lg border border-rose-200 px-2.5 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50">Reject</button></form>
+                                <% } %>
+                                <%- include('admin-crud-actions', {
+                                    entity: 'donor',
+                                    payloadObj: {
+                                        id: d._id,
+                                        name: user.name || '',
+                                        email: user.email || '',
+                                        phone: user.phone || '',
+                                        city: user.city || '',
+                                        bloodGroup: d.bloodGroup,
+                                        status: d.status,
+                                        isAvailable: d.isAvailable,
+                                        emailVerified: user.emailVerified,
+                                        coords: d.location && d.location.coordinates ? d.location.coordinates : null
+                                    },
+                                    deleteUrl: '/admin/donor/' + d._id + '/delete',
+                                    confirmLabel: user.name || 'this donor'
+                                }) %>
+                            </div>
+                        </td>
+                    </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr><td colspan="6" class="px-4 py-12 text-center text-sm text-slate-500">No donors registered</td></tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>

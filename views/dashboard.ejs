@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard — RaktaSetu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <% if (['user', 'donor', 'bloodbank'].includes(user.role)) { %>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <% } %>
+    <% if (user.role === 'admin') { %>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <% } %>
+    <% if (['donor', 'bloodbank', 'admin', 'user'].includes(user.role)) { %>
+    <script src="/socket.io/socket.io.js"></script>
+    <% } %>
+</head>
+<body class="bg-light">
+    <%
+    function donorCooldownDays(donor) {
+        if (!donor || !donor.lastDonationDate) return 999;
+        return Math.floor((Date.now() - new Date(donor.lastDonationDate).getTime()) / (1000 * 60 * 60 * 24));
+    }
+    function donorCooldownRemaining(donor) {
+        return Math.max(0, 90 - donorCooldownDays(donor));
+    }
+    function donorEligibilityLabel(donor) {
+        if (!donor || donor.status !== 'approved') return 'Pending approval';
+        const remaining = donorCooldownRemaining(donor);
+        if (remaining > 0) return 'Not eligible (' + remaining + ' days left)';
+        if (!donor.isAvailable) return 'Unavailable';
+        return 'Eligible';
+    }
+    function donorEligibilityBadge(donor) {
+        if (!donor || donor.status !== 'approved') return 'warning';
+        if (donorCooldownRemaining(donor) > 0) return 'danger';
+        if (!donor.isAvailable) return 'secondary';
+        return 'success';
+    }
+    %>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
+        <div class="container">
+            <a class="navbar-brand" href="/">🩸 RaktaSetu</a>
+            <div class="collapse navbar-collapse justify-content-end">
+                <span class="navbar-text text-white me-3">Welcome, <%= user.name %> (<%= user.role %>)</span>
+                <% if (['user', 'donor', 'bloodbank'].includes(user.role)) { %>
+                    <a class="btn btn-light btn-sm me-2" href="/messages">💬 Messages</a>
+                <% } %>
+                <a class="btn btn-outline-light btn-sm me-2" href="/auth/change-password">Change password</a>
+                <a class="btn btn-outline-light btn-sm" href="/auth/logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mb-5">
+        <% if (typeof flash !== 'undefined' && flash) { %>
+            <% if (flash.msg === 'request_created') { %><div class="alert alert-success">Emergency request posted.</div><% } %>
+            <% if (flash.msg === 'contact_recorded') { %><div class="alert alert-success">Contact recorded on request.</div><% } %>
+            <% if (flash.msg === 'marked_received') { %><div class="alert alert-success">Request marked as received.</div><% } %>
+            <% if (flash.msg === 'donor_docs_submitted') { %><div class="alert alert-info">Documents submitted. Waiting for admin approval.</div><% } %>
+            <% if (flash.msg === 'bloodbank_submitted') { %><div class="alert alert-info">Blood bank submitted with certificate. Waiting for admin approval.</div><% } %>
+            <% if (flash.msg === 'bloodbank_certificate_updated') { %><div class="alert alert-info">Registration certificate updated.</div><% } %>
+            <% if (flash.msg === 'bloodbank_certificate_reverify') { %><div class="alert alert-warning">Certificate updated. Your blood bank must be re-verified by admin.</div><% } %>
+            <% if (flash.msg === 'donor_approved') { %><div class="alert alert-success">Donor approved.</div><% } %>
+            <% if (flash.msg === 'donor_rejected') { %><div class="alert alert-warning">Donor rejected.</div><% } %>
+            <% if (flash.msg === 'bloodbank_approved') { %><div class="alert alert-success">Blood bank approved.</div><% } %>
+            <% if (flash.msg === 'bloodbank_rejected') { %><div class="alert alert-warning">Blood bank rejected.</div><% } %>
+            <% if (flash.msg === 'availability_updated') { %><div class="alert alert-success">Availability updated.</div><% } %>
+            <% if (flash.msg === 'profile_updated') { %><div class="alert alert-success">Profile updated.</div><% } %>
+            <% if (flash.msg === 'bloodbank_profile_updated') { %><div class="alert alert-success">Blood bank profile updated.</div><% } %>
+            <% if (flash.msg === 'subscription_activated') { %><div class="alert alert-success">Subscription activated successfully.</div><% } %>
+            <% if (flash.msg === 'payment_success') { %><div class="alert alert-success">Payment recorded successfully.</div><% } %>
+            <% if (flash.error === 'patient_docs_required') { %><div class="alert alert-danger">Upload blood test report and prescription to create a request.</div><% } %>
+            <% if (flash.error === 'donor_not_approved') { %><div class="alert alert-warning">You must be approved by admin before contacting patients.</div><% } %>
+            <% if (flash.error === 'bloodbank_not_approved') { %><div class="alert alert-warning">Your blood bank must be approved by admin before contacting patients.</div><% } %>
+            <% if (flash.error === 'bloodbank_certificate_required') { %><div class="alert alert-danger">Please upload your registered blood bank certificate.</div><% } %>
+            <% if (flash.error === 'bloodbank_certificate_missing') { %><div class="alert alert-warning">Cannot approve blood bank without a registration certificate.</div><% } %>
+            <% if (flash.error === 'request_closed') { %><div class="alert alert-warning">This request is already closed.</div><% } %>
+            <% if (flash.error === 'already_received') { %><div class="alert alert-info">Request already marked as received.</div><% } %>
+            <% if (flash.error === 'donor_cooldown') { %><div class="alert alert-warning">Donor is not eligible yet. A donor can donate only once in 90 days.</div><% } %>
+            <% if (flash.error === 'select_responder') { %><div class="alert alert-warning">Select the donor or blood bank that provided blood before marking received.</div><% } %>
+            <% if (flash.error && !['patient_docs_required','donor_not_approved','bloodbank_not_approved','bloodbank_certificate_required','bloodbank_certificate_missing','request_closed','already_received','donor_cooldown','select_responder'].includes(flash.error)) { %><div class="alert alert-danger"><%= flash.error %></div><% } %>
+        <% } %>
+
+        <% const isRequestsOnly = user.role === 'donor' || user.role === 'bloodbank'; %>
+        <div class="row">
+            <div class="<%= isRequestsOnly ? 'col-12' : 'col-md-8' %>">
+
+                <% if (['user', 'donor', 'bloodbank'].includes(user.role)) { %>
+                <div class="card shadow-sm mb-4 border-danger">
+                    <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div>
+                            <h5 class="mb-1">💬 Live chat</h5>
+                            <p class="small text-muted mb-0">
+                                <% if (user.role === 'user') { %>
+                                    Message approved donors & blood banks from the lists below, or open your inbox.
+                                <% } else { %>
+                                    Message patients from <strong>Emergency blood requests</strong> → <strong>Chat patient</strong>.
+                                <% } %>
+                            </p>
+                        </div>
+                        <a href="/messages" class="btn btn-danger">Open Messages</a>
+                    </div>
+                </div>
+                <% } %>
+
+                <% if (true) { %>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5>Your profile</h5>
+                        <form action="/auth/profile" method="POST" class="row g-2 mb-2">
+                            <div class="col-md-4">
+                                <label class="form-label small">Name</label>
+                                <input name="name" class="form-control" value="<%= user.name %>" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small">City</label>
+                                <input name="city" class="form-control" value="<%= user.city %>" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small">Phone</label>
+                                <input name="phone" class="form-control" value="<%= user.phone %>" required pattern="[6-9][0-9]{9}">
+                            </div>
+                            <div class="col-12">
+                                <button class="btn btn-outline-danger btn-sm">Update profile</button>
+                            </div>
+                        </form>
+                        <p class="mb-0"><strong>Name:</strong> <%= user.name %> · <strong>City:</strong> <%= user.city %> · <strong>Phone:</strong> <%= user.phone %></p>
+                    </div>
+                </div>
+                <% } %>
+
+                <% if (['user', 'donor', 'bloodbank'].includes(user.role)) { %>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Subscription plans</h5>
+                        <span class="badge bg-dark text-uppercase"><%= (user.subscription && user.subscription.plan) || 'free' %></span>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-3">
+                            <% if (user.role === 'user') { %>
+                                <strong>Why pay?</strong> Free users can post requests, but paid plans give <em>priority visibility</em> so donors and blood banks see your emergency faster.
+                            <% } else if (user.role === 'donor') { %>
+                                <strong>Why pay?</strong> Free donors can respond to requests after admin approval. Paid plans rank you <em>higher in patient search</em> and AI matching so you get contacted sooner.
+                            <% } else { %>
+                                <strong>Why pay?</strong> Free blood banks can manage inventory. Paid plans rank your hospital <em>higher when patients search nearby banks</em> with stock.
+                            <% } %>
+                        </p>
+                        <div class="row g-3">
+                            <% ['premium', 'pro', 'advanced'].forEach(function(planKey) { %>
+                                <% const price = planPrices[planKey]; %>
+                                <% const benefits = (planBenefits && planBenefits[planKey]) || []; %>
+                                <% const isCurrent = user.subscription && user.subscription.plan === planKey && hasActiveSubscription; %>
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3 h-100 <%= isCurrent ? 'border-danger border-2' : '' %>">
+                                        <div class="d-flex justify-content-between align-items-start mb-1">
+                                            <h6 class="mb-0 text-capitalize"><%= price.label %></h6>
+                                            <% if (isCurrent) { %><span class="badge bg-success">Active</span><% } %>
+                                        </div>
+                                        <div class="fw-bold mb-2">Rs <%= price.amountInr %> / <%= price.durationDays %> days</div>
+                                        <ul class="small text-muted ps-3 mb-3">
+                                            <% benefits.forEach(function(line) { %>
+                                                <li><%= line %></li>
+                                            <% }); %>
+                                        </ul>
+                                        <button class="btn btn-<%= planKey === 'pro' ? 'danger' : 'outline-danger' %> btn-sm w-100 buy-plan-btn" data-plan="<%= planKey %>" <%= isCurrent ? 'disabled' : '' %>>
+                                            <%= isCurrent ? 'Current plan' : 'Buy ' + price.label %>
+                                        </button>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                        <% if (user.subscription && user.subscription.expiresAt && hasActiveSubscription) { %>
+                        <div class="small text-muted mt-3">
+                            Active until: <strong><%= new Date(user.subscription.expiresAt).toLocaleString() %></strong>
+                        </div>
+                        <% } %>
+                        <% if (userAnalytics) { %>
+                        <div class="border-top pt-3 mt-3">
+                            <h6 class="mb-2">📊 Your analytics (Pro / Advanced)</h6>
+                            <% if (user.role === 'user') { %>
+                                <div class="row g-2 small">
+                                    <div class="col-md-3"><div class="border rounded p-2">Requests: <strong><%= userAnalytics.totalRequests %></strong></div></div>
+                                    <div class="col-md-3"><div class="border rounded p-2">Active: <strong><%= userAnalytics.activeRequests %></strong></div></div>
+                                    <div class="col-md-3"><div class="border rounded p-2">Responses: <strong><%= userAnalytics.totalResponses %></strong></div></div>
+                                    <div class="col-md-3"><div class="border rounded p-2">Response rate: <strong><%= userAnalytics.responseRate %>%</strong></div></div>
+                                </div>
+                            <% } else if (user.role === 'donor') { %>
+                                <div class="row g-2 small">
+                                    <div class="col-md-3"><div class="border rounded p-2">Responses: <strong><%= userAnalytics.responseCount %></strong></div></div>
+                                    <div class="col-md-3"><div class="border rounded p-2">Donations: <strong><%= userAnalytics.totalDonations %></strong></div></div>
+                                    <div class="col-md-3"><div class="border rounded p-2">Eligible: <strong><%= userAnalytics.eligibleNow ? 'Yes' : 'No' %></strong></div></div>
+                                    <div class="col-md-3"><div class="border rounded p-2">Cooldown: <strong><%= userAnalytics.cooldownDaysRemaining %> days</strong></div></div>
+                                </div>
+                            <% } else if (user.role === 'bloodbank') { %>
+                                <div class="row g-2 small">
+                                    <div class="col-md-3"><div class="border rounded p-2">Total stock: <strong><%= userAnalytics.totalInventoryUnits %> units</strong></div></div>
+                                    <div class="col-md-3"><div class="border rounded p-2">Requests contacted: <strong><%= userAnalytics.requestsContacted %></strong></div></div>
+                                    <div class="col-md-3"><div class="border rounded p-2">Active emergencies: <strong><%= userAnalytics.activeEmergencies %></strong></div></div>
+                                    <div class="col-md-3"><div class="border rounded p-2">Fulfilled: <strong><%= userAnalytics.fulfilledRequests %></strong></div></div>
+                                </div>
+                            <% } %>
+                        </div>
+                        <% } %>
+                        <% if (canExportData) { %>
+                        <div class="mt-3">
+                            <a href="/export/my-data" class="btn btn-outline-dark btn-sm">⬇ Download my report (PDF) — Advanced</a>
+                        </div>
+                        <% } %>
+                        <% const latestActiveRequest = (bloodRequests || []).find(function(r) { return ['active', 'contacted'].includes(r.status); }); %>
+                        <div class="border-top pt-3 mt-3">
+                            <h6 class="mb-2">One-time payments</h6>
+                            <% if (user.role === 'user') { %>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong><%= oneTimePayments.request_boost.label %></strong>
+                                    <div class="small text-muted">Rs <%= oneTimePayments.request_boost.amountInr %> — <%= oneTimePayments.request_boost.description %></div>
+                                </div>
+                                <button class="btn btn-outline-warning btn-sm pay-action-btn"
+                                        data-purpose="request_boost"
+                                        data-request-id="<%= latestActiveRequest ? latestActiveRequest._id : '' %>"
+                                        <%= latestActiveRequest ? '' : 'disabled' %>>
+                                    Boost request
+                                </button>
+                            </div>
+                            <% } %>
+                            <% if (user.role === 'donor') { %>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong><%= oneTimePayments.donor_verification.label %></strong>
+                                    <div class="small text-muted">Rs <%= oneTimePayments.donor_verification.amountInr %> — <%= oneTimePayments.donor_verification.description %></div>
+                                </div>
+                                <button class="btn btn-outline-primary btn-sm pay-action-btn"
+                                        data-purpose="donor_verification"
+                                        <%= user.donorVerificationFeePaid ? 'disabled' : '' %>>
+                                    <%= user.donorVerificationFeePaid ? 'Fee paid ✓' : 'Pay now' %>
+                                </button>
+                            </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- PATIENT: approved donors & blood banks -->
+                <% if (user.role === 'user') { %>
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white"><h5 class="mb-0">Approved blood donors</h5></div>
+                        <div class="card-body border-bottom">
+                            <form class="row g-2" id="donorSearchForm">
+                                <div class="col-md-3">
+                                    <select name="bloodGroup" class="form-select form-select-sm">
+                                        <option value="">Blood group</option>
+                                        <% ['A+','A-','B+','B-','AB+','AB-','O+','O-'].forEach(function(bg) { %>
+                                            <option><%= bg %></option>
+                                        <% }); %>
+                                    </select>
+                                </div>
+                                <div class="col-md-3"><input name="city" class="form-control form-control-sm" placeholder="City" value="<%= user.city %>"></div>
+                                <div class="col-md-3">
+                                    <select name="availability" class="form-select form-select-sm">
+                                        <option value="">Any availability</option>
+                                        <option value="available">Available</option>
+                                        <option value="unavailable">Unavailable</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3"><button class="btn btn-outline-danger btn-sm w-100">Search donors</button></div>
+                            </form>
+                            <div id="donorSearchResults" class="small mt-3"></div>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm mb-0">
+                                <thead><tr><th>Name</th><th>Blood</th><th>City</th><th>Phone</th><th>Eligibility</th><th>Chat</th></tr></thead>
+                                <tbody>
+                                    <% if (approvedDonors && approvedDonors.length) { %>
+                                        <% approvedDonors.forEach(function(d) { %>
+                                            <tr>
+                                                <td><%= d.userId ? d.userId.name : '—' %></td>
+                                                <td><strong><%= d.bloodGroup %></strong></td>
+                                                <td><%= d.userId ? d.userId.city : '—' %></td>
+                                                <td><% if (d.userId) { %><a href="tel:<%= d.userId.phone %>"><%= d.userId.phone %></a><% } %></td>
+                                                <td><span class="badge bg-<%= donorEligibilityBadge(d) %>"><%= donorEligibilityLabel(d) %></span></td>
+                                                <td>
+                                                    <% if (d.userId && d.userId._id) { %>
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-outline-primary btn-sm chat-btn"
+                                                            data-user-id="<%= d.userId._id %>"
+                                                            data-user-name="<%= d.userId.name %>"
+                                                            data-user-role="donor"
+                                                        >Chat</button>
+                                                    <% } %>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr><td colspan="6" class="text-center text-muted">No approved donors yet.</td></tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white"><h5 class="mb-0">Approved blood banks</h5></div>
+                        <div class="card-body border-bottom">
+                            <form class="row g-2" id="bloodBankSearchForm">
+                                <div class="col-md-3">
+                                    <select name="bloodGroup" class="form-select form-select-sm">
+                                        <option value="">Blood group</option>
+                                        <% ['A+','A-','B+','B-','AB+','AB-','O+','O-'].forEach(function(bg) { %>
+                                            <option><%= bg %></option>
+                                        <% }); %>
+                                    </select>
+                                </div>
+                                <div class="col-md-3"><input name="city" class="form-control form-control-sm" placeholder="City" value="<%= user.city %>"></div>
+                                <div class="col-md-3"><input name="radiusKm" type="number" class="form-control form-control-sm" value="20" min="1"></div>
+                                <div class="col-md-3"><button class="btn btn-outline-danger btn-sm w-100">Search banks</button></div>
+                            </form>
+                            <div id="bloodBankSearchResults" class="small mt-3"></div>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm mb-0">
+                                <thead><tr><th>Hospital</th><th>City</th><th>Contact</th><th>Inventory (sample)</th><th>Chat</th></tr></thead>
+                                <tbody>
+                                    <% if (approvedBloodBanks && approvedBloodBanks.length) { %>
+                                        <% approvedBloodBanks.forEach(function(bb) { %>
+                                            <tr>
+                                                <td><%= bb.hospitalName %></td>
+                                                <td><%= bb.userId ? bb.userId.city : '—' %></td>
+                                                <td><% if (bb.userId) { %><a href="tel:<%= bb.userId.phone %>"><%= bb.userId.phone %></a><% } %></td>
+                                                <td class="small">O+: <%= bb.inventory['O+'] || 0 %>, A+: <%= bb.inventory['A+'] || 0 %></td>
+                                                <td>
+                                                    <% if (bb.userId && bb.userId._id) { %>
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-outline-primary btn-sm chat-btn"
+                                                            data-user-id="<%= bb.userId._id %>"
+                                                            data-user-name="<%= bb.hospitalName %>"
+                                                            data-user-role="bloodbank"
+                                                        >Chat</button>
+                                                    <% } %>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr><td colspan="5" class="text-center text-muted">No approved blood banks yet.</td></tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <% if ((recommendedDonors && recommendedDonors.length) || (nearbyBloodBanks && nearbyBloodBanks.length)) { %>
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-white"><h5 class="mb-0">Smart recommendations for latest active request</h5></div>
+                            <div class="card-body">
+                                <% if (recommendedDonors && recommendedDonors.length) { %>
+                                    <h6>Ranked donors</h6>
+                                    <ul class="list-group mb-3">
+                                        <% recommendedDonors.forEach(function(item) { %>
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                <span>
+                                                    <strong><%= item.donor.userId ? item.donor.userId.name : 'Donor' %></strong>
+                                                    <span class="text-muted">(<%= item.donor.bloodGroup %>, <%= item.distanceKm %> km)</span>
+                                                </span>
+                                                <span class="d-flex align-items-center gap-2">
+                                                    <span class="badge bg-danger">Score <%= item.score %></span>
+                                                    <% if (item.donor.userId && item.donor.userId._id) { %>
+                                                        <button type="button" class="btn btn-outline-primary btn-sm chat-btn"
+                                                            data-user-id="<%= item.donor.userId._id %>"
+                                                            data-user-name="<%= item.donor.userId.name %>"
+                                                            data-user-role="donor">Chat</button>
+                                                    <% } %>
+                                                </span>
+                                            </li>
+                                        <% }); %>
+                                    </ul>
+                                <% } %>
+                                <% if (nearbyBloodBanks && nearbyBloodBanks.length) { %>
+                                    <h6>Nearby blood banks with stock</h6>
+                                    <ul class="list-group">
+                                        <% nearbyBloodBanks.forEach(function(item) { %>
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                <span><strong><%= item.bloodBank.hospitalName %></strong> <span class="text-muted">(<%= item.distanceKm %> km)</span></span>
+                                                <span class="d-flex align-items-center gap-2">
+                                                    <span class="badge bg-success"><%= item.availableUnits %> units</span>
+                                                    <% if (item.bloodBank.userId && item.bloodBank.userId._id) { %>
+                                                        <button type="button" class="btn btn-outline-primary btn-sm chat-btn"
+                                                            data-user-id="<%= item.bloodBank.userId._id %>"
+                                                            data-user-name="<%= item.bloodBank.hospitalName %>"
+                                                            data-user-role="bloodbank">Chat</button>
+                                                    <% } %>
+                                                </span>
+                                            </li>
+                                        <% }); %>
+                                    </ul>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% } %>
+                <% } %>
+
+                <!-- Emergency requests (all roles) -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><%= user.role === 'user' ? 'My emergency requests' : 'Emergency blood requests' %></h4>
+                        <% if (!isRequestsOnly) { %><a href="/request" class="btn btn-outline-danger btn-sm">Full list</a><% } %>
+                    </div>
+                    <div class="card-body">
+                        <%- include('partials/blood-requests-table', { bloodRequests, user, donorProfile, bloodbank }) %>
+                    </div>
+                </div>
+
+                <!-- PATIENT: create request with documents -->
+                <% if (user.role === 'user') { %>
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white"><h5 class="mb-0">Create emergency request</h5></div>
+                        <div class="card-body">
+                            <p class="text-muted small">Required: blood test report and doctor prescription.</p>
+                                <form action="/request/create" method="POST" enctype="multipart/form-data" data-geo-form>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label>Blood group needed</label>
+                                        <select name="bloodGroup" class="form-select" required>
+                                            <% ['A+','A-','B+','B-','AB+','AB-','O+','O-'].forEach(function(bg) { %>
+                                                <option><%= bg %></option>
+                                            <% }); %>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label>Required units</label>
+                                        <input type="number" name="requiredUnits" class="form-control" required min="1">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label>Hospital name</label>
+                                    <input type="text" name="hospitalName" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label>Blood test report</label>
+                                    <input type="file" name="bloodTestReport" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label>Prescription</label>
+                                    <input type="file" name="prescription" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                                </div>
+                                <input type="hidden" name="latitude" data-geo-lat>
+                                <input type="hidden" name="longitude" data-geo-lng>
+                                <button type="submit" class="btn btn-danger">Post emergency request</button>
+                            </form>
+                        </div>
+                    </div>
+                <% } %>
+
+                <!-- DONOR: upload documents -->
+                <% if (user.role === 'donor') { %>
+                    <% if (donorProfile) { %>
+                        <div class="alert alert-<%= donorProfile.status === 'approved' ? 'success' : donorProfile.status === 'rejected' ? 'danger' : 'warning' %>">
+                            Donor status: <strong><%= donorProfile.status %></strong>
+                            <% if (donorProfile.status === 'pending') { %> — admin will review your documents.<% } %>
+                        </div>
+                    <% } %>
+                    <% if (donorProfile && donorCooldownRemaining(donorProfile) > 0) { %>
+                        <div class="alert alert-danger">
+                            You are not eligible to donate for <strong><%= donorCooldownRemaining(donorProfile) %> more day(s)</strong>. The contact button is disabled during the 90-day cooldown.
+                        </div>
+                    <% } %>
+                    <% if (donorProfile) { %>
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-white"><h5 class="mb-0">Availability</h5></div>
+                            <div class="card-body">
+                                <form action="/donor/availability" method="POST" class="d-flex gap-2 align-items-center">
+                                    <select name="isAvailable" class="form-select w-auto">
+                                        <option value="true" <%= donorProfile.isAvailable ? 'selected' : '' %>>Available</option>
+                                        <option value="false" <%= !donorProfile.isAvailable ? 'selected' : '' %>>Unavailable</option>
+                                    </select>
+                                    <button class="btn btn-outline-danger">Update</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-white"><h5 class="mb-0">My uploaded documents</h5></div>
+                            <div class="card-body small">
+                                <% const myDocs = donorProfile.medicalReports || {}; %>
+                                <% if (myDocs.bloodGroupReportUrl) { %><a href="<%= docUrl(myDocs.bloodGroupReportUrl) %>" target="_blank">Blood group report</a><br><% } %>
+                                <% if (myDocs.bloodTestReportUrl) { %><a href="<%= docUrl(myDocs.bloodTestReportUrl) %>" target="_blank">Blood test report</a><br><% } %>
+                                <% if (myDocs.fitnessCertificateUrl) { %><a href="<%= docUrl(myDocs.fitnessCertificateUrl) %>" target="_blank">Fitness certificate</a><br><% } %>
+                                <% if (myDocs.identityProofUrl) { %><a href="<%= docUrl(myDocs.identityProofUrl) %>" target="_blank">Identity proof</a><% } %>
+                                <% if (!myDocs.bloodGroupReportUrl && !myDocs.bloodTestReportUrl && !myDocs.fitnessCertificateUrl && !myDocs.identityProofUrl) { %>
+                                    <span class="text-muted">No documents uploaded yet.</span>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% } %>
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white"><h5 class="mb-0">Upload / update medical documents</h5></div>
+                        <div class="card-body">
+                                <form action="/donor/register" method="POST" enctype="multipart/form-data" data-geo-form>
+                                <div class="mb-3">
+                                    <label>Blood group</label>
+                                    <select name="bloodGroup" class="form-select" required>
+                                        <% ['A+','A-','B+','B-','AB+','AB-','O+','O-'].forEach(function(bg) { %>
+                                            <option <%= donorProfile && donorProfile.bloodGroup === bg ? 'selected' : '' %>><%= bg %></option>
+                                        <% }); %>
+                                    </select>
+                                </div>
+                                <div class="mb-3"><label>Blood group report</label><input type="file" name="bloodGroupReport" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp"></div>
+                                <div class="mb-3"><label>Blood test report</label><input type="file" name="bloodTestReport" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp"></div>
+                                <div class="mb-3"><label>Fitness certificate</label><input type="file" name="fitnessCertificate" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp"></div>
+                                <div class="mb-3"><label>Identity proof</label><input type="file" name="identityProof" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp"></div>
+                                <input type="hidden" name="latitude" data-geo-lat>
+                                <input type="hidden" name="longitude" data-geo-lng>
+                                <button type="submit" class="btn btn-primary">Submit for admin approval</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white"><h5 class="mb-0">Donation history</h5></div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm mb-0">
+                                <thead><tr><th>Date</th><th>Hospital</th><th>Blood</th><th>Units</th></tr></thead>
+                                <tbody>
+                                    <% if (donationHistory && donationHistory.length) { %>
+                                        <% donationHistory.forEach(function(item) { %>
+                                            <tr>
+                                                <td><%= new Date(item.donatedAt).toLocaleDateString() %></td>
+                                                <td><%= item.hospitalName %></td>
+                                                <td><%= item.bloodGroup %></td>
+                                                <td><%= item.units %></td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr><td colspan="4" class="text-center text-muted">No donation history yet.</td></tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                <% } %>
+
+                <!-- BLOOD BANK: setup / inventory -->
+                <% if (user.role === 'bloodbank') { %>
+                    <% if (bloodbank) { %>
+                        <div class="alert alert-<%= bloodbank.status === 'approved' ? 'success' : bloodbank.status === 'rejected' ? 'danger' : 'warning' %>">
+                            Blood bank status: <strong><%= bloodbank.status %></strong>
+                            <% if (bloodbank.status === 'pending') { %> — waiting for admin approval.<% } %>
+                        </div>
+                    <% } else { %>
+                        <div class="alert alert-warning">Complete <a href="/bloodbank/setup">blood bank setup</a> first.</div>
+                    <% } %>
+
+                    <% if (bloodbank) { %>
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-white"><h5 class="mb-0">Registration certificate</h5></div>
+                            <div class="card-body">
+                                <% if (bloodbank.registrationCertificateUrl) { %>
+                                    <p class="mb-2">
+                                        <a href="<%= docUrl(bloodbank.registrationCertificateUrl) %>" target="_blank" class="btn btn-outline-primary btn-sm">View uploaded certificate</a>
+                                    </p>
+                                <% } else { %>
+                                    <p class="text-muted small mb-2">No certificate uploaded yet. Upload your registered blood bank certificate for admin verification.</p>
+                                <% } %>
+                                <form action="/bloodbank/certificate" method="POST" enctype="multipart/form-data" class="row g-2 align-items-end">
+                                    <div class="col-md-8">
+                                        <label class="form-label small">Update certificate (PDF or image)</label>
+                                        <input type="file" name="registrationCertificate" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button class="btn btn-danger w-100" type="submit">Upload certificate</button>
+                                    </div>
+                                </form>
+                                <% if (bloodbank.status === 'approved') { %>
+                                    <p class="text-muted small mt-2 mb-0">If you replace the certificate, admin must verify your blood bank again.</p>
+                                <% } %>
+                            </div>
+                        </div>
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-white"><h5 class="mb-0">Blood bank profile</h5></div>
+                            <div class="card-body">
+                                <form action="/bloodbank/profile" method="POST" class="row g-2" data-geo-form>
+                                    <div class="col-md-8">
+                                        <label class="form-label small">Hospital / blood bank name</label>
+                                        <input name="hospitalName" class="form-control" value="<%= bloodbank.hospitalName %>" required>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <button class="btn btn-outline-danger w-100">Update</button>
+                                    </div>
+                                    <input type="hidden" name="latitude" data-geo-lat>
+                                    <input type="hidden" name="longitude" data-geo-lng>
+                                </form>
+                            </div>
+                        </div>
+                    <% } %>
+
+                    <% if (bloodbank && bloodbank.status === 'approved') { %>
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-white"><h5 class="mb-0">Inventory — <%= bloodbank.hospitalName %></h5></div>
+                            <div class="card-body">
+                                <form action="/bloodbank/update-inventory" method="POST">
+                                    <div class="row">
+                                        <% ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].forEach(function(bg) { %>
+                                            <div class="col-md-3 mb-3">
+                                                <label><%= bg %></label>
+                                                <input type="number" name="<%= bg %>" class="form-control" value="<%= bloodbank.inventory[bg] %>" min="0">
+                                            </div>
+                                        <% }) %>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Update inventory</button>
+                                </form>
+                            </div>
+                        </div>
+                    <% } %>
+                <% } %>
+
+                <!-- ADMIN: manage all -->
+                <% if (user.role === 'admin') { %>
+                    <% if (analytics) { %>
+                        <% const pendingApprovals = (analytics.donorsByStatus.pending || 0) + (allBloodBanks || []).filter(function(bank) { return bank.status === 'pending'; }).length; %>
+                        <div class="alert alert-<%= pendingApprovals > 0 ? 'danger' : 'success' %>">
+                            <strong>Approval status:</strong>
+                            <%= pendingApprovals > 0 ? pendingApprovals + ' pending approval(s) need admin review.' : 'All donors and blood banks are approved or resolved.' %>
+                        </div>
+                        <div class="row mb-4">
+                            <% Object.entries(analytics.totals).forEach(function(entry) { %>
+                                <div class="col-md-3 mb-3">
+                                    <div class="card shadow-sm">
+                                        <div class="card-body">
+                                            <div class="text-muted small text-capitalize"><%= entry[0].replace(/([A-Z])/g, ' $1') %></div>
+                                            <h3 class="mb-0"><%= entry[1] %></h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-white"><h5 class="mb-0">Analytics charts</h5></div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4"><canvas id="donorStatusChart"></canvas></div>
+                                    <div class="col-md-4"><canvas id="requestUrgencyChart"></canvas></div>
+                                    <div class="col-md-4"><canvas id="inventoryChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                    <% } %>
+
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-dark text-white"><h5 class="mb-0">Donors — approve & view documents</h5></div>
+                        <div class="card-body p-0 table-responsive">
+                            <table class="table table-bordered mb-0 align-middle">
+                                <thead><tr><th>Name</th><th>Blood</th><th>Status</th><th>Eligibility</th><th>Documents</th><th>Actions</th></tr></thead>
+                                <tbody>
+                                    <% if (allDonors && allDonors.length) { %>
+                                        <% allDonors.forEach(function(d) { %>
+                                            <tr>
+                                                <td><%= d.userId ? d.userId.name : '—' %>
+                                                    <% if (d.userId && d.userId.donorVerificationFeePaid) { %>
+                                                        <span class="badge bg-info ms-1">Fee paid</span>
+                                                    <% } %>
+                                                    <br><small class="text-muted"><%= d.userId ? d.userId.email : '' %></small></td>
+                                                <td><strong><%= d.bloodGroup %></strong></td>
+                                                <td><span class="badge bg-<%= d.status === 'approved' ? 'success' : d.status === 'rejected' ? 'danger' : 'warning' %>"><%= d.status %></span></td>
+                                                <td><span class="badge bg-<%= donorEligibilityBadge(d) %>"><%= donorEligibilityLabel(d) %></span></td>
+                                                <td class="small">
+                                                    <% const docs = d.medicalReports || {}; %>
+                                                    <% if (docs.bloodGroupReportUrl) { %><a href="<%= docUrl(docs.bloodGroupReportUrl) %>" target="_blank">Blood group</a><br><% } %>
+                                                    <% if (docs.bloodTestReportUrl) { %><a href="<%= docUrl(docs.bloodTestReportUrl) %>" target="_blank">Blood test</a><br><% } %>
+                                                    <% if (docs.fitnessCertificateUrl) { %><a href="<%= docUrl(docs.fitnessCertificateUrl) %>" target="_blank">Fitness</a><br><% } %>
+                                                    <% if (docs.identityProofUrl) { %><a href="<%= docUrl(docs.identityProofUrl) %>" target="_blank">ID proof</a><% } %>
+                                                    <% if (!docs.bloodGroupReportUrl && !docs.bloodTestReportUrl) { %>—<% } %>
+                                                </td>
+                                                <td>
+                                                    <% if (d.status !== 'approved') { %>
+                                                        <form action="/admin/donor/<%= d._id %>/approve" method="POST" class="d-inline"><button class="btn btn-success btn-sm">Approve</button></form>
+                                                    <% } %>
+                                                    <% if (d.status !== 'rejected') { %>
+                                                        <form action="/admin/donor/<%= d._id %>/reject" method="POST" class="d-inline"><button class="btn btn-outline-danger btn-sm">Reject</button></form>
+                                                    <% } %>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr><td colspan="6" class="text-center text-muted">No donors</td></tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-dark text-white"><h5 class="mb-0">Blood banks — approve</h5></div>
+                        <div class="card-body p-0 table-responsive">
+                            <table class="table table-bordered mb-0 align-middle">
+                                <thead><tr><th>Hospital</th><th>Contact</th><th>City</th><th>Status</th><th>Certificate</th><th>Actions</th></tr></thead>
+                                <tbody>
+                                    <% if (allBloodBanks && allBloodBanks.length) { %>
+                                        <% allBloodBanks.forEach(function(bb) { %>
+                                            <tr>
+                                                <td><%= bb.hospitalName %></td>
+                                                <td><%= bb.userId ? bb.userId.name : '—' %><br><small><%= bb.userId ? bb.userId.phone : '' %></small></td>
+                                                <td><%= bb.userId ? bb.userId.city : '—' %></td>
+                                                <td><span class="badge bg-<%= bb.status === 'approved' ? 'success' : bb.status === 'rejected' ? 'danger' : 'warning' %>"><%= bb.status %></span></td>
+                                                <td class="small">
+                                                    <% if (bb.registrationCertificateUrl) { %>
+                                                        <a href="<%= docUrl(bb.registrationCertificateUrl) %>" target="_blank">View certificate</a>
+                                                    <% } else { %>
+                                                        <span class="text-muted">Not uploaded</span>
+                                                    <% } %>
+                                                </td>
+                                                <td>
+                                                    <% if (bb.status !== 'approved') { %>
+                                                        <form action="/admin/bloodbank/<%= bb._id %>/approve" method="POST" class="d-inline">
+                                                            <button class="btn btn-success btn-sm" <%= bb.registrationCertificateUrl ? '' : 'disabled title="Certificate required"' %>>Approve</button>
+                                                        </form>
+                                                    <% } %>
+                                                    <% if (bb.status !== 'rejected') { %>
+                                                        <form action="/admin/bloodbank/<%= bb._id %>/reject" method="POST" class="d-inline"><button class="btn btn-outline-danger btn-sm">Reject</button></form>
+                                                    <% } %>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr><td colspan="6" class="text-center text-muted">No blood banks</td></tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-secondary text-white"><h5 class="mb-0">All patients</h5></div>
+                        <div class="card-body p-0 table-responsive">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>City</th></tr></thead>
+                                <tbody>
+                                    <% if (allUsers && allUsers.length) { %>
+                                        <% allUsers.forEach(function(u) { %>
+                                            <tr><td><%= u.name %></td><td><%= u.email %></td><td><%= u.phone %></td><td><%= u.city %></td></tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr><td colspan="4" class="text-center text-muted">No patients</td></tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                <% } %>
+
+            </div>
+
+            <% if (!isRequestsOnly) { %>
+            <div class="col-md-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">🔔 Live notifications</h5>
+                    <span class="badge bg-danger" id="notifBadge" style="display:none;">new</span>
+                </div>
+                <div class="list-group shadow-sm" id="notificationList" style="max-height:70vh;overflow-y:auto;">
+                    <% if (notifications && notifications.length) { %>
+                        <% notifications.forEach(function(n) { %>
+                            <a href="<%= n.link || '/dashboard' %>" class="list-group-item list-group-item-action">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <strong class="small"><%= n.title %></strong>
+                                    <small class="text-muted text-nowrap ms-2"><%= new Date(n.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) %></small>
+                                </div>
+                                <div class="small text-muted"><%= n.message %></div>
+                            </a>
+                        <% }); %>
+                    <% } else { %>
+                        <div class="list-group-item text-muted small" id="notifPlaceholder">Listening in <%= user.city %>…</div>
+                    <% } %>
+                </div>
+            </div>
+            <% } %>
+
+            <% if (isRequestsOnly) { %>
+            <!-- Donor/Bloodbank: collapsible notification bar -->
+            <div class="col-12 mt-3">
+                <div class="card border-danger shadow-sm">
+                    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center py-2"
+                         data-bs-toggle="collapse" data-bs-target="#donorNotifPanel" style="cursor:pointer;">
+                        <span>🔔 Live notifications <span id="notifBadge" class="badge bg-warning text-dark ms-2 d-none">new</span></span>
+                        <span class="small opacity-75">Click to expand</span>
+                    </div>
+                    <div class="collapse" id="donorNotifPanel">
+                        <div class="list-group list-group-flush" id="notificationList" style="max-height:300px;overflow-y:auto;">
+                            <% if (notifications && notifications.length) { %>
+                                <% notifications.forEach(function(n) { %>
+                                    <a href="<%= n.link || '/dashboard' %>" class="list-group-item list-group-item-action">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <strong class="small"><%= n.title %></strong>
+                                            <small class="text-muted text-nowrap ms-2"><%= new Date(n.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) %></small>
+                                        </div>
+                                        <div class="small text-muted"><%= n.message %></div>
+                                    </a>
+                                <% }); %>
+                            <% } else { %>
+                                <div class="list-group-item text-muted small">Listening in <%= user.city %>… No notifications yet.</div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function () {
+            const geoForms = document.querySelectorAll('[data-geo-form]');
+            if (!geoForms.length) return;
+
+            function fillGeoForms(lat, lng) {
+                geoForms.forEach((form) => {
+                    const latInput = form.querySelector('[data-geo-lat]');
+                    const lngInput = form.querySelector('[data-geo-lng]');
+                    if (latInput) latInput.value = String(lat);
+                    if (lngInput) lngInput.value = String(lng);
+                });
+            }
+
+            // Don't submit empty geo fields — server will use default coordinates.
+            function omitGeoFields() {
+                geoForms.forEach((form) => {
+                    form.querySelectorAll('[data-geo-lat], [data-geo-lng]').forEach((input) => {
+                        input.removeAttribute('name');
+                        input.value = '';
+                    });
+                });
+            }
+
+            if (!navigator.geolocation) {
+                omitGeoFields();
+                return;
+            }
+
+            geoForms.forEach((form) => {
+                form.addEventListener('submit', () => {
+                    const latInput = form.querySelector('[data-geo-lat]');
+                    const lngInput = form.querySelector('[data-geo-lng]');
+                    const lat = (latInput?.value || '').trim();
+                    const lng = (lngInput?.value || '').trim();
+                    const latOk = lat && !Number.isNaN(Number(lat));
+                    const lngOk = lng && !Number.isNaN(Number(lng));
+                    if (!latOk || !lngOk) {
+                        if (latInput) latInput.removeAttribute('name');
+                        if (lngInput) lngInput.removeAttribute('name');
+                    }
+                });
+            });
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => fillGeoForms(pos.coords.latitude, pos.coords.longitude),
+                () => omitGeoFields(),
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+            );
+        })();
+    </script>
+    <% if (flash && flash.error && ['upload_invalid_type', 'upload_file_too_large', 'upload_processing_failed'].includes(flash.error)) { %>
+    <script>
+        (function () {
+            const map = {
+                upload_invalid_type: {
+                    title: 'Invalid file type',
+                    text: 'Please upload only JPG, PNG, WEBP, or PDF documents.',
+                },
+                upload_file_too_large: {
+                    title: 'File too large',
+                    text: 'Each document must be 10 MB or smaller.',
+                },
+                upload_processing_failed: {
+                    title: 'Upload failed',
+                    text: 'We could not process your document. Please try again.',
+                },
+            };
+            const cfg = map["<%= flash.error %>"];
+            if (!cfg) return;
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+                window.Swal.fire({
+                    icon: 'error',
+                    title: cfg.title,
+                    text: cfg.text,
+                    confirmButtonColor: '#dc3545',
+                });
+            }
+        })();
+    </script>
+    <% } %>
+
+    <% if (['user', 'donor', 'bloodbank'].includes(user.role)) { %>
+    <!-- ── Chat modal ──────────────────────────────────────────── -->
+    <div class="modal fade" id="chatModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable" style="max-width:520px">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-semibold">
+                        💬 <span id="chatWithName">—</span>
+                        <span id="chatPresenceStatus" class="chat-presence is-offline d-block mt-1">Offline</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body bg-light" id="chatMessages"
+                     style="min-height:300px;max-height:55vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+                </div>
+                <div class="modal-footer bg-white">
+                    <form id="chatForm" class="w-100 d-flex gap-2">
+                        <input id="chatInput" class="form-control" placeholder="Type a message…" autocomplete="off" maxlength="2000" />
+                        <button class="btn btn-danger px-4" type="submit">Send</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Floating chat-notification toast ────────────────────── -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1100">
+        <div id="chatToast" class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive">
+            <div class="d-flex">
+                <div class="toast-body" id="chatToastBody">New message received.</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Unread-chat floating button ─────────────────────────── -->
+    <button id="chatUnreadBtn"
+            class="btn btn-danger rounded-circle shadow-lg d-none"
+            style="position:fixed;bottom:24px;right:24px;width:56px;height:56px;font-size:20px;z-index:1050;"
+            title="Open chat">
+        💬<span id="chatUnreadBadge"
+                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark"
+                style="font-size:11px;">0</span>
+    </button>
+    <% } %>
+
+    <% if (['donor', 'bloodbank', 'admin', 'user'].includes(user.role)) { %>
+    <script src="/js/chat-presence.js"></script>
+    <script>
+        // ── Socket init & auth rooms ────────────────────────────────────────
+        const socket = io({ transports: ['websocket', 'polling'] });
+        const presenceWatcher = window.ChatPresence?.createWatcher(socket);
+        const city = "<%= user.city %>";
+        const currentUser = { id: "<%= user._id %>", role: "<%= user.role %>", city };
+
+        socket.on('connect', () => {
+            // Re-join user + role + city rooms on every (re)connect
+            socket.emit('join_context', { userId: currentUser.id });
+            socket.emit('join_city', city);
+        });
+
+        // ── Live notification helpers ───────────────────────────────────────
+        function escHtml(s) {
+            return (s || '').toString()
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function pushNotification(html, cssClass) {
+            const list = document.getElementById('notificationList');
+            if (!list) return;
+            const item = document.createElement('a');
+            item.className = 'list-group-item list-group-item-action ' + (cssClass || 'list-group-item-danger');
+            item.innerHTML = html;
+            const placeholder = list.querySelector('.text-muted');
+            if (placeholder) placeholder.remove();
+            list.prepend(item);
+            // cap at 30
+            while (list.children.length > 30) list.removeChild(list.lastChild);
+        }
+
+        function pushSavedNotification(data) {
+            const title   = escHtml(data.title   || 'Notification');
+            const message = escHtml(data.message || '');
+            const time    = data.createdAt
+                ? new Date(data.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const link    = data.link || '/dashboard';
+            const cssClass = {
+                request  : 'list-group-item-danger',
+                approval : 'list-group-item-success',
+                match    : 'list-group-item-warning',
+                contact  : 'list-group-item-info',
+            }[data.type] || 'list-group-item-info';
+
+            pushNotification(
+                `<a class="text-decoration-none text-dark d-block" href="${link}">` +
+                `<div class="d-flex justify-content-between align-items-start">` +
+                `<strong>${title}</strong><small class="text-muted ms-2 text-nowrap">${time}</small></div>` +
+                `<div class="small text-muted">${message}</div></a>`,
+                cssClass
+            );
+        }
+
+        // ── Notification events ─────────────────────────────────────────────
+        socket.on('notification:new', (data) => {
+            const notifUserId = data.userId ? data.userId.toString() : null;
+            const forUser     = notifUserId === currentUser.id;
+            const roleMatch   = Array.isArray(data.roles) && data.roles.includes(currentUser.role);
+            const cityMatch   = data.city && data.city.toLowerCase() === currentUser.city.toLowerCase();
+            const broadcast   = !notifUserId && (!data.roles || data.roles.length === 0) && !data.city;
+            if (forUser || roleMatch || cityMatch || broadcast) pushSavedNotification(data);
+        });
+
+        socket.on('critical_alert', (data) => {
+            pushNotification(
+                `<div class="d-flex justify-content-between"><strong>🚨 Critical</strong><small>${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</small></div>` +
+                `<div class="small">${escHtml(data.bloodGroup)} needed at ${escHtml(data.hospitalName)}</div>`,
+                'list-group-item-danger'
+            );
+        });
+
+        socket.on('request_created', (data) => {
+            pushNotification(
+                `<strong>🩸 New Request:</strong> ${escHtml(data.bloodGroup)} — ${escHtml(data.patientName)}`,
+                'list-group-item-warning'
+            );
+        });
+    </script>
+    <% } %>
+
+    <% if (['user', 'donor', 'bloodbank'].includes(user.role)) { %>
+    <script>window.__RAZORPAY_KEY__ = <%- JSON.stringify(razorpayKeyId || '') %>;</script>
+    <script src="/js/razorpay-checkout.js?v=6"></script>
+    <script>
+        (function () {
+            function pay(payload) {
+                if (window.RaktaSetuPayments) {
+                    window.RaktaSetuPayments.openCheckout(payload, '#dc3545');
+                }
+            }
+
+            document.querySelectorAll('.buy-plan-btn').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const plan = button.dataset.plan;
+                    if (!plan) return;
+                    pay({ purpose: 'subscription', plan });
+                });
+            });
+
+            document.querySelectorAll('.pay-action-btn').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const purpose = button.dataset.purpose;
+                    if (!purpose) return;
+                    if (purpose === 'request_boost') {
+                        const requestId = button.dataset.requestId;
+                        if (!requestId) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'No active request found',
+                                text: 'Create an active request first, then boost it.',
+                                confirmButtonColor: '#dc3545',
+                            });
+                            return;
+                        }
+                        pay({ purpose, requestId });
+                        return;
+                    }
+                    pay({ purpose });
+                });
+            });
+        })();
+    </script>
+    <% } %>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Socket.io — Chat + Live Notifications
+    ════════════════════════════════════════════════════════════ -->
+    <% if (['user', 'donor', 'bloodbank'].includes(user.role)) { %>
+    <script>
+    (function () {
+        'use strict';
+
+        // ── DOM refs ────────────────────────────────────────────────────
+        const chatModalEl    = document.getElementById('chatModal');
+        const chatMessagesEl = document.getElementById('chatMessages');
+        const chatWithNameEl = document.getElementById('chatWithName');
+        const chatForm       = document.getElementById('chatForm');
+        const chatInput      = document.getElementById('chatInput');
+        const toastEl        = document.getElementById('chatToast');
+        const toastBodyEl    = document.getElementById('chatToastBody');
+        const unreadBtn      = document.getElementById('chatUnreadBtn');
+        const unreadBadgeEl  = document.getElementById('chatUnreadBadge');
+
+        const chatModal = chatModalEl ? new bootstrap.Modal(chatModalEl) : null;
+        const chatToast = toastEl    ? new bootstrap.Toast(toastEl, { delay: 4000 }) : null;
+
+        let activeChat  = null; // { userId, name, role, conversationId }
+        let unreadCount = 0;
+        let modalOpen   = false;
+
+        chatModalEl?.addEventListener('show.bs.modal',  () => { modalOpen = true; });
+        chatModalEl?.addEventListener('hidden.bs.modal', () => {
+            modalOpen = false;
+            presenceWatcher?.unwatch();
+        });
+
+        // ── Helpers ────────────────────────────────────────────────────
+        function esc(s) {
+            return (s || '').toString()
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function showChatError(message) {
+            const text = message || 'Chat error';
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+                window.Swal.fire({
+                    icon: 'error',
+                    title: 'Chat blocked',
+                    text,
+                    confirmButtonColor: '#dc3545',
+                });
+                return;
+            }
+            alert(text);
+        }
+
+        function scrollDown() {
+            if (chatMessagesEl) chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+        }
+
+        function renderBubble(msg) {
+            const mine = String(msg.fromUserId) === String(currentUser.id);
+            const wrap = document.createElement('div');
+            wrap.className = 'd-flex align-items-end gap-2 ' + (mine ? 'flex-row-reverse' : '');
+
+            const bubble = document.createElement('div');
+            bubble.className = 'px-3 py-2 rounded-3 ' + (mine
+                ? 'bg-danger text-white'
+                : 'bg-white border text-dark');
+            bubble.style.cssText = 'max-width:78%;word-break:break-word;font-size:.92rem;';
+            const time = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+            bubble.innerHTML =
+                `<div style="white-space:pre-wrap;">${esc(msg.message || msg.text || '')}</div>` +
+                `<div class="mt-1 ${mine ? 'text-white-50' : 'text-muted'}" style="font-size:.7rem;text-align:${mine?'right':'left'}">${time}</div>`;
+
+            wrap.appendChild(bubble);
+            return wrap;
+        }
+
+        // ── Unread badge ───────────────────────────────────────────────
+        function incrementUnread(senderName) {
+            unreadCount++;
+            if (unreadBtn) {
+                unreadBtn.classList.remove('d-none');
+                if (unreadBadgeEl) unreadBadgeEl.textContent = unreadCount;
+            }
+            if (chatToast && toastBodyEl) {
+                toastBodyEl.textContent = `💬 ${senderName || 'Someone'} sent you a message`;
+                chatToast.show();
+            }
+        }
+
+        function clearUnread() {
+            unreadCount = 0;
+            if (unreadBtn) unreadBtn.classList.add('d-none');
+            if (unreadBadgeEl) unreadBadgeEl.textContent = '0';
+        }
+
+        // ── Open chat ──────────────────────────────────────────────────
+        function openChat(userId, name, role) {
+            if (!chatModal) return;
+            activeChat = { userId, name, role, conversationId: null };
+            if (chatWithNameEl) chatWithNameEl.textContent = `${esc(name)} · ${role}`;
+            presenceWatcher?.watch(userId, document.getElementById('chatPresenceStatus'));
+            if (chatMessagesEl) chatMessagesEl.innerHTML =
+                '<div class="text-muted small text-center py-4">Loading messages…</div>';
+            clearUnread();
+            chatModal.show();
+
+            // Request history via ack callback
+            socket.emit('chat:history', { withUserId: userId, limit: 50 }, (resp) => {
+                if (!resp || !resp.ok) {
+                    if (chatMessagesEl)
+                        chatMessagesEl.innerHTML =
+                            `<div class="text-danger small text-center py-4">${esc(resp?.error || 'Unable to open chat')}</div>`;
+                    return;
+                }
+                activeChat.conversationId = resp.conversationId;
+                if (chatMessagesEl) chatMessagesEl.innerHTML = '';
+                if (!resp.messages?.length) {
+                    const p = document.createElement('div');
+                    p.className = 'text-muted small text-center py-4';
+                    p.textContent = 'No messages yet. Say hello! 👋';
+                    chatMessagesEl?.appendChild(p);
+                } else {
+                    (resp.messages || []).forEach((m) => chatMessagesEl?.appendChild(renderBubble(m)));
+                }
+                scrollDown();
+            });
+        }
+
+        // ── Delegate chat-btn clicks ───────────────────────────────────
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.chat-btn');
+            if (!btn) return;
+            const userId = btn.dataset.userId;
+            const name   = btn.dataset.userName  || 'User';
+            const role   = btn.dataset.userRole  || 'user';
+            if (userId) openChat(userId, name, role);
+        });
+
+        // Floating unread button also opens the last conversation
+        unreadBtn?.addEventListener('click', () => {
+            if (activeChat?.userId) {
+                clearUnread();
+                chatModal?.show();
+            }
+        });
+
+        // ── Send message ───────────────────────────────────────────────
+        chatForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!activeChat?.userId) return;
+            const text = (chatInput?.value || '').trim();
+            if (!text) return;
+
+            // Optimistically render sender's bubble immediately
+            const optimistic = renderBubble({
+                fromUserId: currentUser.id,
+                toUserId:   activeChat.userId,
+                message:    text,
+                createdAt:  new Date(),
+            });
+            chatMessagesEl?.appendChild(optimistic);
+            scrollDown();
+
+            socket.emit('chat:send', {
+                toUserId:       activeChat.userId,
+                text,                           // server uses `text`
+                conversationId: activeChat.conversationId || undefined,
+            }, (resp) => {
+                if (!resp || !resp.ok) {
+                    // Roll back optimistic bubble
+                    optimistic.remove();
+                    showChatError(resp?.error || 'Failed to send message');
+                }
+            });
+
+            if (chatInput) { chatInput.value = ''; chatInput.focus(); }
+        });
+
+        // ── Receive messages ───────────────────────────────────────────
+        socket.on('chat:message', (msg) => {
+            const fromId = String(msg.fromUserId);
+            const toId   = String(msg.toUserId);
+            const myId   = String(currentUser.id);
+
+            // Skip messages I sent (already rendered optimistically)
+            if (fromId === myId) return;
+
+            // Is this for the currently open chat?
+            const isActive = activeChat?.userId && (
+                fromId === String(activeChat.userId) ||
+                toId   === String(activeChat.userId)
+            );
+
+            if (isActive && modalOpen) {
+                chatMessagesEl?.appendChild(renderBubble(msg));
+                scrollDown();
+            } else {
+                incrementUnread(msg.senderName || 'Someone');
+                // If the same user but modal closed — queue message for next open
+                if (isActive && !modalOpen) {
+                    // We'll just show the toast; messages load fresh on next openChat()
+                }
+            }
+        });
+
+        socket.on('chat:error', (err) => {
+            console.warn('[chat:error]', err);
+            showChatError(err?.error || 'Chat error');
+        });
+    })();
+    </script>
+    <% } %>
+
+    <% if (user.role === 'user') { %>
+    <script>
+        async function submitSearch(formId, endpoint, targetId, render) {
+            const form = document.getElementById(formId);
+            if (!form) return;
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const params = new URLSearchParams(new FormData(form));
+                if (endpoint.includes('bloodbanks')) params.set('nearby', '1');
+                const target = document.getElementById(targetId);
+                target.innerHTML = 'Searching...';
+                const response = await fetch(`${endpoint}?${params.toString()}`);
+                const data = await response.json();
+                target.innerHTML = render(data);
+            });
+        }
+
+        submitSearch('donorSearchForm', '/search/donors', 'donorSearchResults', (data) => {
+            const donors = data.donors || [];
+            if (!donors.length) return '<span class="text-muted">No donors found.</span>';
+            return donors.map((item) => {
+                const donor = item.donor || item;
+                const donorUser = donor.userId || {};
+                const distance = item.distanceKm !== undefined ? `, ${item.distanceKm} km, score ${item.score}` : '';
+                const lastDonation = donor.lastDonationDate ? new Date(donor.lastDonationDate).getTime() : 0;
+                const cooldownDays = lastDonation ? Math.floor((Date.now() - lastDonation) / 86400000) : 999;
+                const remaining = Math.max(0, 90 - cooldownDays);
+                const eligible = donor.status === 'approved' && donor.isAvailable && remaining === 0;
+                const badge = eligible ? '<span class="badge bg-success">Eligible</span>' : `<span class="badge bg-danger">Not eligible${remaining ? ` (${remaining} days left)` : ''}</span>`;
+                return `<div class="border rounded p-2 mb-2"><strong>${donorUser.name || 'Donor'}</strong> (${donor.bloodGroup}${distance}) ${badge}<br><a href="tel:${donorUser.phone || ''}">${donorUser.phone || ''}</a>${donorUser._id ? `<br><button type="button" class="btn btn-outline-primary btn-sm chat-btn mt-1" data-user-id="${donorUser._id}" data-user-name="${donorUser.name || 'Donor'}" data-user-role="donor">Chat</button>` : ''}</div>`;
+            }).join('');
+        });
+
+        submitSearch('bloodBankSearchForm', '/search/bloodbanks', 'bloodBankSearchResults', (data) => {
+            const banks = data.bloodBanks || [];
+            if (!banks.length) return '<span class="text-muted">No blood banks found.</span>';
+            return banks.map((item) => {
+                const bank = item.bloodBank || item;
+                const bankUser = bank.userId || {};
+                const stock = item.availableUnits !== undefined ? `${item.availableUnits} units, ${item.distanceKm} km` : 'Stock available';
+                return `<div class="border rounded p-2 mb-2"><strong>${bank.hospitalName}</strong><br>${stock}<br><a href="tel:${bankUser.phone || ''}">${bankUser.phone || ''}</a>${bankUser._id ? `<br><button type="button" class="btn btn-outline-primary btn-sm chat-btn mt-1" data-user-id="${bankUser._id}" data-user-name="${bank.hospitalName}" data-user-role="bloodbank">Chat</button>` : ''}</div>`;
+            }).join('');
+        });
+    </script>
+    <% } %>
+
+    <% if (user.role === 'admin' && analytics) { %>
+    <script>
+        const analytics = <%- JSON.stringify(analytics) %>;
+        function makeChart(id, source, type) {
+            const element = document.getElementById(id);
+            if (!element) return;
+            new Chart(element, {
+                type,
+                data: {
+                    labels: Object.keys(source),
+                    datasets: [{
+                        data: Object.values(source),
+                        backgroundColor: ['#dc3545', '#198754', '#ffc107', '#0d6efd', '#6c757d', '#20c997', '#6610f2', '#fd7e14'],
+                    }],
+                },
+                options: { plugins: { legend: { position: 'bottom' } } },
+            });
+        }
+        makeChart('donorStatusChart', analytics.donorsByStatus, 'doughnut');
+        makeChart('requestUrgencyChart', analytics.requestsByUrgency, 'bar');
+        makeChart('inventoryChart', analytics.inventoryTotals, 'bar');
+    </script>
+    <% } %>
+    <%- include('partials/shared/help-chatbot', { user }) %>
+</body>
+</html>

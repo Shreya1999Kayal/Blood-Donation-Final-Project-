@@ -1,0 +1,13 @@
+<%
+const avatarUrl = typeof user !== 'undefined' ? profileImageUrl(user) : '';
+const initial = typeof user !== 'undefined' ? userInitials(user.name, '?') : '?';
+const size = typeof avatarSize !== 'undefined' ? avatarSize : 'md';
+const extraClass = typeof avatarClass !== 'undefined' ? avatarClass : '';
+%>
+<div class="user-avatar user-avatar-<%= size %><%= extraClass ? ' ' + extraClass : '' %>">
+    <% if (avatarUrl) { %>
+        <img src="<%= avatarUrl %>" alt="<%= user.name || 'Profile' %>" class="user-avatar-img" loading="lazy">
+    <% } else { %>
+        <span class="user-avatar-initial"><%= initial %></span>
+    <% } %>
+</div>

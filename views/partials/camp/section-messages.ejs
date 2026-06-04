@@ -1,0 +1,35 @@
+<%
+const items = inbox || [];
+const donorCount = items.filter(function(i) { return i.otherUser && i.otherUser.role === 'donor'; }).length;
+const bankCount = items.filter(function(i) { return i.otherUser && i.otherUser.role === 'bloodbank'; }).length;
+const withMessages = items.filter(function(i) { return i.lastMessage && i.lastMessage.text; }).length;
+%>
+
+<div class="cp-msg-hero mb-4">
+    <div class="cp-msg-hero-inner">
+        <div class="cp-msg-hero-copy">
+            <span class="cp-msg-hero-badge"><i data-lucide="messages-square" style="width:14px;height:14px;"></i> Secure inbox</span>
+            <h3 class="cp-msg-hero-title">Messages</h3>
+            <p class="cp-msg-hero-sub mb-0">Coordinate with unlocked donors and blood banks. Conversations stay private to your camp account.</p>
+        </div>
+        <div class="cp-msg-hero-stats">
+            <div class="cp-msg-stat"><small>Threads</small><strong><%= items.length %></strong></div>
+            <div class="cp-msg-stat"><small>Donors</small><strong><%= donorCount %></strong></div>
+            <div class="cp-msg-stat"><small>Blood banks</small><strong><%= bankCount %></strong></div>
+            <div class="cp-msg-stat"><small>Active</small><strong><%= withMessages %></strong></div>
+        </div>
+    </div>
+</div>
+
+<div class="overview-panel cp-inbox-panel">
+    <div class="cp-inbox-head">
+        <div>
+            <h5 class="mb-0">Conversation inbox</h5>
+            <p class="text-muted small mb-0"><%= items.length %> thread<%= items.length !== 1 ? 's' : '' %> · unlock contacts from Donors or Blood banks to start chatting</p>
+        </div>
+        <a href="/messages" class="btn btn-sm btn-outline-primary">Open full page</a>
+    </div>
+    <div class="cp-inbox-body">
+        <%- include('messages-board', { inbox: items }) %>
+    </div>
+</div>

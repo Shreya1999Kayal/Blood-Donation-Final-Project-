@@ -1,0 +1,43 @@
+<%
+const requests = campParticipationRequests || [];
+if (!requests.length) return;
+%>
+<div class="cp-participation-panel mb-4">
+    <div class="cp-participation-head">
+        <div>
+            <h5 class="mb-0">Camp participation requests</h5>
+            <p class="text-muted small mb-0"><%= requests.length %> pending invitation<%= requests.length !== 1 ? 's' : '' %> from blood donation camps</p>
+        </div>
+    </div>
+    <div class="cp-participation-list">
+        <% requests.forEach(function(r) {
+            const campUser = r.campUserId || {};
+            const dateLabel = r.campDate ? new Date(r.campDate).toLocaleDateString('en-IN', { dateStyle: 'medium' }) : '—';
+            const acceptAction = r.targetType === 'bloodbank' ? '/bloodbank/camp-participation/' + r._id + '/accept' : '/donor/camp-participation/' + r._id + '/accept';
+            const rejectAction = r.targetType === 'bloodbank' ? '/bloodbank/camp-participation/' + r._id + '/reject' : '/donor/camp-participation/' + r._id + '/reject';
+        %>
+        <div class="cp-participation-item">
+            <div class="cp-participation-item-main">
+                <span class="cp-participation-type"><%= r.targetType === 'bloodbank' ? 'Blood collection' : 'Donor invite' %></span>
+                <h6 class="mb-1"><%= r.campName %></h6>
+                <p class="small text-muted mb-1">From <strong><%= (r.campId && r.campId.organizationName) || campUser.name || 'Camp organizer' %></strong> · <%= dateLabel %> · <%= r.campCity || '—' %></p>
+                <p class="small mb-0">
+                    <% if (r.targetType === 'bloodbank') { %>
+                    Accept to receive blood units collected at this camp. Decline if you cannot coordinate.
+                    <% } else { %>
+                    Accept to donate blood at this camp. Decline if you will not participate.
+                    <% } %>
+                </p>
+            </div>
+            <div class="cp-participation-actions">
+                <form action="<%= acceptAction %>" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-success">Accept</button>
+                </form>
+                <form action="<%= rejectAction %>" method="POST" class="d-inline ms-1">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">Decline</button>
+                </form>
+            </div>
+        </div>
+        <% }); %>
+    </div>
+</div>

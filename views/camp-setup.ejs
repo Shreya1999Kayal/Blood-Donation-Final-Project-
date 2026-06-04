@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camp Organization Profile — RaktaSetu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="/css/camp-ui.css" rel="stylesheet">
+</head>
+<body class="cp-setup-page">
+<div class="cp-setup-shell">
+
+    <header class="cp-setup-header">
+        <div class="cp-setup-header-inner">
+            <a href="/" class="cp-setup-brand">
+                <div class="cp-setup-logo">
+                    <i data-lucide="tent" style="width:22px;height:22px;color:#fff;"></i>
+                </div>
+                <div>
+                    <div class="cp-setup-brand-title">RaktaSetu</div>
+                    <div class="cp-setup-brand-sub">Camp organization portal</div>
+                </div>
+            </a>
+            <div class="cp-setup-steps" aria-hidden="true">
+                <span class="cp-setup-step-pill active">1. Profile</span>
+                <span class="cp-setup-step-arrow">→</span>
+                <span class="cp-setup-step-pill">2. OTP verify</span>
+                <span class="cp-setup-step-arrow">→</span>
+                <span class="cp-setup-step-pill">3. Admin approval</span>
+            </div>
+            <a href="/auth/logout" class="cp-setup-link-btn">Sign out</a>
+        </div>
+    </header>
+
+    <main class="cp-setup-main">
+        <div class="cp-setup-intro">
+            <span class="cp-setup-badge">Registration</span>
+            <h1 class="cp-setup-page-title">Camp organization profile</h1>
+            <p class="cp-setup-page-lead">Register your organization and first camp event. An OTP will be sent to the organizer email after you submit. Blood bank linkage is optional.</p>
+        </div>
+
+        <% if (error) { %>
+            <div class="cp-setup-alert cp-setup-alert--error">
+                <i data-lucide="alert-circle" style="width:20px;height:20px;flex-shrink:0;"></i>
+                <span><%= error %></span>
+            </div>
+        <% } %>
+
+        <form action="/camp/setup" method="POST" id="campSetupForm" class="cp-setup-form">
+
+            <section class="cp-setup-card">
+                <div class="cp-setup-card-head">
+                    <div class="cp-setup-card-icon"><i data-lucide="building" style="width:20px;height:20px;"></i></div>
+                    <div class="cp-setup-card-head-text">
+                        <h2 class="cp-setup-card-title">Organization details</h2>
+                        <p class="cp-setup-card-sub">Legal or operating identity of the camp organizing body</p>
+                    </div>
+                </div>
+                <div class="cp-setup-card-body">
+                    <div class="cp-setup-grid cp-setup-grid--org">
+                        <div class="cp-setup-field">
+                            <label for="organizationType">Organization Type <span class="cp-req">*</span></label>
+                            <select name="organizationType" id="organizationType" class="cp-setup-input" required>
+                                <option value="">Select value</option>
+                                <% organizationTypes.forEach(function(t) { %><option value="<%= t %>"><%= t %></option><% }); %>
+                            </select>
+                        </div>
+                        <div class="cp-setup-field">
+                            <label for="organizationName">Organization Name <span class="cp-req">*</span></label>
+                            <input type="text" name="organizationName" id="organizationName" class="cp-setup-input" placeholder="e.g. Red Cross District Chapter" required>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="cp-setup-card">
+                <div class="cp-setup-card-head">
+                    <div class="cp-setup-card-icon"><i data-lucide="users" style="width:20px;height:20px;"></i></div>
+                    <div class="cp-setup-card-head-text">
+                        <h2 class="cp-setup-card-title">Organizers</h2>
+                        <p class="cp-setup-card-sub">Primary contact receives OTP on submit (email)</p>
+                    </div>
+                </div>
+                <div class="cp-setup-card-body">
+                    <div class="cp-setup-grid">
+                        <div class="cp-setup-field">
+                            <label for="organizerName">Organizer Name <span class="cp-req">*</span></label>
+                            <input type="text" name="organizerName" id="organizerName" class="cp-setup-input" value="<%= user.name %>" required>
+                        </div>
+                        <div class="cp-setup-field">
+                            <label for="organizerMobile">Organizer Mobile No. <span class="cp-req">*</span></label>
+                            <input type="tel" name="organizerMobile" id="organizerMobile" class="cp-setup-input" value="<%= user.phone %>" pattern="[6-9][0-9]{9}" placeholder="10-digit mobile" required>
+                            <span class="cp-setup-hint">OTP is sent to organizer email on submit</span>
+                        </div>
+                        <div class="cp-setup-field cp-setup-field--full">
+                            <label for="organizerEmail">Organizer Email Id <span class="cp-req">*</span></label>
+                            <input type="email" name="organizerEmail" id="organizerEmail" class="cp-setup-input" value="<%= user.email %>" required>
+                        </div>
+                        <div class="cp-setup-field">
+                            <label for="coOrganizerName">Co-Organizer Name</label>
+                            <input type="text" name="coOrganizerName" id="coOrganizerName" class="cp-setup-input" placeholder="Optional">
+                        </div>
+                        <div class="cp-setup-field">
+                            <label for="coOrganizerMobile">Co-Organizer Mobile</label>
+                            <input type="tel" name="coOrganizerMobile" id="coOrganizerMobile" class="cp-setup-input" pattern="[6-9][0-9]{9}" placeholder="Optional">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="cp-setup-card">
+                <div class="cp-setup-card-head">
+                    <div class="cp-setup-card-icon"><i data-lucide="calendar-range" style="width:20px;height:20px;"></i></div>
+                    <div class="cp-setup-card-head-text">
+                        <h2 class="cp-setup-card-title">First camp event</h2>
+                        <p class="cp-setup-card-sub">Schedule your inaugural blood donation camp — saved to camp history</p>
+                    </div>
+                </div>
+                <div class="cp-setup-card-body">
+                    <div class="cp-setup-grid">
+                        <div class="cp-setup-field">
+                            <label for="campName">Camp Name <span class="cp-req">*</span></label>
+                            <input type="text" name="campName" id="campName" class="cp-setup-input" placeholder="e.g. World Blood Donor Day Camp 2026" required>
+                        </div>
+                        <div class="cp-setup-field">
+                            <label for="linkedBloodBankId">Blood Bank <span class="cp-opt">(optional)</span></label>
+                            <select name="linkedBloodBankId" id="linkedBloodBankId" class="cp-setup-input">
+                                <option value="">Select Blood Bank — optional</option>
+                                <% (approvedBloodBanks || []).forEach(function(bb) { %><option value="<%= bb._id %>"><%= bb.hospitalName %></option><% }); %>
+                            </select>
+                            <span class="cp-setup-hint">Link a partner blood bank if already confirmed</span>
+                        </div>
+                        <div class="cp-setup-field cp-setup-field--full">
+                            <label for="campAddress">Camp Address <span class="cp-req">*</span></label>
+                            <textarea name="campAddress" id="campAddress" class="cp-setup-input cp-setup-textarea" rows="3" placeholder="Venue address with landmark" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="cp-setup-grid cp-setup-grid--triple">
+                        <div class="cp-setup-field">
+                            <label for="cpStateSelect">State <span class="cp-req">*</span></label>
+                            <select name="state" id="cpStateSelect" class="cp-setup-input" required>
+                                <option value="">Select State</option>
+                                <% states.forEach(function(s) { %><option value="<%= s %>"><%= s %></option><% }); %>
+                            </select>
+                        </div>
+                        <div class="cp-setup-field">
+                            <label for="cpDistrictSelect">District <span class="cp-req">*</span></label>
+                            <select name="district" id="cpDistrictSelect" class="cp-setup-input" required>
+                                <option value="">Select District</option>
+                            </select>
+                        </div>
+                        <div class="cp-setup-field">
+                            <label for="city">City Name <span class="cp-req">*</span></label>
+                            <input type="text" name="city" id="city" class="cp-setup-input" value="<%= user.city %>" required>
+                        </div>
+                    </div>
+
+                    <div class="cp-setup-grid cp-setup-grid--triple">
+                        <div class="cp-setup-field">
+                            <label for="proposedDate">Camp Propose Date <span class="cp-req">*</span></label>
+                            <input type="date" name="proposedDate" id="proposedDate" class="cp-setup-input" required>
+                        </div>
+                        <div class="cp-setup-field">
+                            <label for="startTime">Start Time (24HH:MM) <span class="cp-req">*</span></label>
+                            <input type="time" name="startTime" id="startTime" class="cp-setup-input" value="09:00" required>
+                        </div>
+                        <div class="cp-setup-field">
+                            <label for="endTime">End Time (24HH:MM) <span class="cp-req">*</span></label>
+                            <input type="time" name="endTime" id="endTime" class="cp-setup-input" value="17:00" required>
+                        </div>
+                    </div>
+
+                    <div class="cp-setup-grid">
+                        <div class="cp-setup-field">
+                            <label for="latitude">Latitude</label>
+                            <input type="text" name="latitude" id="latitude" class="cp-setup-input" placeholder="Optional">
+                        </div>
+                        <div class="cp-setup-field">
+                            <label for="longitude">Longitude</label>
+                            <input type="text" name="longitude" id="longitude" class="cp-setup-input" placeholder="Optional">
+                        </div>
+                        <div class="cp-setup-field">
+                            <label for="estimatedParticipants">Estimated Participants <span class="cp-req">*</span></label>
+                            <input type="number" name="estimatedParticipants" id="estimatedParticipants" class="cp-setup-input" min="1" placeholder="e.g. 150" required>
+                        </div>
+                        <div class="cp-setup-field">
+                            <label for="referenceSupporter">Reference / Camp Supporter (Prayojak)</label>
+                            <input type="text" name="referenceSupporter" id="referenceSupporter" class="cp-setup-input" placeholder="Optional">
+                        </div>
+                        <div class="cp-setup-field cp-setup-field--full">
+                            <label for="remarks">Remarks</label>
+                            <input type="text" name="remarks" id="remarks" class="cp-setup-input" placeholder="Any additional notes for admin review">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="cp-setup-actions">
+                <button type="submit" class="cp-setup-submit">
+                    <i data-lucide="send" style="width:18px;height:18px;"></i>
+                    Submit &amp; verify OTP
+                </button>
+                <p class="cp-setup-actions-note">By submitting, you confirm details are accurate. Admin approval is required before directory access.</p>
+            </div>
+        </form>
+    </main>
+</div>
+
+<script>
+window.__CAMP_DISTRICTS__ = <%- JSON.stringify(typeof districtsByState !== 'undefined' ? districtsByState : {}) %>;
+</script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="/js/camp-ui.js"></script>
+<script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<%
+const notifs = notifications || [];
+const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+const todayList = notifs.filter(function(n) { return new Date(n.createdAt) >= todayStart; });
+const messageList = notifs.filter(function(n) {
+    return n.type === 'message' || n.type === 'contact' || (n.link && String(n.link).indexOf('/chat/') === 0);
+});
+const approvalList = notifs.filter(function(n) { return n.type === 'approval'; });
+const activeEmergencies = (bloodRequests || []).filter(function(r) { return ['active', 'contacted'].includes(r.status); }).length;
+
+const ntStats = [
+    { label: 'In feed', value: notifs.length, icon: 'bell', tone: 'slate', img: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=260&fit=crop&q=80' },
+    { label: 'Messages', value: messageList.length, icon: 'messages-square', tone: 'blue', img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=260&fit=crop&q=80' },
+    { label: 'Approvals', value: approvalList.length, icon: 'badge-check', tone: 'green', img: 'https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=400&h=260&fit=crop&q=80' },
+    { label: 'Live cases', value: activeEmergencies, icon: 'siren', tone: 'red', img: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=400&h=260&fit=crop&q=80' },
+];
+%>
+
+<div class="nt-hero mb-4 dn-hero">
+    <div class="nt-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="nt-hero-overlay"></div>
+    <div class="nt-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="nt-hero-badge"><span class="pulse-dot" id="ntLiveDot"></span> Real-time alerts</span>
+                <h3 class="nt-hero-title">Notifications</h3>
+                <p class="nt-hero-sub mb-0">Emergency requests, patient messages, approval updates, and platform alerts — delivered instantly.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="nt-hero-meta">
+                    <div><small>Feed items</small><strong id="ntFeedTotal"><%= notifs.length %></strong></div>
+                    <div><small>Today</small><strong><%= todayList.length %></strong></div>
+                    <div><small>Status</small><strong class="text-success" id="ntConnStatus">Live</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="nt-live-banner mb-4">
+    <div class="nt-live-banner-icon">
+        <img src="https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=100&h=100&fit=crop&q=80" alt="" loading="lazy">
+    </div>
+    <div class="flex-grow-1">
+        <h6 class="mb-1"><i data-lucide="radio" style="width:16px;height:16px;"></i> Listening for updates</h6>
+        <p class="mb-0 small text-muted">New messages and emergency alerts appear here instantly. <span class="badge bg-success ms-1 d-none" id="notifBadge">0</span></p>
+    </div>
+    <a href="#" class="btn btn-outline-success btn-sm" data-dn-section="messages" data-dn-label="Messages">Open messages</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <% ntStats.forEach(function(stat) { %>
+    <div class="col-sm-6 col-xl-3">
+        <div class="overview-kpi overview-kpi-<%= stat.tone %>">
+            <div class="overview-kpi-visual">
+                <img src="<%= stat.img %>" alt="" loading="lazy">
+                <div class="overview-kpi-visual-shade"></div>
+            </div>
+            <div class="overview-kpi-body">
+                <div class="overview-kpi-icon"><i data-lucide="<%= stat.icon %>" style="width:20px;height:20px;"></i></div>
+                <div class="overview-kpi-label"><%= stat.label %></div>
+                <div class="overview-kpi-value"><%= stat.value %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel">
+            <div class="overview-panel-head flex-wrap">
+                <div>
+                    <h5>Alert feed</h5>
+                    <p class="text-muted small mb-0"><span id="ntVisibleCount"><%= notifs.length %></span> of <span id="ntFeedCount"><%= notifs.length %></span> notification(s) shown</p>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="ntMarkRead">
+                    <i data-lucide="check-check" style="width:14px;height:14px;"></i> Dismiss badge
+                </button>
+            </div>
+
+            <div class="nt-toolbar">
+                <div class="nt-search-wrap">
+                    <i data-lucide="search" style="width:16px;height:16px;"></i>
+                    <input type="search" class="form-control form-control-sm" id="ntSearch" placeholder="Search title or message…" autocomplete="off">
+                </div>
+                <div class="nt-filter-group">
+                    <span class="nt-filter-label">Type</span>
+                    <div class="nt-pills" id="ntTypeFilters">
+                        <button type="button" class="nt-pill active" data-nt-type="all">All</button>
+                        <button type="button" class="nt-pill" data-nt-type="message">Message</button>
+                        <button type="button" class="nt-pill" data-nt-type="match">Match</button>
+                        <button type="button" class="nt-pill" data-nt-type="approval">Update</button>
+                        <button type="button" class="nt-pill" data-nt-type="system">System</button>
+                    </div>
+                </div>
+                <div class="nt-filter-group">
+                    <span class="nt-filter-label">When</span>
+                    <div class="nt-pills" id="ntWhenFilters">
+                        <button type="button" class="nt-pill active" data-nt-when="all">All time</button>
+                        <button type="button" class="nt-pill" data-nt-when="today">Today</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overview-panel-body pt-0">
+                <%- include('../admin/notifications-board', { notifications: notifs }) %>
+            </div>
+        </div>
+        <div class="nt-empty nt-empty-filter d-none" id="ntEmptyFilter">
+            <h5>No notifications match your filters</h5>
+            <button type="button" class="btn btn-outline-success btn-sm" id="ntClearFilters">Clear filters</button>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="overview-panel">
+            <div class="overview-panel-head"><h5>Alert types</h5></div>
+            <div class="overview-panel-body pt-2">
+                <div class="cp-tip">
+                    <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <div>
+                        <strong>Patient messages</strong>
+                        <p class="small text-muted mb-0">Tap a message alert to open the chat instantly.</p>
+                    </div>
+                </div>
+                <div class="cp-tip mb-0">
+                    <img src="https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <div>
+                        <strong>Emergency requests</strong>
+                        <p class="small text-muted mb-0">New blood requests in your city appear in real time.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

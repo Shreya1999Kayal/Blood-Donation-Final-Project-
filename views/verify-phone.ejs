@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Verify Phone — RaktaSetu</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+
+        .otp-input { font-size: 1.5rem; letter-spacing: 0.4rem; text-align: center; }
+
+        .phone-display {
+
+            background: #f8fafc;
+
+            border: 1px solid #e2e8f0;
+
+            border-radius: 0.375rem;
+
+            padding: 0.65rem 0.75rem;
+
+            font-weight: 600;
+
+            color: #0f172a;
+
+        }
+
+    </style>
+
+</head>
+
+<body class="bg-light">
+
+    <div class="container mt-5">
+
+        <div class="row justify-content-center">
+
+            <div class="col-md-5">
+
+                <div class="card shadow-sm">
+
+                    <div class="card-body">
+
+                        <h3 class="text-center mb-2">Verify your phone</h3>
+
+                        <p class="text-center text-muted small mb-4">
+
+                            Enter the 6-digit code we sent by SMS to your mobile number.
+
+                        </p>
+
+
+
+                        <% if (error) { %>
+
+                            <div class="alert alert-danger py-2"><%= error %></div>
+
+                        <% } %>
+
+                        <% if (success) { %>
+
+                            <div class="alert alert-success py-2"><%= success %></div>
+
+                        <% } %>
+
+                        <% if (sent && !success) { %>
+
+                            <div class="alert alert-info py-2">Check your phone for the SMS verification code.</div>
+
+                        <% } %>
+
+                        <% if (verified) { %>
+
+                            <div class="alert alert-success py-2">Phone already verified. <a href="/auth/verify-email?email=<%= encodeURIComponent(email) %><%= typeof portal !== 'undefined' && portal === 'admin' ? '&portal=admin' : '' %>">Continue to email verification</a></div>
+
+                        <% } %>
+
+
+
+                        <form action="/auth/verify-phone-otp" method="POST">
+
+                            <input type="hidden" name="email" value="<%= email %>">
+
+                            <div class="mb-3">
+
+                                <label class="form-label">Mobile number</label>
+
+                                <% if (phoneDisplay || maskedPhone) { %>
+
+                                    <div class="phone-display"><%= phoneDisplay || maskedPhone %></div>
+
+                                <% } else { %>
+
+                                    <div class="phone-display text-muted">Your registered mobile number</div>
+
+                                <% } %>
+
+                                <div class="form-text">SMS was sent to this number during registration.</div>
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label class="form-label">SMS verification code (OTP)</label>
+
+                                <input type="text" name="otp" class="form-control otp-input"
+
+                                    maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code"
+
+                                    placeholder="000000" required autofocus>
+
+                                <div class="form-text">Code expires in 10 minutes. Standard SMS rates may apply.</div>
+
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100">Verify phone</button>
+
+                        </form>
+
+
+
+                        <form action="/auth/resend-phone-otp" method="POST" class="mt-3">
+
+                            <input type="hidden" name="email" value="<%= email %>">
+
+                            <button type="submit" class="btn btn-outline-secondary w-100 btn-sm">Resend SMS code</button>
+
+                        </form>
+
+
+
+                        <p class="text-center mt-3 mb-0">
+
+                            <a href="<%= typeof loginUrl !== 'undefined' ? loginUrl : '/auth/login' %>">Back to login</a>
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>
+

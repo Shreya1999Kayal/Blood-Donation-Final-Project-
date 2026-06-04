@@ -1,0 +1,190 @@
+<%
+function bannerForStatus(status) {
+    if (status === 'approved') return 'https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=600&h=200&fit=crop&q=80';
+    if (status === 'rejected') return 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&h=200&fit=crop&q=80';
+    return 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&h=200&fit=crop&q=80';
+}
+function initials(name) {
+    if (!name) return '?';
+    return name.split(' ').map(function(p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
+}
+function isPdfUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    return /\.pdf($|\?|#)/i.test(url) || (url.includes('cloudinary.com') && url.includes('/raw/upload/'));
+}
+function barLevel(units) {
+    if (units <= 0) return 'critical';
+    if (units <= 5) return 'low';
+    return 'ok';
+}
+%>
+
+<div class="bb-board" id="bbBoard">
+    <% if (allBloodBanks && allBloodBanks.length) { %>
+        <% allBloodBanks.forEach(function(bb) {
+            const user = bb.userId || {};
+            const units = totalInventory(bb);
+            const stock = stockKey(bb);
+            const searchText = [bb.hospitalName, user.name, user.email, user.phone, user.city].filter(Boolean).join(' ').toLowerCase();
+            const certUrl = bb.registrationCertificateUrl ? docUrl(bb.registrationCertificateUrl) : null;
+            const isPdf = certUrl && isPdfUrl(certUrl);
+            const maxGroupUnits = Math.max.apply(null, bloodGroups.map(function(g) { return Number((bb.inventory || {})[g] || 0); }).concat([1]));
+        %>
+        <article
+            class="bb-card bb-card-<%= bb.status %>"
+            data-bb-item
+            data-status="<%= bb.status %>"
+            data-stock="<%= stock %>"
+            data-search="<%= searchText.replace(/"/g, '') %>"
+        >
+            <div class="bb-card-top">
+                <div class="bb-card-cover">
+                    <img src="<%= bannerForStatus(bb.status) %>" alt="" loading="lazy">
+                    <div class="bb-card-cover-shade"></div>
+                </div>
+                <div class="bb-card-identity">
+                    <div class="bb-card-avatar"><%= initials(bb.hospitalName) %></div>
+                    <div class="bb-card-identity-main">
+                        <span class="bb-card-stock"><%= units %> units</span>
+                        <div class="bb-card-top-badges">
+                            <span class="bb-status-badge <%= bb.status %>"><%= bb.status %></span>
+                            <% if (certUrl) { %>
+                            <span class="bb-cert-badge"><i data-lucide="file-check" style="width:11px;height:11px;"></i> Certified</span>
+                            <% } else { %>
+                            <span class="bb-cert-badge missing"><i data-lucide="file-x" style="width:11px;height:11px;"></i> No cert</span>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bb-card-body">
+                <div class="bb-card-head">
+                    <div>
+                        <h6 class="bb-hospital-name"><%= bb.hospitalName %></h6>
+                        <p class="bb-contact mb-0"><i data-lucide="user" style="width:13px;height:13px;"></i> <%= user.name || '—' %></p>
+                    </div>
+                    <span class="badge bg-<%= stock === 'stocked' ? 'success' : stock === 'low' ? 'warning text-dark' : 'danger' %> bb-stock-badge">
+                        <%= stock === 'stocked' ? 'Stocked' : stock === 'low' ? 'Low stock' : 'Empty' %>
+                    </span>
+                </div>
+
+                <div class="bb-meta-grid">
+                    <div class="bb-meta-item">
+                        <i data-lucide="phone" style="width:14px;height:14px;"></i>
+                        <div><small>Phone</small><span><% if (user.phone) { %><a href="tel:<%= user.phone %>"><%= user.phone %></a><% } else { %>—<% } %></span></div>
+                    </div>
+                    <div class="bb-meta-item">
+                        <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+                        <div><small>City</small><span><%= user.city || '—' %></span></div>
+                    </div>
+                    <div class="bb-meta-item">
+                        <i data-lucide="mail" style="width:14px;height:14px;"></i>
+                        <div><small>Email</small><span class="bb-email-truncate"><%= user.email || '—' %></span></div>
+                    </div>
+                    <div class="bb-meta-item">
+                        <i data-lucide="calendar" style="width:14px;height:14px;"></i>
+                        <div><small>Registered</small><span><%= new Date(bb.createdAt).toLocaleDateString([], { dateStyle: 'medium' }) %></span></div>
+                    </div>
+                </div>
+
+                <div class="bb-inventory-section">
+                    <div class="bb-inventory-head">
+                        <i data-lucide="flask-conical" style="width:14px;height:14px;"></i>
+                        Blood inventory
+                        <span class="badge bg-light text-dark border"><%= units %> total</span>
+                    </div>
+                    <div class="bb-inventory-grid">
+                        <% bloodGroups.forEach(function(group) {
+                            const count = Number((bb.inventory || {})[group] || 0);
+                            const pct = maxGroupUnits ? Math.round((count / maxGroupUnits) * 100) : 0;
+                        %>
+                        <div class="bb-inv-row">
+                            <span class="overview-blood-badge"><%= group %></span>
+                            <div class="bb-inv-bar"><span class="overview-stock-fill <%= barLevel(count) %>" style="width:<%= Math.max(pct, count > 0 ? 10 : 0) %>%"></span></div>
+                            <span class="bb-inv-count"><%= count %></span>
+                        </div>
+                        <% }); %>
+                    </div>
+                </div>
+
+                <div class="bb-cert-section">
+                    <div class="bb-cert-head">
+                        <i data-lucide="shield" style="width:14px;height:14px;"></i>
+                        Registration certificate
+                    </div>
+                    <% if (certUrl) { %>
+                    <a href="<%= certUrl %>" target="_blank" rel="noopener" class="bb-cert-tile" title="Open registration certificate">
+                        <div class="bb-cert-preview<%= isPdf ? ' bb-cert-preview-pdf' : '' %>">
+                            <% if (isPdf) { %>
+                                <i data-lucide="file-text" style="width:24px;height:24px;"></i>
+                                <span class="bb-cert-ext">PDF</span>
+                            <% } else { %>
+                                <img src="<%= certUrl %>" alt="Registration certificate" loading="lazy" onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none'); if(typeof lucide!=='undefined') lucide.createIcons();">
+                                <div class="bb-cert-preview-fallback d-none"><i data-lucide="file-image" style="width:22px;height:22px;"></i></div>
+                            <% } %>
+                        </div>
+                        <span class="bb-cert-label">View certificate</span>
+                    </a>
+                    <% } else { %>
+                    <div class="bb-cert-missing">
+                        <i data-lucide="upload" style="width:18px;height:18px;"></i>
+                        <span>Certificate not uploaded — approval blocked</span>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="bb-card-footer">
+                <% if (bb.status !== 'approved') { %>
+                <form action="/admin/bloodbank/<%= bb._id %>/approve" method="POST" class="bb-action-form">
+                    <button type="submit" class="btn btn-success btn-sm" <%= certUrl ? '' : 'disabled title="Certificate required"' %>>
+                        <i data-lucide="check" style="width:14px;height:14px;"></i> Approve bank
+                    </button>
+                </form>
+                <% } else { %>
+                <span class="bb-approved-label text-success small">
+                    <i data-lucide="shield-check" style="width:14px;height:14px;"></i> Verified partner
+                </span>
+                <% } %>
+                <% if (bb.status !== 'rejected') { %>
+                <form action="/admin/bloodbank/<%= bb._id %>/reject" method="POST" class="bb-action-form">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i data-lucide="x" style="width:14px;height:14px;"></i> Reject
+                    </button>
+                </form>
+                <% } %>
+                <% if (user.phone) { %>
+                <a href="tel:<%= user.phone %>" class="btn btn-outline-secondary btn-sm ms-auto">
+                    <i data-lucide="phone-call" style="width:14px;height:14px;"></i> Call
+                </a>
+                <% } %>
+                <%- include('admin-crud-actions', {
+                    entity: 'bloodbank',
+                    payloadObj: {
+                        id: bb._id,
+                        hospitalName: bb.hospitalName,
+                        name: user.name || '',
+                        email: user.email || '',
+                        phone: user.phone || '',
+                        city: user.city || '',
+                        status: bb.status,
+                        emailVerified: user.emailVerified,
+                        registrationCertificateUrl: certUrl || '',
+                        inventory: bb.inventory || {},
+                        coords: bb.location && bb.location.coordinates ? bb.location.coordinates : null
+                    },
+                    deleteUrl: '/admin/bloodbank/' + bb._id + '/delete',
+                    confirmLabel: bb.hospitalName || 'this blood bank'
+                }) %>
+            </div>
+        </article>
+        <% }); %>
+    <% } else { %>
+        <div class="bb-empty">
+            <img src="https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=400&h=260&fit=crop&q=80" alt="" loading="lazy">
+            <h5>No blood banks registered yet</h5>
+            <p class="text-muted mb-0">Hospital registrations will appear here for admin review.</p>
+        </div>
+    <% } %>
+</div>

@@ -1,0 +1,7 @@
+<%
+const inboxCount = (inbox || []).length;
+%>
+<div class="home-shell dashboard-home-chrome">
+    <%- include('../home/topbar', { user }) %>
+    <%- include('./dashboard-subnav', { inboxCount }) %>
+</div>

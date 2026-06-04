@@ -1,0 +1,98 @@
+<%
+const banks = campBloodBanks || [];
+const approved = campProfile && campProfile.status === 'approved';
+const scheduledCamp = campScheduledEvent || null;
+%>
+<div class="cp-hero mb-4"><div class="cp-hero-bg" style="background-image:url('https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=1400&h=420&fit=crop&q=85');"></div><div class="cp-hero-overlay"></div><div class="cp-hero-content"><span class="cp-hero-badge"><i data-lucide="building-2" style="width:14px;height:14px;"></i> Partner hospitals</span><h3 class="cp-hero-title">Blood bank directory</h3><p class="cp-hero-sub mb-0">Pay ₹<%= campUnlockFees.bloodbank %> to view contact details, then send a camp blood collection request. Blood banks accept or decline in their dashboard.</p></div></div>
+
+<% if (!approved) { %>
+<div class="alert alert-warning">Your camp must be approved by admin to unlock blood bank contacts.</div>
+<% } %>
+
+<% if (approved && !scheduledCamp) { %>
+<div class="alert alert-warning mb-4">Schedule a camp under <strong>Organize camp</strong> before sending requests to blood banks.</div>
+<% } else if (approved && scheduledCamp) { %>
+<div class="alert alert-light border mb-4 py-2 px-3 small">
+    Active camp for requests: <strong><%= scheduledCamp.campName %></strong>
+    · <%= scheduledCamp.proposedDate ? new Date(scheduledCamp.proposedDate).toLocaleDateString('en-IN') : '—' %>
+    · <%= scheduledCamp.city || '—' %>
+</div>
+<% } %>
+
+<div class="cp-shell overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm ring-1 ring-slate-900/5">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-gradient-to-r from-sky-50 via-slate-50 to-white"><tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Hospital</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">City</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Contact</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Payment</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Camp request</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold uppercase text-slate-500">Chat</th>
+            </tr></thead>
+            <tbody class="divide-y divide-slate-100">
+                <% if (banks.length) { banks.forEach(function(b) {
+                    const reqStatus = b.campRequestStatus;
+                    const bankUserId = b.userId && b.userId.toString ? b.userId.toString() : b.userId;
+                    const bankProfileId = b._id && b._id.toString ? b._id.toString() : b._id;
+                %>
+                <tr class="hover:bg-sky-50/40">
+                    <td class="px-4 py-3 font-semibold"><%= b.hospitalName %></td>
+                    <td class="px-4 py-3 text-slate-600"><%= b.city || '—' %></td>
+                    <td class="px-4 py-3">
+                        <% if (b.unlocked) { %>
+                        <span class="cp-unlock-badge">Unlocked</span><br><small><%= b.phone %> · <%= b.email %></small>
+                        <% } else { %>
+                        <span class="cp-lock-badge">Locked</span>
+                        <% } %>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <% if (b.unlocked) { %>
+                        <span class="cp-pay-badge">Paid</span>
+                        <% } else if (approved && bankUserId) { %>
+                        <button type="button" class="btn btn-sm btn-primary cp-unlock-btn" style="background:#7c3aed;border-color:#6d28d9" data-purpose="camp_unlock_bloodbank" data-target-user-id="<%= bankUserId %>" data-target-profile-id="<%= bankProfileId %>">Pay ₹<%= campUnlockFees.bloodbank %></button>
+                        <% } else { %>
+                        <span class="text-muted small">—</span>
+                        <% } %>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <% if (reqStatus === 'accepted') { %>
+                        <span class="cp-req-badge cp-req-badge--accepted">Accepted</span>
+                        <% } else if (reqStatus === 'rejected') { %>
+                        <span class="cp-req-badge cp-req-badge--rejected">Declined</span>
+                        <% if (b.unlocked && scheduledCamp && bankUserId) { %>
+                        <form action="/camp/participation/bloodbank" method="POST" class="d-inline ms-1">
+                            <input type="hidden" name="targetUserId" value="<%= bankUserId %>">
+                            <input type="hidden" name="targetProfileId" value="<%= bankProfileId %>">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Resend</button>
+                        </form>
+                        <% } %>
+                        <% } else if (reqStatus === 'pending') { %>
+                        <span class="cp-req-badge cp-req-badge--pending">Pending</span>
+                        <% } else if (b.unlocked && scheduledCamp && bankUserId) { %>
+                        <form action="/camp/participation/bloodbank" method="POST" class="d-inline">
+                            <input type="hidden" name="targetUserId" value="<%= bankUserId %>">
+                            <input type="hidden" name="targetProfileId" value="<%= bankProfileId %>">
+                            <button type="submit" class="btn btn-sm btn-outline-success">Send request</button>
+                        </form>
+                        <% } else if (b.unlocked && !scheduledCamp) { %>
+                        <span class="text-muted small">Schedule camp</span>
+                        <% } else { %>
+                        <span class="text-muted small">Pay first</span>
+                        <% } %>
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <% if (b.unlocked && b.chatUserId) { %>
+                        <button type="button" class="btn btn-sm btn-outline-primary cp-chat-btn" data-user-id="<%= b.chatUserId %>">Chat</button>
+                        <% } else { %>
+                        <span class="text-muted small">—</span>
+                        <% } %>
+                    </td>
+                </tr>
+                <% }); } else { %>
+                <tr><td colspan="6" class="px-4 py-8 text-center text-muted">No approved blood banks listed yet.</td></tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>

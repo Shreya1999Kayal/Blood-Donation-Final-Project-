@@ -1,0 +1,21 @@
+<nav class="dashboard-subnav" aria-label="Dashboard sections">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="dashboard-subnav-scroll">
+            <a href="/" class="dashboard-subnav-link">Home</a>
+            <a href="#" class="dashboard-subnav-link active dashboard-section-link admin-nav-link" data-dn-section="overview" data-dn-label="Overview">Overview</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-dn-section="requests" data-dn-label="Emergency Requests">Requests<% if (activeRequests > 0) { %> <span class="badge bg-danger rounded-pill"><%= activeRequests %></span><% } %></a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-dn-section="availability" data-dn-label="Availability">Availability</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-dn-section="documents" data-dn-label="Medical Documents">Documents</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-dn-section="messages" data-dn-label="Messages">Messages<% if (inboxCount > 0) { %> <span class="badge bg-danger rounded-pill"><%= inboxCount %></span><% } %></a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-dn-section="notifications" data-dn-label="Notifications">Alerts</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-dn-section="profile" data-dn-label="Profile">Profile</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-dn-section="subscription" data-dn-label="Plans & Billing">Plans</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-dn-section="history" data-dn-label="Donation History">History</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-dn-section="feedback" data-dn-label="Feedback">Feedback</a>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-dn-section="password" data-dn-label="Change Password">Password</a>
+            <% if (userAnalytics) { %>
+            <a href="#" class="dashboard-subnav-link dashboard-section-link admin-nav-link" data-dn-section="analytics" data-dn-label="Analytics">Analytics</a>
+            <% } %>
+        </div>
+    </div>
+</nav>

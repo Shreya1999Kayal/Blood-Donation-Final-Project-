@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Blood Bank — RaktaSetu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/admin-ui.css" rel="stylesheet">
+    <link href="/css/bloodbank-ui.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body class="bb-setup-shell bb-shell">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-7 col-xl-6">
+                <div class="bb-setup-card">
+                    <div class="bb-setup-hero text-center">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-3 mb-3" style="width:56px;height:56px;background:linear-gradient(135deg,#0ea5e9,#0369a1);">
+                            <i data-lucide="building-2" style="width:28px;height:28px;color:#fff;"></i>
+                        </div>
+                        <h3>Complete blood bank registration</h3>
+                        <p class="text-muted mb-0">Register your hospital, upload your official certificate, and start the admin verification process.</p>
+                    </div>
+                    <div class="p-4 p-md-5">
+                        <% if (typeof error !== 'undefined' && error === 'certificate_required') { %>
+                            <div class="alert alert-danger d-flex align-items-center gap-2">
+                                <i data-lucide="alert-circle" style="width:18px;height:18px;"></i>
+                                Please upload your registered blood bank certificate (PDF or image).
+                            </div>
+                        <% } %>
+                        <form action="/bloodbank/setup" method="POST" enctype="multipart/form-data" data-geo-form class="cp-form">
+                            <div class="cp-field">
+                                <label for="setupHospitalName">Hospital / blood bank name</label>
+                                <div class="cp-input-wrap">
+                                    <i data-lucide="hospital" style="width:16px;height:16px;"></i>
+                                    <input type="text" name="hospitalName" id="setupHospitalName" class="form-control" placeholder="City General Hospital Blood Bank" required>
+                                </div>
+                            </div>
+                            <div class="cp-field">
+                                <label for="setupCert">Registered blood bank certificate</label>
+                                <input type="file" name="registrationCertificate" id="setupCert" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+                                <small class="text-muted">Official registration document — PDF, JPG, PNG, or WEBP (max 10 MB).</small>
+                            </div>
+                            <p class="small text-muted">Your location is captured automatically for nearby patient matching when you submit.</p>
+                            <input type="hidden" name="latitude" data-geo-lat>
+                            <input type="hidden" name="longitude" data-geo-lng>
+                            <button type="submit" class="btn btn-danger w-100 py-2">
+                                <i data-lucide="check-circle" style="width:16px;height:16px;"></i> Submit for verification
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <p class="text-center mt-4 small" style="color:rgba(255,255,255,0.5);">RaktaSetu · Hospital onboarding</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        (function () {
+            const forms = document.querySelectorAll('[data-geo-form]');
+            if (!forms.length) return;
+            function fillGeoForms(lat, lng) {
+                forms.forEach(function (form) {
+                    const latInput = form.querySelector('[data-geo-lat]');
+                    const lngInput = form.querySelector('[data-geo-lng]');
+                    if (latInput) latInput.value = String(lat);
+                    if (lngInput) lngInput.value = String(lng);
+                });
+            }
+            function omitGeoFields() {
+                forms.forEach(function (form) {
+                    form.querySelectorAll('[data-geo-lat], [data-geo-lng]').forEach(function (input) {
+                        input.removeAttribute('name');
+                        input.value = '';
+                    });
+                });
+            }
+            if (!navigator.geolocation) { omitGeoFields(); return; }
+            forms.forEach(function (form) {
+                form.addEventListener('submit', function () {
+                    const latInput = form.querySelector('[data-geo-lat]');
+                    const lngInput = form.querySelector('[data-geo-lng]');
+                    const lat = (latInput?.value || '').trim();
+                    const lng = (lngInput?.value || '').trim();
+                    if (!lat || !lng || Number.isNaN(Number(lat)) || Number.isNaN(Number(lng))) {
+                        if (latInput) latInput.removeAttribute('name');
+                        if (lngInput) lngInput.removeAttribute('name');
+                    }
+                });
+            });
+            navigator.geolocation.getCurrentPosition(
+                function (pos) { fillGeoForms(pos.coords.latitude, pos.coords.longitude); },
+                function () { omitGeoFields(); },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+            );
+        })();
+    </script>
+</body>
+</html>

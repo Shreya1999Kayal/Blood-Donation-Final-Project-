@@ -1,0 +1,84 @@
+/* Role dashboards — home page chrome + dashboard sections */
+
+.dashboard-home-shell {
+    background: #f8fafc;
+}
+
+.dashboard-home-shell .admin-shell,
+.dashboard-home-shell.admin-shell {
+    background: #f8fafc;
+}
+
+.dashboard-home-shell .admin-topbar {
+    background: rgba(255, 255, 255, 0.98);
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+}
+
+.dashboard-home-shell .admin-topbar-title-wrap h2 {
+    color: #0f172a;
+}
+
+.dashboard-home-shell .admin-content {
+    background: transparent;
+}
+
+.dashboard-subnav {
+    position: sticky;
+    top: 64px;
+    z-index: 45;
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
+.dashboard-subnav-scroll {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding: 0 0.25rem;
+}
+
+.dashboard-subnav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.85rem 0.95rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #334155;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.dashboard-subnav-link:hover,
+.dashboard-subnav-link.active {
+    color: #dc2626;
+    border-bottom-color: #dc2626;
+}
+
+.dashboard-subnav-link .badge-count,
+.dashboard-subnav-link .badge {
+    font-size: 0.65rem;
+}
+
+@media (min-width: 992px) {
+    .dashboard-home-shell .admin-sidebar {
+        transform: translateX(-110%);
+    }
+
+    .dashboard-home-shell .admin-main {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .dashboard-subnav-scroll {
+        padding-bottom: 0.15rem;
+    }
+}

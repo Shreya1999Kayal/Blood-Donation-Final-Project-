@@ -1,0 +1,35 @@
+<%
+const prefix = typeof photoFieldPrefix !== 'undefined' ? photoFieldPrefix : 'profile';
+const currentUrl = profileImageUrl(user);
+const initials = userInitials(user.name, 'U');
+const hint = typeof photoHint !== 'undefined' ? photoHint : 'Optional · JPG, PNG, or WEBP · max 5 MB';
+%>
+<div class="profile-photo-field mb-4">
+    <label class="form-label fw-semibold small text-uppercase text-muted" for="<%= prefix %>ImageInput">Profile photo <span class="text-lowercase fw-normal">(optional)</span></label>
+    <div class="profile-photo-row">
+        <div class="profile-photo-preview-wrap">
+            <div class="profile-photo-preview" id="<%= prefix %>PhotoPreview">
+                <% if (currentUrl) { %>
+                    <img src="<%= currentUrl %>" alt="Your profile photo" class="profile-photo-preview-img" id="<%= prefix %>PhotoImg">
+                    <span class="profile-photo-preview-initial d-none" id="<%= prefix %>PhotoInitial"><%= initials %></span>
+                <% } else { %>
+                    <img src="" alt="" class="profile-photo-preview-img d-none" id="<%= prefix %>PhotoImg">
+                    <span class="profile-photo-preview-initial" id="<%= prefix %>PhotoInitial"><%= initials %></span>
+                <% } %>
+            </div>
+        </div>
+        <div class="profile-photo-controls">
+            <input type="file"
+                   name="profileImage"
+                   id="<%= prefix %>ImageInput"
+                   class="form-control profile-photo-input"
+                   accept="image/jpeg,image/jpg,image/png,image/webp"
+                   data-preview-img="<%= prefix %>PhotoImg"
+                   data-preview-initial="<%= prefix %>PhotoInitial">
+            <p class="profile-photo-hint mb-0"><%= hint %></p>
+            <% if (currentUrl) { %>
+            <p class="profile-photo-current mb-0"><i data-lucide="check-circle" style="width:13px;height:13px;"></i> Photo saved to your account</p>
+            <% } %>
+        </div>
+    </div>
+</div>

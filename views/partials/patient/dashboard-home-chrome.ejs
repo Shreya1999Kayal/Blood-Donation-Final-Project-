@@ -1,0 +1,9 @@
+<%
+const requests = bloodRequests || [];
+const activeRequests = requests.filter(function(r) { return ['active', 'contacted'].includes(r.status); }).length;
+const inboxCount = (inbox || []).length;
+%>
+<div class="home-shell dashboard-home-chrome">
+    <%- include('../home/topbar', { user }) %>
+    <%- include('./dashboard-subnav', { activeRequests, inboxCount }) %>
+</div>

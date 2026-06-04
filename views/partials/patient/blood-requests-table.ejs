@@ -1,0 +1,185 @@
+<%
+function ptInitials(name) {
+    if (!name) return '?';
+    return name.split(' ').map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
+}
+function ptStatusLabel(s) {
+    if (s === 'fulfilled') return 'received';
+    return s;
+}
+const requests = bloodRequests || [];
+%>
+
+<div class="pt-req-registry">
+    <div class="pt-req-registry-head">
+        <span class="pt-req-registry-title">
+            <span class="pt-req-live-dot"></span>
+            Emergency request registry
+        </span>
+        <span class="pt-req-registry-count"><%= requests.length %> total</span>
+    </div>
+    <div class="pt-req-registry-scroll">
+        <table class="pt-req-table">
+            <thead>
+                <tr>
+                    <th>Patient</th>
+                    <th>Blood</th>
+                    <th>Hospital</th>
+                    <th>City</th>
+                    <th>Units</th>
+                    <th>Contact</th>
+                    <th>Documents</th>
+                    <th>Status</th>
+                    <th>Matched</th>
+                    <th>Responders</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (requests.length) { %>
+                    <% requests.forEach(function(r) {
+                        const label = ptStatusLabel(r.status);
+                        const urgLevel = String(r.urgencyLevel || 'High').toLowerCase();
+                        const urgKey = urgLevel === 'critical' ? 'critical' : urgLevel === 'normal' ? 'normal' : 'high';
+                        const isLiveRow = ['active', 'contacted'].includes(label);
+                        const rowStatus = isLiveRow ? label : 'closed';
+                        const rowSearch = [r.patientName, r.bloodGroup, r.hospitalName, r.city, r.contactName, r.contactPhone].join(' ').toLowerCase();
+                        const requestOwnerId = r.requestedBy && (r.requestedBy._id || r.requestedBy).toString();
+                        const isOwnRequest = user.role === 'user' && requestOwnerId === user._id.toString();
+                        const hasBloodTest = r.patientDocuments && r.patientDocuments.bloodTestReportUrl;
+                        const hasPrescription = r.patientDocuments && r.patientDocuments.prescriptionUrl;
+                    %>
+                    <tr class="pt-req-row"
+                        data-req-item
+                        data-status="<%= rowStatus %>"
+                        data-live="<%= isLiveRow ? '1' : '0' %>"
+                        data-urgency="<%= urgKey %>"
+                        data-search="<%= rowSearch.replace(/"/g, '') %>">
+                        <td>
+                            <div class="pt-req-patient">
+                                <span class="pt-req-avatar"><%= ptInitials(r.patientName) %></span>
+                                <span>
+                                    <span class="pt-req-patient-name"><%= r.patientName %></span>
+                                    <% if (isLiveRow) { %><span class="pt-req-live-tag">Live</span><% } %>
+                                </span>
+                            </div>
+                        </td>
+                        <td><span class="pt-req-blood"><%= r.bloodGroup %></span></td>
+                        <td class="pt-req-hospital"><%= r.hospitalName %></td>
+                        <td>
+                            <span class="pt-req-city">
+                                <i data-lucide="map-pin"></i>
+                                <%= r.city %>
+                            </span>
+                        </td>
+                        <td><span class="pt-req-units"><%= r.requiredUnits %></span></td>
+                        <td class="pt-req-contact">
+                            <a href="tel:<%= r.contactPhone %>"><%= r.contactPhone %></a>
+                            <small><%= r.contactName %></small>
+                        </td>
+                        <td>
+                            <div class="pt-req-docs">
+                                <% if (hasBloodTest) { %>
+                                    <a href="<%= docUrl(r.patientDocuments.bloodTestReportUrl) %>" target="_blank" rel="noopener" class="req-doc-link">
+                                        <i data-lucide="file-text"></i>
+                                        Blood test
+                                    </a>
+                                <% } %>
+                                <% if (hasPrescription) { %>
+                                    <a href="<%= docUrl(r.patientDocuments.prescriptionUrl) %>" target="_blank" rel="noopener" class="req-doc-link">
+                                        <i data-lucide="file-image"></i>
+                                        Prescription
+                                    </a>
+                                <% } %>
+                                <% if (!hasBloodTest && !hasPrescription) { %>
+                                    <span class="pt-req-muted">—</span>
+                                <% } %>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="req-status-badge <%= label %>"><%= label %></span>
+                            <% if (r.receivedAt) { %>
+                                <small class="pt-req-received-date">Received <%= new Date(r.receivedAt).toLocaleDateString('en-IN') %></small>
+                            <% } %>
+                        </td>
+                        <td class="pt-req-matched">
+                            <% const exactMatches = (r.matchedDonors || []).filter(function(d) { return d && d.bloodGroup === r.bloodGroup; }); %>
+                            <% if (exactMatches.length) { %>
+                                <ul class="pt-req-mini-list">
+                                    <% exactMatches.slice(0, 3).forEach(function(d) { %>
+                                        <li>
+                                            <strong><%= d.userId ? d.userId.name : 'Donor' %></strong>
+                                            <span class="pt-req-blood pt-req-blood--sm"><%= d.bloodGroup %></span>
+                                        </li>
+                                    <% }); %>
+                                </ul>
+                            <% } else { %>
+                                <span class="pt-req-no-match">No match</span>
+                            <% } %>
+                        </td>
+                        <td class="pt-req-responders">
+                            <% if (r.contacts && r.contacts.length) { %>
+                                <ul class="pt-req-responder-list">
+                                    <% r.contacts.forEach(function(c) { %>
+                                        <li>
+                                            <strong><%= c.name %></strong>
+                                            <span class="pt-req-role"><%= c.role %></span>
+                                            <a href="tel:<%= c.phone %>"><%= c.phone %></a>
+                                            <% if (c.note) { %><em><%= c.note %></em><% } %>
+                                            <% if (isOwnRequest && c.userId && ['donor','bloodbank'].includes(c.role)) { %>
+                                                <button type="button" class="btn btn-outline-danger btn-sm chat-btn pt-req-chat-btn"
+                                                    data-user-id="<%= c.userId._id || c.userId %>"
+                                                    data-user-name="<%= c.name %>"
+                                                    data-user-role="<%= c.role %>">
+                                                    <i data-lucide="message-circle"></i> Chat
+                                                </button>
+                                            <% } %>
+                                        </li>
+                                    <% }); %>
+                                </ul>
+                            <% } else { %>
+                                <span class="pt-req-muted">—</span>
+                            <% } %>
+                        </td>
+                        <td class="text-end pt-req-actions">
+                            <% if (isOwnRequest && label !== 'received' && label !== 'cancelled') { %>
+                                <form action="/request/<%= r._id %>/received" method="POST" class="pt-req-received-form"
+                                    onsubmit="return confirm('Confirm that you have received the blood?');">
+                                    <select name="responderUserId" class="form-select form-select-sm" required>
+                                        <option value="">Select responder</option>
+                                        <% (r.contacts || []).filter(function(c) { return c.userId && ['donor','bloodbank'].includes(c.role); }).forEach(function(c) { %>
+                                            <option value="<%= c.userId._id || c.userId %>"><%= c.name %> (<%= c.role %>)</option>
+                                        <% }); %>
+                                    </select>
+                                    <button type="submit" class="btn btn-success btn-sm w-100">Mark received</button>
+                                </form>
+                                <% if (!r.contacts || !r.contacts.some(function(c) { return c.userId && ['donor','bloodbank'].includes(c.role); })) { %>
+                                    <small class="pt-req-waiting">Waiting for responses</small>
+                                <% } %>
+                            <% } else if (isOwnRequest && label === 'received') { %>
+                                <span class="pt-req-received-note">
+                                    <i data-lucide="check-circle"></i>
+                                    Blood received
+                                </span>
+                                <% if (r.fulfilledBy && r.fulfilledBy.name) { %>
+                                    <small class="pt-req-muted">By <%= r.fulfilledBy.name %> (<%= r.fulfilledBy.role %>)</small>
+                                <% } %>
+                            <% } else { %>
+                                <span class="pt-req-muted">—</span>
+                            <% } %>
+                        </td>
+                    </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="11" class="pt-req-empty">
+                            <i data-lucide="inbox"></i>
+                            <p><strong>No requests yet</strong></p>
+                            <span>Create an emergency request to get started.</span>
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>

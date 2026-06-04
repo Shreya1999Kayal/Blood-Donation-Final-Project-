@@ -1,0 +1,35 @@
+<%
+const s = stats || {};
+%>
+<section class="home-section" id="accessibility-stats">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-2xl mx-auto mb-12">
+            <span class="home-badge">Ensuring Accessibility</span>
+            <h2 class="home-section-title mt-4">Nationwide impact at a glance</h2>
+            <p class="home-section-lead mx-auto">Live platform metrics reflecting our commitment to transparent, accessible blood donation services across India.</p>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6">
+            <div class="home-stat-card">
+                <div class="home-stat-value" data-stat-value="<%= s.totalDonors || 0 %>">0</div>
+                <div class="home-stat-label">Total Donors</div>
+            </div>
+            <div class="home-stat-card">
+                <div class="home-stat-value" data-stat-value="<%= s.patientsReceivedBlood || 0 %>">0</div>
+                <div class="home-stat-label">Patients Received Blood</div>
+            </div>
+            <div class="home-stat-card">
+                <div class="home-stat-value" data-stat-value="<%= s.upcomingCamps || 0 %>">0</div>
+                <div class="home-stat-label">Upcoming Donation Camps</div>
+            </div>
+            <div class="home-stat-card">
+                <div class="home-stat-value" data-stat-value="<%= s.campsOrganized || 0 %>">0</div>
+                <div class="home-stat-label">Camps Organised</div>
+            </div>
+            <div class="home-stat-card col-span-2 lg:col-span-1">
+                <div class="home-stat-value" data-stat-value="<%= s.totalBloodBanks || 0 %>">0</div>
+                <div class="home-stat-label">Blood Banks</div>
+            </div>
+        </div>
+    </div>
+</section>

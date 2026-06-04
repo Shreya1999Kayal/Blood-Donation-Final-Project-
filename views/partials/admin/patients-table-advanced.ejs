@@ -1,0 +1,107 @@
+<%
+function twInitials(name) {
+    if (!name) return '?';
+    return name.split(' ').map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
+}
+function twBadgeBase() {
+    return 'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset';
+}
+function twPlanTw(tone) {
+    const map = {
+        pro: 'bg-violet-50 text-violet-800 ring-violet-600/20',
+        premium: 'bg-amber-50 text-amber-800 ring-amber-600/20',
+        free: 'bg-slate-100 text-slate-600 ring-slate-500/20',
+    };
+    return twBadgeBase() + ' ' + (map[tone] || map.free);
+}
+function twThClass() {
+    return 'px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap';
+}
+function twTdClass() {
+    return 'px-4 py-3.5 align-middle text-slate-700';
+}
+function twRowClass() {
+    return 'transition-colors hover:bg-slate-50/90';
+}
+const patients = allUsers || [];
+%>
+
+<div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm ring-1 ring-slate-900/5">
+    <div class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-rose-50/80 via-white to-slate-50/50 px-4 py-3">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Patient care directory</span>
+        <span class="rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-semibold text-rose-800 ring-1 ring-rose-600/20"><%= patients.length %> patients</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-gradient-to-r from-rose-50 via-slate-50 to-white">
+                <tr>
+                    <th class="<%= twThClass() %>">Patient</th>
+                    <th class="<%= twThClass() %>">Contact</th>
+                    <th class="<%= twThClass() %>">City</th>
+                    <th class="<%= twThClass() %>">Plan</th>
+                    <th class="<%= twThClass() %>">Requests</th>
+                    <th class="<%= twThClass() %>">Account</th>
+                    <th class="<%= twThClass() %> text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+                <% if (patients.length) { %>
+                    <% patients.forEach(function(u) {
+                        const stats = patientStats(u);
+                        const searchText = [u.name, u.email, u.phone, u.city].filter(Boolean).join(' ').toLowerCase();
+                    %>
+                    <tr class="<%= twRowClass() %>"
+                        data-pt-item
+                        data-account="<%= u.emailVerified ? 'verified' : 'unverified' %>"
+                        data-activity="<%= activityKey(stats) %>"
+                        data-search="<%= searchText.replace(/"/g, '') %>">
+                        <td class="<%= twTdClass() %> whitespace-nowrap">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-red-700 text-[11px] font-bold text-white ring-2 ring-white"><%= twInitials(u.name) %></div>
+                                <div>
+                                    <div class="font-semibold text-slate-900"><%= u.name %></div>
+                                    <div class="text-xs text-slate-500 truncate max-w-[180px]"><%= u.email %></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="<%= twTdClass() %> whitespace-nowrap">
+                            <a href="tel:<%= u.phone %>" class="font-medium text-slate-800 hover:text-rose-600"><%= u.phone %></a>
+                        </td>
+                        <td class="<%= twTdClass() %> whitespace-nowrap text-slate-600"><%= u.city %></td>
+                        <td class="<%= twTdClass() %>"><span class="<%= twPlanTw(planTone(u)) %>"><%= planLabel(u) %></span></td>
+                        <td class="<%= twTdClass() %> whitespace-nowrap">
+                            <span class="inline-flex h-7 min-w-[1.75rem] items-center justify-center rounded-lg bg-slate-100 px-2 text-sm font-bold text-slate-800"><%= stats.total %></span>
+                            <% if (stats.active) { %>
+                                <span class="<%= twBadgeBase() %> bg-rose-50 text-rose-700 ring-rose-600/20 ml-1"><%= stats.active %> live</span>
+                            <% } %>
+                        </td>
+                        <td class="<%= twTdClass() %>">
+                            <span class="<%= twBadgeBase() %> <%= u.emailVerified ? 'bg-emerald-50 text-emerald-800 ring-emerald-600/20' : 'bg-amber-50 text-amber-800 ring-amber-600/20' %>">
+                                <%= u.emailVerified ? 'Verified' : 'Unverified' %>
+                            </span>
+                        </td>
+                        <td class="<%= twTdClass() %> text-right">
+                            <%- include('admin-crud-actions', {
+                                entity: 'patient',
+                                payloadObj: {
+                                    id: u._id,
+                                    name: u.name || '',
+                                    email: u.email || '',
+                                    phone: u.phone || '',
+                                    city: u.city || '',
+                                    emailVerified: u.emailVerified,
+                                    subscriptionPlan: (u.subscription && u.subscription.plan) || 'free'
+                                },
+                                deleteUrl: '/admin/patient/' + u._id + '/delete',
+                                confirmLabel: u.name || 'this patient'
+                            }) %>
+                        </td>
+                    </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr><td colspan="7" class="px-4 py-12 text-center text-sm text-slate-500">No patients registered</td></tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>

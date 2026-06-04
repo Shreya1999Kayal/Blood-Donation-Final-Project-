@@ -1,0 +1,34 @@
+<%
+const history = bloodIssueHistory || [];
+const totalUnits = history.reduce(function(sum, item) { return sum + Number(item.units || 0); }, 0);
+const patientsServed = new Set(history.map(function(item) {
+    return item.patientUserId ? item.patientUserId.toString() : item.patientName;
+}).filter(Boolean)).size;
+%>
+
+<div class="cp-hero mb-4 bb-hero">
+    <div class="cp-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="cp-hero-overlay"></div>
+    <div class="cp-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="cp-hero-badge"><i data-lucide="history" style="width:14px;height:14px;"></i> Issue registry</span>
+                <h3 class="cp-hero-title">Blood issue records</h3>
+                <p class="cp-hero-sub mb-0">View patients who received blood from your hospital — blood group, units issued, dates, and remaining stock after each issue.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="cp-hero-meta">
+                    <div><small>Total issues</small><strong><%= history.length %></strong></div>
+                    <div><small>Units issued</small><strong><%= totalUnits %></strong></div>
+                    <div><small>Patients served</small><strong><%= patientsServed %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <%- include('blood-issue-history-table', { bloodIssueHistory: history }) %>
+    </div>
+</div>

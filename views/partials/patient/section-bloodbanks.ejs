@@ -1,0 +1,321 @@
+<%
+const banks = approvedBloodBanks || [];
+const latestActiveRequest = (bloodRequests || []).find(function(r) {
+
+    return ['active', 'contacted'].includes(r.status);
+
+});
+
+const defaultBloodGroup = latestActiveRequest ? latestActiveRequest.bloodGroup : '';
+
+%>
+
+
+
+<div class="cp-hero mb-4 pt-hero">
+
+    <div class="cp-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=1400&h=420&fit=crop&q=85');"></div>
+
+    <div class="cp-hero-overlay"></div>
+
+    <div class="cp-hero-content">
+
+        <div class="row align-items-end g-3">
+
+            <div class="col-lg-8">
+
+                <span class="cp-hero-badge"><i data-lucide="building-2" style="width:14px;height:14px;"></i> Hospital network</span>
+
+                <h3 class="cp-hero-title">Find blood banks</h3>
+
+                <p class="cp-hero-sub mb-0">Use <strong>Search near me</strong> to find the nearest hospitals with blood inventory.</p>
+
+            </div>
+
+            <div class="col-lg-4">
+
+                <div class="cp-hero-meta">
+
+                    <div><small>Listed</small><strong><%= banks.length %></strong></div>
+
+                    <div><small>Default radius</small><strong>20 km</strong></div>
+
+                    <div><small>City</small><strong><%= user.city %></strong></div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<div class="row g-4 mb-4">
+
+    <div class="col-12">
+
+        <div class="overview-panel">
+
+            <div class="overview-panel-head d-flex flex-wrap align-items-center justify-content-between gap-2">
+
+                <h5 class="mb-0">Search blood banks</h5>
+
+                <button type="button" class="btn btn-success btn-sm d-inline-flex align-items-center gap-1" data-near-me-search="bloodBankSearchForm">
+
+                    <i data-lucide="map-pin" style="width:14px;height:14px;"></i> Search near me
+
+                </button>
+
+            </div>
+
+            <div class="overview-panel-body">
+
+                <p class="small mb-2" data-geo-status id="bloodBankGeoStatus"></p>
+
+                <form class="row g-2 pt-search-card" id="bloodBankSearchForm" data-search-geo-form>
+
+                    <div class="col-md-3">
+
+                        <select name="bloodGroup" class="form-select form-select-sm">
+
+                            <option value="">Blood group</option>
+
+                            <% ['A+','A-','B+','B-','AB+','AB-','O+','O-'].forEach(function(bg) { %>
+
+                                <option value="<%= bg %>" <%= defaultBloodGroup === bg ? 'selected' : '' %>><%= bg %></option>
+
+                            <% }); %>
+
+                        </select>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <input name="city" class="form-control form-control-sm" placeholder="City or area (optional)" value="">
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <input name="radiusKm" type="number" class="form-control form-control-sm" data-radius-input data-near-me-only value="20" min="1" placeholder="Radius (km)">
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <button type="submit" class="btn btn-danger btn-sm w-100 d-none d-md-block">Search banks</button>
+
+                    </div>
+
+                    <div class="col-12 d-flex flex-wrap align-items-center gap-2" data-radius-presets data-near-me-only>
+
+                        <span class="small text-muted">Radius:</span>
+
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-radius-km="5">5 km</button>
+
+                        <button type="button" class="btn btn-outline-secondary btn-sm active" data-radius-km="20">20 km</button>
+
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-radius-km="10">10 km</button>
+
+                        <button type="submit" class="btn btn-danger btn-sm ms-auto">Search banks</button>
+
+                    </div>
+
+                </form>
+
+                <div id="bloodBankSearchResults" class="mb-3"></div>
+
+                <p class="small text-muted mb-3" id="bloodBankSearchHint">Search by <strong>blood group</strong> and/or <strong>city</strong> — no GPS needed. Use <strong>Search near me</strong> only for location-based results.</p>
+
+
+
+                <div class="pt-bbank-registry">
+
+                    <div class="pt-bbank-registry-head">
+
+                        <span class="pt-bbank-registry-title">
+
+                            <i data-lucide="building-2"></i>
+
+                            Verified blood bank registry
+
+                        </span>
+
+                        <span class="pt-bbank-registry-count"><%= banks.length %> hospitals</span>
+
+                    </div>
+
+                    <div class="pt-bbank-registry-scroll">
+
+                        <table class="pt-bbank-table">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Hospital</th>
+
+                                    <th>City</th>
+
+                                    <th>Contact</th>
+
+                                    <th>Sample inventory</th>
+
+                                    <th class="text-end">Actions</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                <% if (banks.length) { %>
+
+                                    <% banks.forEach(function(bb) {
+
+                                        const bankUser = bb.userId || {};
+
+                                        const hospitalName = bb.hospitalName || 'Blood bank';
+
+                                    %>
+
+                                    <tr class="pt-bbank-row">
+
+                                        <td>
+
+                                            <div class="pt-bbank-cell">
+
+                                                <% if (profileImageUrl(bankUser)) { %>
+
+                                                <img src="<%= profileImageUrl(bankUser) %>" alt="" class="pt-bbank-avatar pt-bbank-avatar--photo" loading="lazy">
+
+                                                <% } else { %>
+
+                                                <span class="pt-bbank-avatar pt-bbank-avatar--icon">
+
+                                                    <i data-lucide="building-2"></i>
+
+                                                </span>
+
+                                                <% } %>
+
+                                                <div class="pt-bbank-meta">
+
+                                                    <span class="pt-bbank-name" title="<%= hospitalName %>"><%= hospitalName %></span>
+
+                                                    <% if (bankUser.name) { %>
+
+                                                    <span class="pt-bbank-contact-name"><%= bankUser.name %></span>
+
+                                                    <% } %>
+
+                                                </div>
+
+                                            </div>
+
+                                        </td>
+
+                                        <td>
+
+                                            <span class="pt-bbank-city">
+
+                                                <i data-lucide="map-pin"></i>
+
+                                                <%= bankUser.city || '—' %>
+
+                                            </span>
+
+                                        </td>
+
+                                        <td class="pt-bbank-phone">
+
+                                            <% if (bankUser.phone) { %>
+
+                                            <a href="tel:<%= bankUser.phone %>"><%= bankUser.phone %></a>
+
+                                            <% } else { %><span class="pt-bbank-muted">—</span><% } %>
+
+                                        </td>
+
+                                        <td>
+
+                                            <div class="pt-bbank-inventory">
+
+                                                <span class="pt-bbank-stock pt-bbank-stock--o">O+ <%= bb.inventory['O+'] || 0 %></span>
+
+                                                <span class="pt-bbank-stock pt-bbank-stock--a">A+ <%= bb.inventory['A+'] || 0 %></span>
+
+                                                <span class="pt-bbank-stock pt-bbank-stock--b">B+ <%= bb.inventory['B+'] || 0 %></span>
+
+                                            </div>
+
+                                        </td>
+
+                                        <td class="text-end">
+
+                                            <% if (bankUser._id) { %>
+
+                                            <button type="button" class="btn btn-outline-danger btn-sm chat-btn pt-bbank-chat-btn"
+
+                                                data-user-id="<%= bankUser._id %>"
+
+                                                data-user-name="<%= hospitalName %>"
+
+                                                data-user-role="bloodbank">
+
+                                                <i data-lucide="message-circle"></i> Chat
+
+                                            </button>
+
+                                            <% } else { %>
+
+                                            <span class="pt-bbank-muted">—</span>
+
+                                            <% } %>
+
+                                        </td>
+
+                                    </tr>
+
+                                    <% }); %>
+
+                                <% } else { %>
+
+                                    <tr>
+
+                                        <td colspan="5" class="pt-bbank-empty">
+
+                                            <i data-lucide="building-2"></i>
+
+                                            <p><strong>No approved blood banks yet</strong></p>
+
+                                            <span>Check back later or widen your search radius.</span>
+
+                                        </td>
+
+                                    </tr>
+
+                                <% } %>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+

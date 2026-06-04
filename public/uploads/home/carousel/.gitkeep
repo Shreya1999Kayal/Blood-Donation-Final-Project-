@@ -1,0 +1,15 @@
+# Carousel media — use these exact base names (add your extension):
+
+# Slide 1 — picture
+01-blood-donation.jpg   (or .jpeg .png .webp)
+
+# Slide 2 — video
+02-donor.mp4            (or .webm .mov)
+
+# Slide 3 — picture
+03-camp.jpg
+
+# Slide 4 — video
+04-patient.mp4
+
+# Only put FILES here — not folders or saved web pages.

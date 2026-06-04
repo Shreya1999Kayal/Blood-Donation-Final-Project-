@@ -1,0 +1,168 @@
+<%
+const items = inbox || [];
+const isFullPageMode = typeof isFullPage !== 'undefined' ? !!isFullPage : false;
+const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+const todayList = items.filter(function(i) { return i.updatedAt && new Date(i.updatedAt) >= todayStart; });
+const patientList = items.filter(function(i) { return i.otherUser && i.otherUser.role === 'user'; });
+const withMessages = items.filter(function(i) { return i.lastMessage && i.lastMessage.text; }).length;
+const chatEnabled = bloodbank && bloodbank.status === 'approved';
+
+const msgStats = [
+    { label: 'Conversations', value: items.length, icon: 'messages-square', tone: 'blue', img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=260&fit=crop&q=80' },
+    { label: 'Patients', value: patientList.length, icon: 'users', tone: 'slate', img: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=260&fit=crop&q=80' },
+    { label: 'Active today', value: todayList.length, icon: 'calendar-clock', tone: 'green', img: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=260&fit=crop&q=80' },
+    { label: 'Chat access', value: chatEnabled ? 'Enabled' : 'Locked', icon: 'shield-check', tone: chatEnabled ? 'green' : 'amber', img: 'https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=400&h=260&fit=crop&q=80' },
+];
+%>
+
+<div class="msg-hero mb-4">
+    <div class="msg-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="msg-hero-overlay"></div>
+    <div class="msg-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="msg-hero-badge"><i data-lucide="messages-square" style="width:14px;height:14px;"></i> Patient coordination inbox</span>
+                <h3 class="msg-hero-title">Messages</h3>
+                <p class="msg-hero-sub mb-0">Secure conversations with patients — confirm availability, coordinate delivery, and respond to emergencies in real time.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="msg-hero-meta">
+                    <div><small>Inbox</small><strong id="msgFeedTotal"><%= items.length %></strong></div>
+                    <div><small>With messages</small><strong><%= withMessages %></strong></div>
+                    <div><small>Status</small><strong class="<%= chatEnabled ? 'text-success' : 'text-warning' %>"><%= chatEnabled ? 'Live' : 'Pending' %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (!chatEnabled) { %>
+<div class="bb-gate-banner mb-4">
+    <i data-lucide="message-square-off" style="width:22px;height:22px;"></i>
+    <div>
+        <strong>Messaging requires approval</strong>
+        <p class="mb-0 small">Once your blood bank is verified, you can chat with patients. You can still preview how the inbox will look below.</p>
+    </div>
+</div>
+<% } %>
+
+<div class="row g-3 mb-4">
+    <% msgStats.forEach(function(stat) { %>
+    <div class="col-sm-6 col-xl-3">
+        <div class="overview-kpi overview-kpi-<%= stat.tone %>">
+            <div class="overview-kpi-visual">
+                <img src="<%= stat.img %>" alt="" loading="lazy">
+                <div class="overview-kpi-visual-shade"></div>
+            </div>
+            <div class="overview-kpi-body">
+                <div class="overview-kpi-icon"><i data-lucide="<%= stat.icon %>" style="width:20px;height:20px;"></i></div>
+                <div class="overview-kpi-label"><%= stat.label %></div>
+                <div class="overview-kpi-value"><%= stat.value %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel">
+            <div class="overview-panel-head flex-wrap">
+                <div>
+                    <h5>Conversation inbox</h5>
+                    <p class="text-muted small mb-0"><span id="msgVisibleCount"><%= items.length %></span> of <%= items.length %> conversation(s) shown</p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <% if (!isFullPageMode) { %>
+                    <a href="/messages" class="btn btn-outline-danger btn-sm">
+                        <i data-lucide="external-link" style="width:14px;height:14px;"></i> Full page inbox
+                    </a>
+                    <% } %>
+                    <a href="<%= isFullPageMode ? '/dashboard#section-requests' : '#' %>" class="btn btn-danger btn-sm" <%= isFullPageMode ? '' : 'data-bb-section="requests" data-bb-label="Emergency Requests"' %>>
+                        <i data-lucide="siren" style="width:14px;height:14px;"></i> New from requests
+                    </a>
+                </div>
+            </div>
+
+            <div class="msg-toolbar">
+                <div class="msg-search-wrap">
+                    <i data-lucide="search" style="width:16px;height:16px;"></i>
+                    <input type="search" class="form-control form-control-sm" id="msgSearch" placeholder="Search patient, city, phone, message…" autocomplete="off">
+                </div>
+                <div class="msg-filter-group">
+                    <span class="msg-filter-label">Contact</span>
+                    <div class="msg-pills" id="msgRoleFilters">
+                        <button type="button" class="msg-pill active" data-msg-role="all">All</button>
+                        <button type="button" class="msg-pill" data-msg-role="patient">Patients</button>
+                    </div>
+                </div>
+                <div class="msg-filter-group">
+                    <span class="msg-filter-label">Activity</span>
+                    <div class="msg-pills" id="msgWhenFilters">
+                        <button type="button" class="msg-pill active" data-msg-when="all">All time</button>
+                        <button type="button" class="msg-pill" data-msg-when="today">Today</button>
+                        <button type="button" class="msg-pill" data-msg-when="empty">No messages</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overview-panel-body pt-0">
+                <%- include('messages-board', { inbox: items, isFullPage: isFullPageMode }) %>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="overview-panel mb-4">
+            <div class="overview-panel-head"><h5>Start a new chat</h5></div>
+            <div class="overview-panel-body">
+                <div class="bb-msg-steps">
+                    <div class="bb-msg-step">
+                        <span class="bb-msg-step-num">1</span>
+                        <div>
+                            <strong>Open emergency requests</strong>
+                            <p class="small text-muted mb-0">Find a live patient case that matches your inventory.</p>
+                        </div>
+                    </div>
+                    <div class="bb-msg-step">
+                        <span class="bb-msg-step-num">2</span>
+                        <div>
+                            <strong>Click Chat on the card</strong>
+                            <p class="small text-muted mb-0">Opens a secure conversation with the patient instantly.</p>
+                        </div>
+                    </div>
+                    <div class="bb-msg-step mb-0">
+                        <span class="bb-msg-step-num">3</span>
+                        <div>
+                            <strong>Return here anytime</strong>
+                            <p class="small text-muted mb-0">All threads stay in this inbox for follow-up coordination.</p>
+                        </div>
+                    </div>
+                </div>
+                <a href="#" class="btn btn-danger w-100 mt-3" data-bb-section="requests" data-bb-label="Emergency Requests">
+                    <i data-lucide="siren" style="width:16px;height:16px;"></i> Go to emergency requests
+                </a>
+            </div>
+        </div>
+
+        <div class="overview-panel">
+            <div class="overview-panel-head"><h5>Communication tips</h5></div>
+            <div class="overview-panel-body pt-2">
+                <div class="cp-tip mb-3">
+                    <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <div>
+                        <strong>Confirm blood availability</strong>
+                        <p class="small text-muted mb-0">Share matching stock groups and estimated arrival time.</p>
+                    </div>
+                </div>
+                <div class="cp-tip mb-0">
+                    <img src="https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <div>
+                        <strong>Record contact on platform</strong>
+                        <p class="small text-muted mb-0">Use "I contacted patient" on the request card after reaching out.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

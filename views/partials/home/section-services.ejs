@@ -1,0 +1,29 @@
+<section class="home-section home-section-alt" id="services">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-2xl mx-auto mb-12">
+            <span class="home-badge">Our Services</span>
+            <h2 class="home-section-title mt-4">End-to-end blood donation ecosystem</h2>
+            <p class="home-section-lead mx-auto">From discovery to donation — RaktaSetu supports every stakeholder in the blood supply chain with modern, accessible digital tools.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <% const services = [
+                { icon: 'search', color: 'bg-red-100 text-red-600', title: 'Blood Availability Search', desc: 'Search verified donors and blood banks by blood group, city, and real-time availability status.' },
+                { icon: 'siren', color: 'bg-amber-100 text-amber-600', title: 'Emergency Request Matching', desc: 'Patients raise urgent requests; compatible donors and banks are notified instantly via live alerts.' },
+                { icon: 'building-2', color: 'bg-blue-100 text-blue-600', title: 'Blood Bank Inventory', desc: 'Licensed blood banks manage stock levels, certificates, and respond to critical demand in one dashboard.' },
+                { icon: 'scan-line', color: 'bg-violet-100 text-violet-600', title: 'AI Document Verification', desc: 'Medical reports and registration documents are validated using OCR and intelligent eligibility checks.' },
+                { icon: 'tent', color: 'bg-emerald-100 text-emerald-600', title: 'Donation Camp Management', desc: 'Organizers schedule camps, coordinate with banks and donors, and track completed outreach events.' },
+                { icon: 'messages-square', color: 'bg-rose-100 text-rose-600', title: 'Secure Messaging', desc: 'Verified users communicate through in-platform chat after approval — protecting privacy and trust.' },
+            ]; %>
+            <% services.forEach(function(s) { %>
+                <article class="home-service-card">
+                    <div class="home-service-icon <%= s.color %>">
+                        <i data-lucide="<%= s.icon %>" style="width:24px;height:24px;"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-slate-900 mb-2"><%= s.title %></h3>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-0"><%= s.desc %></p>
+                </article>
+            <% }); %>
+        </div>
+    </div>
+</section>

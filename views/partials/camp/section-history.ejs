@@ -1,0 +1,48 @@
+<%
+const events = campEvents || [];
+
+function eventStatusBadge(status) {
+    if (status === 'completed') return 'bg-success';
+    if (status === 'cancelled') return 'bg-secondary';
+    return 'bg-primary';
+}
+%>
+<div class="cp-hero mb-4"><div class="cp-hero-bg" style="background-image:url('https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=1400&h=420&fit=crop&q=85');"></div><div class="cp-hero-overlay"></div><div class="cp-hero-content"><span class="cp-hero-badge"><i data-lucide="history" style="width:14px;height:14px;"></i> Past & upcoming</span><h3 class="cp-hero-title">Camp history</h3><p class="cp-hero-sub mb-0">Every camp you organize is recorded here. Mark completed after the event or cancel if plans change.</p></div></div>
+
+<div class="overview-panel">
+    <div class="overview-panel-body pt-0">
+        <% if (events.length) { %>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 cp-history-table">
+                <thead><tr><th>Camp</th><th>Location</th><th>Date</th><th>Time</th><th>Participants</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+                <tbody>
+                <% events.forEach(function(ev) { %>
+                <tr>
+                    <td><strong><%= ev.campName %></strong><br><small class="text-muted"><%= ev.linkedBloodBankId ? ev.linkedBloodBankId.hospitalName : 'No linked bank' %></small></td>
+                    <td><%= ev.city %>, <%= ev.district %><br><small><%= ev.state %></small></td>
+                    <td class="text-nowrap"><%= ev.proposedDate ? new Date(ev.proposedDate).toLocaleDateString('en-IN') : '—' %></td>
+                    <td class="text-nowrap"><%= ev.startTime %> – <%= ev.endTime %></td>
+                    <td><%= ev.estimatedParticipants %></td>
+                    <td><span class="badge <%= eventStatusBadge(ev.status) %> text-capitalize"><%= ev.status %></span></td>
+                    <td class="text-end text-nowrap">
+                        <% if (ev.status === 'scheduled') { %>
+                            <form action="/camp/events/<%= ev._id %>/complete" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-success">Complete</button>
+                            </form>
+                            <form action="/camp/events/<%= ev._id %>/cancel" method="POST" class="d-inline cp-cancel-event-form">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Cancel</button>
+                            </form>
+                        <% } else { %>
+                            <span class="text-muted small">—</span>
+                        <% } %>
+                    </td>
+                </tr>
+                <% }); %>
+                </tbody>
+            </table>
+        </div>
+        <% } else { %>
+        <p class="text-muted mb-0 p-3">No camp events yet. Complete registration or organize your first camp.</p>
+        <% } %>
+    </div>
+</div>

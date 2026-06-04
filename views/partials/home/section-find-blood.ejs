@@ -1,0 +1,225 @@
+<%
+const bankList = bloodBanks || [];
+const donorList = donors || [];
+
+function stockLevel(units) {
+    const n = Number(units) || 0;
+    if (n <= 0) return { label: 'Out of stock', tone: 'critical' };
+    if (n <= 10) return { label: 'Low stock', tone: 'low' };
+    if (n <= 30) return { label: 'Moderate', tone: 'moderate' };
+    return { label: 'Adequate', tone: 'good' };
+}
+
+function bankInitial(name) {
+    return (name || 'B').charAt(0).toUpperCase();
+}
+
+function donorInitial(name) {
+    const part = (name || 'D').split(' ')[0];
+    return part.charAt(0).toUpperCase();
+}
+%>
+<section class="home-section home-section-alt" id="find-blood">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-2xl mx-auto mb-10">
+            <span class="home-badge">Find Blood</span>
+            <h2 class="home-section-title mt-4">Verified donors &amp; blood banks</h2>
+            <p class="home-section-lead mx-auto mb-0">Browse approved partners nationwide. Contact details are masked on the public directory — register to connect during emergencies.</p>
+        </div>
+
+        <!-- Tab switcher -->
+        <div class="flex justify-center mb-6">
+            <div class="home-find-tabs" role="tablist" aria-label="Directory type">
+                <button type="button" class="home-find-tab active" data-find-tab="bloodbanks" role="tab" aria-selected="true">
+                    <i data-lucide="building-2" style="width:16px;height:16px;"></i>
+                    Blood Banks
+                    <span class="home-find-tab-count"><%= bankList.length %></span>
+                </button>
+                <button type="button" class="home-find-tab" data-find-tab="donors" role="tab" aria-selected="false">
+                    <i data-lucide="heart-handshake" style="width:16px;height:16px;"></i>
+                    Donors
+                    <span class="home-find-tab-count"><%= donorList.length %></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Blood banks panel -->
+        <div class="home-find-panel" data-find-panel="bloodbanks" role="tabpanel">
+            <% if (bankList.length) { %>
+                <div class="home-data-card">
+                    <div class="home-data-toolbar">
+                        <div class="home-data-toolbar-left">
+                            <div class="home-data-search-wrap">
+                                <i data-lucide="search" class="home-data-search-icon" style="width:18px;height:18px;"></i>
+                                <input type="search" class="home-data-search" data-find-search placeholder="Search hospital, city…" aria-label="Search blood banks">
+                            </div>
+                            <span class="home-data-meta">
+                                Showing <strong data-find-count><%= bankList.length %></strong> of <%= bankList.length %> verified blood banks
+                            </span>
+                        </div>
+                        <span class="home-data-badge home-data-badge--blue">
+                            <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
+                            Admin verified
+                        </span>
+                    </div>
+
+                    <div class="home-table-scroll">
+                        <table class="home-pro-table">
+                            <thead>
+                                <tr>
+                                    <th><span class="home-th-inner"><i data-lucide="building-2" style="width:14px;height:14px;"></i> Hospital / Blood Bank</span></th>
+                                    <th><span class="home-th-inner"><i data-lucide="map-pin" style="width:14px;height:14px;"></i> City</span></th>
+                                    <th><span class="home-th-inner"><i data-lucide="package" style="width:14px;height:14px;"></i> Inventory</span></th>
+                                    <th><span class="home-th-inner"><i data-lucide="activity" style="width:14px;height:14px;"></i> Stock status</span></th>
+                                    <th><span class="home-th-inner"><i data-lucide="phone" style="width:14px;height:14px;"></i> Contact</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% bankList.forEach(function(bank, idx) {
+                                    const stock = stockLevel(bank.stock);
+                                    const searchText = [bank.hospitalName, bank.city, bank.phone].filter(Boolean).join(' ').toLowerCase();
+                                %>
+                                    <tr class="home-pro-row" data-find-row data-search="<%= searchText.replace(/"/g, '') %>">
+                                        <td>
+                                            <div class="home-cell-entity">
+                                                <div class="home-cell-avatar home-cell-avatar--bank"><%= bankInitial(bank.hospitalName) %></div>
+                                                <div class="home-cell-entity-text">
+                                                    <span class="home-cell-title"><%= bank.hospitalName %></span>
+                                                    <span class="home-cell-sub">Verified blood bank · #<%= String(idx + 1).padStart(2, '0') %></span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><span class="home-cell-city"><%= bank.city || '—' %></span></td>
+                                        <td>
+                                            <span class="home-stock-units"><%= bank.stock %></span>
+                                            <span class="home-cell-sub block">units total</span>
+                                        </td>
+                                        <td>
+                                            <span class="home-status-pill home-status-pill--<%= stock.tone %>">
+                                                <span class="home-status-dot"></span>
+                                                <%= stock.label %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <% if (bank.phone) { %>
+                                                <span class="home-contact-mask"><%= bank.phone %></span>
+                                                <span class="home-cell-sub block">Partially masked</span>
+                                            <% } else { %>
+                                                <a href="/auth/login" class="home-link-action">Login to view</a>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="home-data-footer">
+                        <span><i data-lucide="info" style="width:14px;height:14px;"></i> Inventory totals are indicative. Confirm availability with the blood bank directly.</span>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="home-data-empty">
+                    <div class="home-data-empty-icon"><i data-lucide="building-2" style="width:32px;height:32px;"></i></div>
+                    <h3>No approved blood banks yet</h3>
+                    <p>Registered hospitals appear here after admin verification.</p>
+                    <a href="/auth/register?role=bloodbank" class="home-data-empty-btn">Register your blood bank</a>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Donors panel -->
+        <div class="home-find-panel hidden" data-find-panel="donors" role="tabpanel">
+            <% if (donorList.length) { %>
+                <div class="home-data-card">
+                    <div class="home-data-toolbar">
+                        <div class="home-data-toolbar-left">
+                            <div class="home-data-search-wrap">
+                                <i data-lucide="search" class="home-data-search-icon" style="width:18px;height:18px;"></i>
+                                <input type="search" class="home-data-search" data-find-search placeholder="Search donor, blood group, city…" aria-label="Search donors">
+                            </div>
+                            <span class="home-data-meta">
+                                Showing <strong data-find-count><%= donorList.length %></strong> of <%= donorList.length %> verified donors
+                            </span>
+                        </div>
+                        <span class="home-data-badge home-data-badge--green">
+                            <i data-lucide="badge-check" style="width:14px;height:14px;"></i>
+                            Eligibility verified
+                        </span>
+                    </div>
+
+                    <div class="home-table-scroll">
+                        <table class="home-pro-table">
+                            <thead>
+                                <tr>
+                                    <th><span class="home-th-inner"><i data-lucide="user" style="width:14px;height:14px;"></i> Donor</span></th>
+                                    <th><span class="home-th-inner"><i data-lucide="droplet" style="width:14px;height:14px;"></i> Blood group</span></th>
+                                    <th><span class="home-th-inner"><i data-lucide="map-pin" style="width:14px;height:14px;"></i> City</span></th>
+                                    <th><span class="home-th-inner"><i data-lucide="radio" style="width:14px;height:14px;"></i> Availability</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% donorList.forEach(function(donor, idx) {
+                                    const searchText = [donor.name, donor.bloodGroup, donor.city].filter(Boolean).join(' ').toLowerCase();
+                                %>
+                                    <tr class="home-pro-row" data-find-row data-search="<%= searchText.replace(/"/g, '') %>">
+                                        <td>
+                                            <div class="home-cell-entity">
+                                                <div class="home-cell-avatar home-cell-avatar--donor"><%= donorInitial(donor.name) %></div>
+                                                <div class="home-cell-entity-text">
+                                                    <span class="home-cell-title"><%= donor.name %></span>
+                                                    <span class="home-cell-sub">Verified donor · #<%= String(idx + 1).padStart(2, '0') %></span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="home-blood-chip"><%= donor.bloodGroup %></span>
+                                        </td>
+                                        <td><span class="home-cell-city"><%= donor.city || '—' %></span></td>
+                                        <td>
+                                            <% if (donor.available) { %>
+                                                <span class="home-status-pill home-status-pill--good">
+                                                    <span class="home-status-dot"></span>
+                                                    Available now
+                                                </span>
+                                            <% } else { %>
+                                                <span class="home-status-pill home-status-pill--muted">
+                                                    <span class="home-status-dot"></span>
+                                                    Unavailable
+                                                </span>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="home-data-footer">
+                        <span><i data-lucide="lock" style="width:14px;height:14px;"></i> Donor identities are partially masked for privacy. Full details after login &amp; matching.</span>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="home-data-empty">
+                    <div class="home-data-empty-icon"><i data-lucide="heart-handshake" style="width:32px;height:32px;"></i></div>
+                    <h3>No verified donors listed yet</h3>
+                    <p>Approved donors who opt in to public availability appear here.</p>
+                    <a href="/auth/register?role=donor" class="home-data-empty-btn">Become a donor</a>
+                </div>
+            <% } %>
+        </div>
+
+        <% if (!user) { %>
+            <div class="home-find-cta mt-8">
+                <div class="home-find-cta-icon">
+                    <i data-lucide="unlock" style="width:22px;height:22px;"></i>
+                </div>
+                <div class="flex-1">
+                    <strong class="text-slate-900 text-base">Need full contact details?</strong>
+                    <p class="text-slate-600 text-sm mb-0 mt-1">Create a free RaktaSetu account to connect with donors and blood banks during emergencies.</p>
+                </div>
+                <a href="/auth/register" class="home-find-cta-btn">Register now</a>
+            </div>
+        <% } %>
+    </div>
+</section>

@@ -1,0 +1,66 @@
+<div id="rakta-help-chat" class="rakta-help-chat" data-user-role="<%= typeof user !== 'undefined' && user ? user.role : '' %>">
+    <button type="button" class="rakta-help-chat__toggle" id="raktaHelpToggle" aria-expanded="false" aria-controls="raktaHelpPanel" title="Ask RaktaSetu Help">
+        <svg class="rakta-help-chat__toggle-icon rakta-help-chat__toggle-icon--open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
+        </svg>
+        <svg class="rakta-help-chat__toggle-icon rakta-help-chat__toggle-icon--close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+        <span class="rakta-help-chat__toggle-label">Help</span>
+    </button>
+
+    <div class="rakta-help-chat__panel" id="raktaHelpPanel" hidden>
+        <header class="rakta-help-chat__header">
+            <div class="rakta-help-chat__header-text">
+                <strong>RaktaSetu Guide</strong>
+                <span>App help · blood donation · find blood</span>
+            </div>
+            <button type="button" class="rakta-help-chat__clear" id="raktaHelpClear" title="Clear chat">Clear</button>
+        </header>
+
+        <div class="rakta-help-chat__messages" id="raktaHelpMessages" role="log" aria-live="polite">
+            <div class="rakta-help-chat__msg rakta-help-chat__msg--bot">
+                <div class="rakta-help-chat__msg-body">
+                    <p class="rakta-help-chat__title">Welcome to RaktaSetu Help</p>
+                    <p class="rakta-help-chat__para">Ask about registration, finding blood, donor verification, emergency requests, eligibility, and blood groups.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="rakta-help-chat__suggestions" id="raktaHelpSuggestions" aria-label="Suggested questions">
+            <span class="rakta-help-chat__suggestions-label">Try asking:</span>
+            <div class="rakta-help-chat__suggestions-list">
+                <button type="button" class="rakta-help-chat__chip" data-suggest="How do I use the RaktaSetu website?">How to use RaktaSetu?</button>
+                <button type="button" class="rakta-help-chat__chip" data-suggest="Where can I find O+ blood near me?">Find O+ blood nearby</button>
+                <button type="button" class="rakta-help-chat__chip" data-suggest="How can I become a verified donor?">Become a verified donor</button>
+                <button type="button" class="rakta-help-chat__chip" data-suggest="What documents are required for donor verification?">Donor documents</button>
+                <button type="button" class="rakta-help-chat__chip" data-suggest="How do I create an emergency blood request?">Emergency request</button>
+                <button type="button" class="rakta-help-chat__chip" data-suggest="Who is eligible to donate blood?">Who can donate?</button>
+                <button type="button" class="rakta-help-chat__chip" data-suggest="Which blood groups are compatible with B+?">B+ compatibility</button>
+                <button type="button" class="rakta-help-chat__chip" data-suggest="How often can I donate blood?">Donation frequency</button>
+                <button type="button" class="rakta-help-chat__chip" data-suggest="Find nearby blood banks on RaktaSetu">Nearby blood banks</button>
+                <button type="button" class="rakta-help-chat__chip" data-suggest="How does emergency donor matching work on RaktaSetu?">Emergency matching</button>
+            </div>
+        </div>
+
+        <form class="rakta-help-chat__form" id="raktaHelpForm">
+            <textarea
+                id="raktaHelpInput"
+                class="rakta-help-chat__input"
+                rows="2"
+                maxlength="2000"
+                placeholder="e.g. How do I register as a donor?"
+                required
+            ></textarea>
+            <button type="submit" class="rakta-help-chat__send" id="raktaHelpSend">
+                <span>Send</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="m22 2-7 20-4-9-9-4z"/>
+                </svg>
+            </button>
+        </form>
+    </div>
+</div>
+
+<link rel="stylesheet" href="/css/help-chatbot.css?v=2">
+<script src="/js/help-chatbot.js?v=2" defer></script>

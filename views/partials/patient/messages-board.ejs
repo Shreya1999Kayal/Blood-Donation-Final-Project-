@@ -1,0 +1,85 @@
+<%
+const items = inbox || [];
+const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+const showFilterEmpty = typeof filterEmpty !== 'undefined' ? !!filterEmpty : false;
+
+function roleLabel(role) {
+    if (role === 'donor') return 'Donor';
+    if (role === 'bloodbank') return 'Blood bank';
+    return role || 'User';
+}
+function roleTone(role) {
+    if (role === 'donor') return 'donor';
+    if (role === 'bloodbank') return 'bloodbank';
+    return 'patient';
+}
+function previewText(item) {
+    const text = item.lastMessage && item.lastMessage.text ? item.lastMessage.text : '';
+    return text.length > 120 ? text.slice(0, 117) + '…' : text;
+}
+%>
+
+<div class="msg-board" id="msgBoard">
+    <div class="msg-feed" id="msgFeed">
+        <% if (items.length) { %>
+            <% items.forEach(function(item) {
+                const other = item.otherUser || {};
+                const otherId = other._id || '';
+            %>
+            <button type="button"
+                class="msg-card msg-card-<%= roleTone(other.role) %> w-full text-start border-0"
+                data-chat-open="1"
+                data-chat-user-id="<%= otherId %>"
+                data-chat-user-name="<%= other.name || 'Contact' %>"
+                data-chat-user-role="<%= other.role || 'donor' %>">
+                <%- include('../shared/card-avatar', { contactUser: other, cardAvatarClass: 'msg-card-avatar' }) %>
+                <div class="msg-card-body min-w-0 flex-1">
+                    <div class="msg-card-head">
+                        <div class="min-w-0">
+                            <span class="msg-role-badge msg-role-<%= roleTone(other.role) %>"><%= roleLabel(other.role) %></span>
+                            <h6 class="msg-name truncate"><%= other.name || 'User' %></h6>
+                        </div>
+                        <time class="msg-time shrink-0"><%= item.updatedAt ? new Date(item.updatedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '' %></time>
+                    </div>
+                    <p class="msg-preview mb-0 line-clamp-2"><%= previewText(item) %></p>
+                    <div class="msg-meta-row">
+                        <% if (other.city) { %>
+                        <span><i data-lucide="map-pin" style="width:12px;height:12px;"></i> <%= other.city %></span>
+                        <% } %>
+                        <% if (other.phone) { %>
+                        <span><i data-lucide="phone" style="width:12px;height:12px;"></i> <%= other.phone %></span>
+                        <% } %>
+                    </div>
+                </div>
+                <div class="msg-card-actions shrink-0">
+                    <% if (other.phone) { %>
+                    <span class="msg-call-btn" role="button" tabindex="0" data-phone-call="<%= other.phone %>" title="Call">
+                        <i data-lucide="phone-call" style="width:16px;height:16px;"></i>
+                    </span>
+                    <% } %>
+                    <span class="msg-open-btn" aria-hidden="true"><i data-lucide="chevron-right" style="width:18px;height:18px;"></i></span>
+                </div>
+            </button>
+            <% }); %>
+        <% } else if (showFilterEmpty) { %>
+            <div class="msg-empty-state" id="msgEmptyState">
+                <div class="pt-msg-empty-icon pt-msg-empty-icon--lg">
+                    <i data-lucide="filter-x" style="width:28px;height:28px;"></i>
+                </div>
+                <h5>No conversations match</h5>
+                <p class="text-muted mb-0 mx-auto text-sm" style="max-width:24rem;">Try another contact type, time range, or search term.</p>
+            </div>
+        <% } else { %>
+            <div class="msg-empty-state" id="msgEmptyState">
+                <div class="pt-msg-empty-icon pt-msg-empty-icon--lg">
+                    <i data-lucide="messages-square" style="width:28px;height:28px;"></i>
+                </div>
+                <h5>No conversation started yet</h5>
+                <p class="text-muted mb-3 mx-auto text-sm" style="max-width:24rem;">When you chat with a donor or blood bank, the thread appears here. Use <strong>Find contacts</strong> to start messaging.</p>
+                <a href="#" class="btn btn-danger btn-sm" data-pt-section="donors" data-pt-label="Find Donors">
+                    <i data-lucide="users" style="width:14px;height:14px;"></i> Find contacts
+                </a>
+            </div>
+        <% } %>
+    </div>
+</div>

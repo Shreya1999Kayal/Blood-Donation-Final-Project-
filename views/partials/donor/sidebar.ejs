@@ -1,0 +1,86 @@
+<%
+const requests = bloodRequests || [];
+const activeRequests = requests.filter(function(r) { return ['active', 'contacted'].includes(r.status); }).length;
+const inboxCount = (inbox || []).length;
+const msgNotifs = (notifications || []).filter(function(n) {
+    return n.type === 'message' || n.type === 'contact' || (n.link && String(n.link).indexOf('/chat/') === 0);
+}).length;
+function donorCooldownDays(d) {
+    if (!d || !d.lastDonationDate) return 999;
+    return Math.floor((Date.now() - new Date(d.lastDonationDate).getTime()) / (1000 * 60 * 60 * 24));
+}
+function donorCooldownRemaining(d) {
+    return Math.max(0, 90 - donorCooldownDays(d));
+}
+const statusLabel = donorProfile ? donorProfile.status : 'setup';
+const bloodGroup = donorProfile ? donorProfile.bloodGroup : '—';
+%>
+<aside class="admin-sidebar dn-sidebar" id="dnSidebar">
+    <div class="admin-sidebar-brand">
+        <div class="d-flex align-items-start gap-3">
+            <div class="logo"><i data-lucide="droplets" style="width:22px;height:22px;color:#fff;"></i></div>
+            <div>
+                <h1>RaktaSetu</h1>
+                <p class="dn-portal-subtitle">Save lives · respond fast</p>
+                <span class="dn-portal-tag">Donor portal</span>
+            </div>
+        </div>
+    </div>
+
+    <nav class="admin-nav">
+        <a href="#" class="admin-nav-link active" data-dn-section="overview" data-dn-label="Overview">
+            <i data-lucide="layout-dashboard" style="width:18px;height:18px;"></i> Overview
+        </a>
+        <a href="#" class="admin-nav-link" data-dn-section="requests" data-dn-label="Emergency Requests">
+            <i data-lucide="siren" style="width:18px;height:18px;"></i> Emergency requests
+            <% if (activeRequests > 0) { %><span class="badge-count"><%= activeRequests %></span><% } %>
+        </a>
+        <a href="#" class="admin-nav-link" data-dn-section="availability" data-dn-label="Availability">
+            <i data-lucide="toggle-right" style="width:18px;height:18px;"></i> Availability
+        </a>
+        <a href="#" class="admin-nav-link" data-dn-section="documents" data-dn-label="Medical Documents">
+            <i data-lucide="file-heart" style="width:18px;height:18px;"></i> Documents
+        </a>
+        <a href="#" class="admin-nav-link" data-dn-section="history" data-dn-label="Donation History">
+            <i data-lucide="history" style="width:18px;height:18px;"></i> Donation history
+        </a>
+        <a href="#" class="admin-nav-link" data-dn-section="messages" data-dn-label="Messages">
+            <i data-lucide="messages-square" style="width:18px;height:18px;"></i> Messages
+            <% if (inboxCount > 0) { %><span class="badge-count"><%= inboxCount %></span><% } %>
+        </a>
+        <a href="#" class="admin-nav-link" data-dn-section="subscription" data-dn-label="Plans & Billing">
+            <i data-lucide="credit-card" style="width:18px;height:18px;"></i> Plans & billing
+        </a>
+        <% if (userAnalytics) { %>
+        <a href="#" class="admin-nav-link" data-dn-section="analytics" data-dn-label="Analytics">
+            <i data-lucide="bar-chart-3" style="width:18px;height:18px;"></i> Analytics
+        </a>
+        <% } %>
+        <a href="#" class="admin-nav-link" data-dn-section="notifications" data-dn-label="Notifications">
+            <i data-lucide="bell" style="width:18px;height:18px;"></i> Notifications
+            <% if (msgNotifs > 0) { %><span class="badge-count" id="dnNotifBadge"><%= msgNotifs %></span><% } %>
+        </a>
+        <a href="#" class="admin-nav-link" data-dn-section="profile" data-dn-label="Profile">
+            <i data-lucide="user-circle" style="width:18px;height:18px;"></i> Profile
+        </a>
+        <a href="#" class="admin-nav-link" data-dn-section="feedback" data-dn-label="Feedback">
+            <i data-lucide="message-square-heart" style="width:18px;height:18px;"></i> Feedback
+        </a>
+        <a href="#" class="admin-nav-link" data-dn-section="password" data-dn-label="Change Password">
+            <i data-lucide="shield-check" style="width:18px;height:18px;"></i> Password
+        </a>
+    </nav>
+
+    <div class="admin-sidebar-footer">
+        <div class="admin-profile-chip">
+            <%- include('../shared/user-avatar', { user, avatarSize: 'sm' }) %>
+            <div class="admin-profile-meta">
+                <strong class="text-truncate d-block"><%= user.name %></strong>
+                <span class="text-truncate d-block"><%= bloodGroup %> · <%= user.city %></span>
+            </div>
+        </div>
+        <a href="/auth/logout" class="admin-logout-link">
+            <i data-lucide="log-out" style="width:16px;height:16px;"></i> Sign out
+        </a>
+    </div>
+</aside>

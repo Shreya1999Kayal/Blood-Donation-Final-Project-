@@ -1,0 +1,80 @@
+<%
+const requests = bloodRequests || [];
+const activeRequests = requests.filter(function(r) { return ['active', 'contacted'].includes(r.status); }).length;
+const inboxCount = (inbox || []).length;
+const msgNotifs = (notifications || []).filter(function(n) {
+    return n.type === 'message' || n.type === 'contact' || (n.link && String(n.link).indexOf('/chat/') === 0);
+}).length;
+%>
+<aside class="admin-sidebar pt-sidebar" id="ptSidebar">
+    <div class="admin-sidebar-brand">
+        <div class="d-flex align-items-start gap-3">
+            <div class="logo"><i data-lucide="heart-pulse" style="width:22px;height:22px;color:#fff;"></i></div>
+            <div>
+                <h1>RaktaSetu</h1>
+                <p class="pt-portal-subtitle">Emergency blood assistance</p>
+                <span class="pt-portal-tag">Patient portal</span>
+            </div>
+        </div>
+    </div>
+
+    <nav class="admin-nav">
+        <a href="#" class="admin-nav-link active" data-pt-section="overview" data-pt-label="Overview">
+            <i data-lucide="layout-dashboard" style="width:18px;height:18px;"></i> Overview
+        </a>
+        <a href="#" class="admin-nav-link" data-pt-section="create-request" data-pt-label="Create Request">
+            <i data-lucide="plus-circle" style="width:18px;height:18px;"></i> Create request
+        </a>
+        <a href="#" class="admin-nav-link" data-pt-section="requests" data-pt-label="My Requests">
+            <i data-lucide="clipboard-list" style="width:18px;height:18px;"></i> My requests
+            <% if (activeRequests > 0) { %><span class="badge-count"><%= activeRequests %></span><% } %>
+        </a>
+        <a href="#" class="admin-nav-link" data-pt-section="donors" data-pt-label="Find Donors">
+            <i data-lucide="users" style="width:18px;height:18px;"></i> Find donors
+        </a>
+        <a href="#" class="admin-nav-link" data-pt-section="bloodbanks" data-pt-label="Blood Banks">
+            <i data-lucide="building-2" style="width:18px;height:18px;"></i> Blood banks
+        </a>
+        <a href="#" class="admin-nav-link" data-pt-section="matches" data-pt-label="Smart Matches">
+            <i data-lucide="sparkles" style="width:18px;height:18px;"></i> Smart matches
+        </a>
+        <a href="#" class="admin-nav-link" data-pt-section="messages" data-pt-label="Messages">
+            <i data-lucide="messages-square" style="width:18px;height:18px;"></i> Messages
+            <% if (inboxCount > 0) { %><span class="badge-count"><%= inboxCount %></span><% } %>
+        </a>
+        <a href="#" class="admin-nav-link" data-pt-section="subscription" data-pt-label="Plans & Billing">
+            <i data-lucide="credit-card" style="width:18px;height:18px;"></i> Plans & billing
+        </a>
+        <a href="#" class="admin-nav-link" data-pt-section="feedback" data-pt-label="Feedback">
+            <i data-lucide="message-square-heart" style="width:18px;height:18px;"></i> Feedback
+        </a>
+        <% if (userAnalytics) { %>
+        <a href="#" class="admin-nav-link" data-pt-section="analytics" data-pt-label="Analytics">
+            <i data-lucide="bar-chart-3" style="width:18px;height:18px;"></i> Analytics
+        </a>
+        <% } %>
+        <a href="#" class="admin-nav-link" data-pt-section="notifications" data-pt-label="Notifications">
+            <i data-lucide="bell" style="width:18px;height:18px;"></i> Notifications
+            <% if (msgNotifs > 0) { %><span class="badge-count" id="ptNotifBadge"><%= msgNotifs %></span><% } %>
+        </a>
+        <a href="#" class="admin-nav-link" data-pt-section="profile" data-pt-label="Profile">
+            <i data-lucide="user-circle" style="width:18px;height:18px;"></i> Profile
+        </a>
+        <a href="#" class="admin-nav-link" data-pt-section="password" data-pt-label="Change Password">
+            <i data-lucide="shield-check" style="width:18px;height:18px;"></i> Password
+        </a>
+    </nav>
+
+    <div class="admin-sidebar-footer">
+        <div class="admin-profile-chip">
+            <%- include('../shared/user-avatar', { user, avatarSize: 'sm' }) %>
+            <div class="admin-profile-meta">
+                <strong class="text-truncate d-block"><%= user.name %></strong>
+                <span class="text-truncate d-block"><%= user.city %></span>
+            </div>
+        </div>
+        <a href="/auth/logout" class="admin-logout-link">
+            <i data-lucide="log-out" style="width:16px;height:16px;"></i> Sign out
+        </a>
+    </div>
+</aside>

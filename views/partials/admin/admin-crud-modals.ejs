@@ -1,0 +1,128 @@
+<%
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const ORG_TYPES = typeof organizationTypes !== 'undefined' ? organizationTypes : ['NGO', 'Hospital', 'Government', 'Corporate', 'Red Cross', 'Educational', 'Other'];
+const CAMP_STATUSES = ['pending_verification', 'pending', 'approved', 'rejected'];
+const ENTITY_STATUSES = ['pending', 'approved', 'rejected'];
+const PLAN_OPTIONS = ['free', 'premium', 'pro', 'advanced'];
+%>
+
+<!-- Patient modal -->
+<div class="modal fade admin-crud-modal" id="adminPatientModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="adminPatientForm" method="POST" action="/admin/patients/create">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adminPatientModalTitle">Add patient</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label">Full name</label><input type="text" name="name" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input type="email" name="email" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Phone</label><input type="tel" name="phone" class="form-control" pattern="[6-9][0-9]{9}" required></div>
+                        <div class="col-md-6"><label class="form-label">City</label><input type="text" name="city" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Password <span class="admin-pwd-hint text-muted small">(leave blank to keep on edit)</span></label><input type="password" name="password" class="form-control admin-pwd-field" minlength="6"></div>
+                        <div class="col-md-6"><label class="form-label">Subscription plan</label><select name="subscriptionPlan" class="form-select"><% PLAN_OPTIONS.forEach(function(p) { %><option value="<%= p %>"><%= p %></option><% }); %></select></div>
+                        <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="emailVerified" value="true" id="adminPatientVerified" checked><label class="form-check-label" for="adminPatientVerified">Email verified</label></div></div>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-danger">Save patient</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Donor modal -->
+<div class="modal fade admin-crud-modal" id="adminDonorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="adminDonorForm" method="POST" action="/admin/donors/create">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adminDonorModalTitle">Add donor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label">Full name</label><input type="text" name="name" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input type="email" name="email" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Phone</label><input type="tel" name="phone" class="form-control" pattern="[6-9][0-9]{9}" required></div>
+                        <div class="col-md-6"><label class="form-label">City</label><input type="text" name="city" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Password</label><input type="password" name="password" class="form-control admin-pwd-field" minlength="6"></div>
+                        <div class="col-md-6"><label class="form-label">Blood group</label><select name="bloodGroup" class="form-select" required><% BLOOD_GROUPS.forEach(function(bg) { %><option value="<%= bg %>"><%= bg %></option><% }); %></select></div>
+                        <div class="col-md-4"><label class="form-label">Latitude</label><input type="number" step="any" name="latitude" class="form-control" placeholder="19.0760"></div>
+                        <div class="col-md-4"><label class="form-label">Longitude</label><input type="number" step="any" name="longitude" class="form-control" placeholder="72.8777"></div>
+                        <div class="col-md-4"><label class="form-label">Status</label><select name="status" class="form-select"><% ENTITY_STATUSES.forEach(function(s) { %><option value="<%= s %>"><%= s %></option><% }); %></select></div>
+                        <div class="col-md-6"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="isAvailable" value="true" id="adminDonorAvailable" checked><label class="form-check-label" for="adminDonorAvailable">Available to donate</label></div></div>
+                        <div class="col-md-6"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="emailVerified" value="true" id="adminDonorVerified" checked><label class="form-check-label" for="adminDonorVerified">Email verified</label></div></div>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-danger">Save donor</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Blood bank modal -->
+<div class="modal fade admin-crud-modal" id="adminBloodBankModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="adminBloodBankForm" method="POST" action="/admin/bloodbanks/create">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adminBloodBankModalTitle">Add blood bank</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label">Hospital / bank name</label><input type="text" name="hospitalName" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Contact person</label><input type="text" name="name" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input type="email" name="email" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Phone</label><input type="tel" name="phone" class="form-control" pattern="[6-9][0-9]{9}" required></div>
+                        <div class="col-md-6"><label class="form-label">City</label><input type="text" name="city" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Password</label><input type="password" name="password" class="form-control admin-pwd-field" minlength="6"></div>
+                        <div class="col-md-6"><label class="form-label">Certificate URL</label><input type="url" name="registrationCertificateUrl" class="form-control" placeholder="https://"></div>
+                        <div class="col-md-6"><label class="form-label">Status</label><select name="status" class="form-select"><% ENTITY_STATUSES.forEach(function(s) { %><option value="<%= s %>"><%= s %></option><% }); %></select></div>
+                        <div class="col-md-4"><label class="form-label">Latitude</label><input type="number" step="any" name="latitude" class="form-control"></div>
+                        <div class="col-md-4"><label class="form-label">Longitude</label><input type="number" step="any" name="longitude" class="form-control"></div>
+                        <div class="col-md-4"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="emailVerified" value="true" id="adminBbVerified" checked><label class="form-check-label" for="adminBbVerified">Email verified</label></div></div>
+                        <div class="col-12"><label class="form-label">Inventory (units)</label><div class="row g-2"><% BLOOD_GROUPS.forEach(function(bg) { %><div class="col-6 col-md-3"><label class="small text-muted"><%= bg %></label><input type="number" min="0" name="inventory[<%= bg %>]" class="form-control form-control-sm admin-inv-field" value="0"></div><% }); %></div></div>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-danger">Save blood bank</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Camp modal -->
+<div class="modal fade admin-crud-modal" id="adminCampModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="adminCampForm" method="POST" action="/admin/camps/create">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adminCampModalTitle">Add camp organization</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label">Organization name</label><input type="text" name="organizationName" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Organization type</label><select name="organizationType" class="form-select" required><% ORG_TYPES.forEach(function(t) { %><option value="<%= t %>"><%= t %></option><% }); %></select></div>
+                        <div class="col-md-6"><label class="form-label">Account name</label><input type="text" name="name" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Account email</label><input type="email" name="email" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Account phone</label><input type="tel" name="phone" class="form-control" pattern="[6-9][0-9]{9}" required></div>
+                        <div class="col-md-6"><label class="form-label">City</label><input type="text" name="city" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Password</label><input type="password" name="password" class="form-control admin-pwd-field" minlength="6"></div>
+                        <div class="col-md-6"><label class="form-label">Organizer name</label><input type="text" name="organizerName" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Organizer mobile</label><input type="tel" name="organizerMobile" class="form-control" pattern="[6-9][0-9]{9}" required></div>
+                        <div class="col-md-6"><label class="form-label">Organizer email</label><input type="email" name="organizerEmail" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Status</label><select name="status" class="form-select"><% CAMP_STATUSES.forEach(function(s) { %><option value="<%= s %>" <%= s === 'approved' ? 'selected' : '' %>><%= s.replace('_', ' ') %></option><% }); %></select></div>
+                        <div class="col-md-6"><label class="form-label">Co-organizer name</label><input type="text" name="coOrganizerName" class="form-control"></div>
+                        <div class="col-md-6"><label class="form-label">Co-organizer mobile</label><input type="tel" name="coOrganizerMobile" class="form-control" pattern="[6-9][0-9]{9}"></div>
+                        <div class="col-md-6"><div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="emailVerified" value="true" id="adminCampEmailVerified" checked><label class="form-check-label" for="adminCampEmailVerified">Email verified</label></div></div>
+                        <div class="col-md-6"><div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="mobileVerified" value="true" id="adminCampMobileVerified" checked><label class="form-check-label" for="adminCampMobileVerified">Mobile verified</label></div></div>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-danger">Save camp</button></div>
+            </form>
+        </div>
+    </div>
+</div>

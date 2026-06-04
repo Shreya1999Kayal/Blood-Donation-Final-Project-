@@ -1,0 +1,81 @@
+<%
+function normalizeType(type) {
+    return portalMedia.normalizeNotificationType(type);
+}
+function typeMeta(type) {
+    return portalMedia.notificationTypeMeta(type);
+}
+function filterType(type) {
+    return portalMedia.notificationFilterType(type);
+}
+function chatLinkMeta(n) {
+    const link = n.link || '';
+    if (!/^\/chat\//.test(link)) return null;
+    const userId = link.replace(/^\/chat\//, '').split('?')[0].trim();
+    if (!/^[a-f0-9]{24}$/i.test(userId)) return null;
+    const nameMatch = (n.title || '').match(/^New message from (.+)$/i);
+    return {
+        userId: userId,
+        name: nameMatch ? nameMatch[1] : 'Patient',
+        role: 'user',
+    };
+}
+function isTodayDate(d) {
+    const start = new Date(); start.setHours(0, 0, 0, 0);
+    return new Date(d) >= start;
+}
+%>
+
+<div class="nt-board" id="ntBoard">
+    <div class="nt-feed" id="notificationList">
+        <% if (notifications && notifications.length) { %>
+            <% notifications.forEach(function(n) {
+                const meta = typeMeta(n.type || 'system');
+                const fType = filterType(n.type || 'system');
+                const chatMeta = chatLinkMeta(n);
+                const searchText = [n.title, n.message, n.city, meta.label].filter(Boolean).join(' ').toLowerCase();
+                const when = isTodayDate(n.createdAt) ? 'today' : 'older';
+            %>
+            <a href="<%= chatMeta ? '#' : (n.link || '/dashboard') %>" class="nt-card nt-card-<%= meta.tone %>"
+                data-notif-item
+                data-type="<%= fType %>"
+                data-when="<%= when %>"
+                data-search="<%= searchText.replace(/"/g, '') %>"
+                <% if (chatMeta) { %>
+                data-chat-open="1"
+                data-chat-user-id="<%= chatMeta.userId %>"
+                data-chat-user-name="<%= chatMeta.name %>"
+                data-chat-user-role="<%= chatMeta.role %>"
+                <% } %>
+            >
+                <div class="nt-card-thumb">
+                    <img src="<%= meta.img %>" alt="" loading="lazy">
+                    <span class="nt-type-icon"><i data-lucide="<%= meta.icon %>" style="width:16px;height:16px;"></i></span>
+                </div>
+                <div class="nt-card-body">
+                    <div class="nt-card-head">
+                        <div>
+                            <span class="nt-type-badge nt-type-<%= meta.tone %>"><%= meta.label %></span>
+                            <h6 class="nt-title"><%= n.title %></h6>
+                        </div>
+                        <time class="nt-time"><%= new Date(n.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) %></time>
+                    </div>
+                    <p class="nt-message mb-0"><%= n.message %></p>
+                    <% if (n.city) { %>
+                    <div class="nt-meta-row">
+                        <i data-lucide="map-pin" style="width:12px;height:12px;"></i> <%= n.city %>
+                    </div>
+                    <% } %>
+                </div>
+                <div class="nt-card-arrow"><i data-lucide="chevron-right" style="width:18px;height:18px;"></i></div>
+            </a>
+            <% }); %>
+        <% } else { %>
+            <div class="nt-empty-state" id="notifPlaceholder">
+                <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=260&fit=crop&q=80" alt="" loading="lazy">
+                <h5>Listening for platform alerts</h5>
+                <p class="text-muted mb-0">New notifications will stream here in real time via Socket.IO.</p>
+            </div>
+        <% } %>
+    </div>
+</div>

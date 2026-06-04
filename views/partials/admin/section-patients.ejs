@@ -1,0 +1,220 @@
+<%
+const patients = allUsers || [];
+const requests = bloodRequests || [];
+const verifiedList = patients.filter(function(u) { return u.emailVerified; });
+const unverifiedList = patients.filter(function(u) { return !u.emailVerified; });
+const premiumList = patients.filter(function(u) {
+    const plan = (u.subscription && u.subscription.plan) || 'free';
+    return plan !== 'free';
+});
+
+function patientStats(user) {
+    const id = user._id.toString();
+    const mine = requests.filter(function(r) {
+        if (!r.requestedBy) return false;
+        return (r.requestedBy._id || r.requestedBy).toString() === id;
+    });
+    const active = mine.filter(function(r) { return ['active', 'contacted'].includes(r.status); });
+    return { total: mine.length, active: active.length, latest: mine[0] || null };
+}
+
+function activityKey(stats) {
+    if (stats.active > 0) return 'active';
+    if (stats.total > 0) return 'requests';
+    return 'none';
+}
+
+function planLabel(u) {
+    return ((u.subscription && u.subscription.plan) || 'free').toUpperCase();
+}
+
+function planTone(u) {
+    const plan = (u.subscription && u.subscription.plan) || 'free';
+    if (plan === 'pro' || plan === 'advanced') return 'pro';
+    if (plan === 'premium') return 'premium';
+    return 'free';
+}
+
+const withActiveEmergency = patients.filter(function(u) { return patientStats(u).active > 0; }).length;
+const totalRequests = requests.filter(function(r) {
+    return r.requestedBy && patients.some(function(p) { return p._id.toString() === (r.requestedBy._id || r.requestedBy).toString(); });
+}).length;
+
+const ptStats = [
+    { label: 'Total patients', value: patients.length, icon: 'users', tone: 'slate', img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=260&fit=crop&q=80' },
+    { label: 'Email verified', value: verifiedList.length, icon: 'user-check', tone: 'green', img: 'https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=400&h=260&fit=crop&q=80' },
+    { label: 'Active emergencies', value: withActiveEmergency, icon: 'siren', tone: 'red', img: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=400&h=260&fit=crop&q=80' },
+    { label: 'Premium members', value: premiumList.length, icon: 'crown', tone: 'amber', img: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=260&fit=crop&q=80' },
+];
+%>
+
+<!-- Hero -->
+<div class="pt-hero mb-4">
+    <div class="pt-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="pt-hero-overlay"></div>
+    <div class="pt-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="pt-hero-badge"><span class="pulse-dot"></span> Patient care registry</span>
+                <h3 class="pt-hero-title">Patient management</h3>
+                <p class="pt-hero-sub mb-0">Monitor registered patients, track emergency request activity, and view subscription status across the platform care network.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="pt-hero-meta">
+                    <div><small>Registered</small><strong><%= patients.length %></strong></div>
+                    <div><small>Live cases</small><strong class="<%= withActiveEmergency ? 'text-warning' : 'text-success' %>"><%= withActiveEmergency %></strong></div>
+                    <div><small>Total requests</small><strong><%= totalRequests %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (withActiveEmergency > 0) { %>
+<div class="pt-alert-strip mb-4">
+    <div class="pt-alert-strip-icon">
+        <img src="https://images.unsplash.com/photo-1516549655169-df83a0774514?w=100&h=100&fit=crop&q=80" alt="" loading="lazy">
+    </div>
+    <div class="flex-grow-1">
+        <h6 class="mb-1"><i data-lucide="heart-pulse" style="width:16px;height:16px;"></i> <%= withActiveEmergency %> patient<%= withActiveEmergency !== 1 ? 's' : '' %> with active blood requests</h6>
+        <p class="mb-0 small text-muted">These patients currently have open or in-progress emergency cases on the network.</p>
+    </div>
+    <button type="button" class="btn btn-danger btn-sm" id="ptFilterActive">Show active cases</button>
+</div>
+<% } %>
+
+<!-- KPI row -->
+<div class="row g-3 mb-4">
+    <% ptStats.forEach(function(stat) { %>
+    <div class="col-sm-6 col-xl-3">
+        <div class="overview-kpi overview-kpi-<%= stat.tone %>">
+            <div class="overview-kpi-visual">
+                <img src="<%= stat.img %>" alt="" loading="lazy">
+                <div class="overview-kpi-visual-shade"></div>
+            </div>
+            <div class="overview-kpi-body">
+                <div class="overview-kpi-icon"><i data-lucide="<%= stat.icon %>" style="width:20px;height:20px;"></i></div>
+                <div class="overview-kpi-label"><%= stat.label %></div>
+                <div class="overview-kpi-value"><%= stat.value %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel">
+            <div class="overview-panel-head flex-wrap">
+                <div>
+                    <h5>Patient directory</h5>
+                    <p class="text-muted small mb-0"><span id="ptVisibleCount"><%= patients.length %></span> of <%= patients.length %> patient(s) shown</p>
+                </div>
+                <div class="btn-group btn-group-sm pt-view-toggle" role="group">
+                    <button type="button" class="btn btn-danger active" data-pt-view="cards" title="Card view"><i data-lucide="layout-grid" style="width:14px;height:14px;"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" data-pt-view="table" title="Table view"><i data-lucide="table" style="width:14px;height:14px;"></i></button>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm ms-2" data-admin-create="patient"><i data-lucide="plus" style="width:14px;height:14px;"></i> Add patient</button>
+            </div>
+
+            <div class="pt-toolbar">
+                <div class="pt-search-wrap">
+                    <i data-lucide="search" style="width:16px;height:16px;"></i>
+                    <input type="search" class="form-control form-control-sm" id="ptSearch" placeholder="Search name, email, phone, city…" autocomplete="off">
+                </div>
+                <div class="pt-filter-group">
+                    <span class="pt-filter-label">Account</span>
+                    <div class="pt-pills" id="ptAccountFilters">
+                        <button type="button" class="pt-pill active" data-pt-account="all">All</button>
+                        <button type="button" class="pt-pill" data-pt-account="verified">Verified</button>
+                        <button type="button" class="pt-pill" data-pt-account="unverified">Unverified</button>
+                    </div>
+                </div>
+                <div class="pt-filter-group">
+                    <span class="pt-filter-label">Activity</span>
+                    <div class="pt-pills" id="ptActivityFilters">
+                        <button type="button" class="pt-pill active" data-pt-activity="all">All</button>
+                        <button type="button" class="pt-pill" data-pt-activity="active">Active case</button>
+                        <button type="button" class="pt-pill" data-pt-activity="requests">Has requests</button>
+                        <button type="button" class="pt-pill" data-pt-activity="none">No requests</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overview-panel-body pt-0">
+                <div id="ptCardsView">
+                    <%- include('patients-board', { allUsers: patients, bloodRequests: requests, patientStats, activityKey, planLabel, planTone }) %>
+                </div>
+                <div id="ptTableView" class="d-none">
+                    <%- include('patients-table-advanced', { allUsers: patients, patientStats, activityKey, planLabel, planTone }) %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <% if (typeof analytics !== 'undefined' && analytics && analytics.patientsByPlan) { %>
+        <div class="overview-panel mb-4">
+            <div class="overview-panel-head">
+                <div>
+                    <h5>Subscription mix</h5>
+                    <p class="text-muted small mb-0">Patients by plan tier</p>
+                </div>
+            </div>
+            <div class="overview-panel-body">
+                <div class="overview-chart-box">
+                    <canvas id="ptSectionPlanChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <div class="overview-panel mb-4">
+            <div class="overview-panel-head">
+                <h5>Care workflow</h5>
+            </div>
+            <div class="overview-panel-body pt-2">
+                <div class="pt-checklist-item">
+                    <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <div>
+                        <strong>1. Verify patient accounts</strong>
+                        <p class="small text-muted mb-0"><%= unverifiedList.length %> patient(s) still need email verification.</p>
+                    </div>
+                </div>
+                <div class="pt-checklist-item">
+                    <img src="https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <div>
+                        <strong>2. Monitor emergencies</strong>
+                        <p class="small text-muted mb-0"><%= withActiveEmergency %> patient(s) with live blood requests right now.</p>
+                    </div>
+                </div>
+                <div class="pt-checklist-item mb-0">
+                    <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <div>
+                        <strong>3. Coordinate via requests</strong>
+                        <p class="small text-muted mb-0">Jump to Emergency Requests to manage active cases.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="overview-panel overview-panel-accent">
+            <div class="overview-panel-head border-0 pb-0">
+                <h5 class="text-white mb-0">Network snapshot</h5>
+            </div>
+            <div class="overview-panel-body">
+                <div class="pt-live-stat"><span>Registered patients</span><strong><%= patients.length %></strong></div>
+                <div class="pt-live-stat"><span>Email verified</span><strong><%= verifiedList.length %></strong></div>
+                <div class="pt-live-stat"><span>With blood requests</span><strong><%= patients.filter(function(u) { return patientStats(u).total > 0; }).length %></strong></div>
+                <div class="pt-live-stat mb-0"><span>Premium / paid plans</span><strong><%= premiumList.length %></strong></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="pt-empty pt-empty-filter d-none" id="ptEmptyFilter">
+    <img src="https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=400&h=260&fit=crop&q=80" alt="" loading="lazy">
+    <h5>No patients match your filters</h5>
+    <p class="text-muted mb-3">Try adjusting search or filter criteria.</p>
+    <button type="button" class="btn btn-outline-danger btn-sm" id="ptClearFilters">Clear all filters</button>
+</div>

@@ -1,0 +1,26 @@
+<div class="cp-hero mb-4 dn-hero">
+    <div class="cp-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="cp-hero-overlay"></div>
+    <div class="cp-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="cp-hero-badge"><i data-lucide="history" style="width:14px;height:14px;"></i> Impact tracker</span>
+                <h3 class="cp-hero-title">Donation history</h3>
+                <p class="cp-hero-sub mb-0">A complete record of hospitals, blood groups, and units donated through RaktaSetu.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="cp-hero-meta">
+                    <div><small>Total donations</small><strong><%= (donationHistory || []).length %></strong></div>
+                    <div><small>Units donated</small><strong><%= (donationHistory || []).reduce(function(s, i) { return s + Number(i.units || 0); }, 0) %></strong></div>
+                    <div><small>Blood group</small><strong><%= donorProfile ? donorProfile.bloodGroup : '—' %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <%- include('donation-history-table', { donationHistory }) %>
+    </div>
+</div>

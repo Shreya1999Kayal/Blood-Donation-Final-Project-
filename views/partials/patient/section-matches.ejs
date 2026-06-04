@@ -1,0 +1,100 @@
+<%
+const hasMatches = (recommendedDonors && recommendedDonors.length) || (nearbyBloodBanks && nearbyBloodBanks.length);
+const latestActive = (bloodRequests || []).find(function(r) { return ['active', 'contacted'].includes(r.status); });
+%>
+
+<div class="cp-hero mb-4 pt-hero">
+    <div class="cp-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="cp-hero-overlay"></div>
+    <div class="cp-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="cp-hero-badge"><i data-lucide="sparkles" style="width:14px;height:14px;"></i> AI-powered matching</span>
+                <h3 class="cp-hero-title">Smart recommendations</h3>
+                <p class="cp-hero-sub mb-0">Ranked donors and nearby blood banks with stock — based on your latest active emergency request.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="cp-hero-meta">
+                    <div><small>Donors ranked</small><strong><%= (recommendedDonors || []).length %></strong></div>
+                    <div><small>Banks nearby</small><strong><%= (nearbyBloodBanks || []).length %></strong></div>
+                    <div><small>Active case</small><strong><%= latestActive ? latestActive.bloodGroup : '—' %></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (!latestActive) { %>
+<div class="pt-gate-banner mb-4">
+    <i data-lucide="info" style="width:22px;height:22px;color:#dc2626;"></i>
+    <div>
+        <strong>No active request for matching</strong>
+        <p class="mb-0 small text-muted">Post an emergency request first. Smart matches appear automatically for your live case.</p>
+    </div>
+    <a href="#" class="btn btn-danger btn-sm" data-pt-section="create-request" data-pt-label="Create Request">Create request</a>
+</div>
+<% } else if (!hasMatches) { %>
+<div class="pt-gate-banner mb-4">
+    <i data-lucide="search-x" style="width:22px;height:22px;color:#dc2626;"></i>
+    <div>
+        <strong>No matches found yet</strong>
+        <p class="mb-0 small text-muted">For <%= latestActive.bloodGroup %> at <%= latestActive.hospitalName %> in <%= latestActive.city %> — no matching <%= latestActive.bloodGroup %> donors or stocked blood banks found yet.</p>
+    </div>
+</div>
+<% } %>
+
+<div class="row g-4 mb-4">
+    <% if (recommendedDonors && recommendedDonors.length) { %>
+    <div class="col-xl-6">
+        <div class="overview-panel h-100">
+            <div class="overview-panel-head"><h5>Ranked donors</h5></div>
+            <div class="overview-panel-body">
+                <% recommendedDonors.forEach(function(item) { %>
+                <div class="pt-match-card mb-3">
+                    <div>
+                        <strong><%= item.donor.userId ? item.donor.userId.name : 'Donor' %></strong>
+                        <div class="small text-muted"><%= item.donor.bloodGroup %> · <%= item.distanceKm %> km away</div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="pt-match-score">Score <%= item.score %></span>
+                        <% if (item.donor.userId && item.donor.userId._id) { %>
+                            <button type="button" class="btn btn-outline-danger btn-sm chat-btn"
+                                data-user-id="<%= item.donor.userId._id %>"
+                                data-user-name="<%= item.donor.userId.name %>"
+                                data-user-role="donor">Chat</button>
+                        <% } %>
+                    </div>
+                </div>
+                <% }); %>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
+    <% if (nearbyBloodBanks && nearbyBloodBanks.length) { %>
+    <div class="col-xl-6">
+        <div class="overview-panel h-100">
+            <div class="overview-panel-head"><h5>Nearby blood banks with stock</h5></div>
+            <div class="overview-panel-body">
+                <% nearbyBloodBanks.forEach(function(item) { %>
+                <div class="pt-match-card mb-3">
+                    <div>
+                        <strong><%= item.bloodBank.hospitalName %></strong>
+                        <div class="small text-muted"><%= item.distanceKm %> km · <%= item.availableUnits %> units available</div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-success"><%= item.availableUnits %> units</span>
+                        <% if (item.bloodBank.userId && item.bloodBank.userId._id) { %>
+                            <button type="button" class="btn btn-outline-danger btn-sm chat-btn"
+                                data-user-id="<%= item.bloodBank.userId._id %>"
+                                data-user-name="<%= item.bloodBank.hospitalName %>"
+                                data-user-role="bloodbank">Chat</button>
+                        <% } %>
+                    </div>
+                </div>
+                <% }); %>
+            </div>
+        </div>
+    </div>
+    <% } %>
+</div>

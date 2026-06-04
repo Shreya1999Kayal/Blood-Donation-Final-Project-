@@ -1,0 +1,151 @@
+<%
+const requests = bloodRequests || [];
+const activeList = requests.filter(function(r) { return ['active', 'contacted'].includes(r.status); });
+function donorCooldownDays(d) {
+    if (!d || !d.lastDonationDate) return 999;
+    return Math.floor((Date.now() - new Date(d.lastDonationDate).getTime()) / (1000 * 60 * 60 * 24));
+}
+function donorCooldownRemaining(d) {
+    return Math.max(0, 90 - donorCooldownDays(d));
+}
+function donorEligibilityLabel(d) {
+    if (!d || d.status !== 'approved') return 'Pending approval';
+    const remaining = donorCooldownRemaining(d);
+    if (remaining > 0) return 'Cooldown (' + remaining + 'd)';
+    if (!d.isAvailable) return 'Unavailable';
+    return 'Eligible';
+}
+const hour = new Date().getHours();
+const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+const donations = (donationHistory || []).length;
+const responses = userAnalytics ? userAnalytics.responseCount : requests.reduce(function(sum, r) {
+    return sum + (r.contacts || []).filter(function(c) { return c.role === 'donor'; }).length;
+}, 0);
+const kpis = [
+    { label: 'Live emergencies', value: activeList.length, icon: 'siren', tone: 'red', img: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=400&h=260&fit=crop&q=80' },
+    { label: 'Total requests', value: requests.length, icon: 'clipboard-list', tone: 'slate', img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=260&fit=crop&q=80' },
+    { label: 'My responses', value: responses, icon: 'phone-call', tone: 'blue', img: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=260&fit=crop&q=80' },
+    { label: 'Donations logged', value: donations, icon: 'heart-handshake', tone: 'green', img: 'https://images.unsplash.com/photo-1615461066159-fa5966998606?w=400&h=260&fit=crop&q=80' },
+    { label: 'Eligibility', value: donorProfile ? donorEligibilityLabel(donorProfile) : 'Setup needed', icon: 'shield-check', tone: 'rose', img: 'https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=400&h=260&fit=crop&q=80' },
+    { label: 'Plan', value: (user.subscription && user.subscription.plan) || 'free', icon: 'credit-card', tone: 'slate', img: 'https://images.unsplash.com/photo-1563986768494-4ccb4962f667?w=400&h=260&fit=crop&q=80' },
+];
+%>
+
+<div class="overview-hero mb-4 dn-hero">
+    <div class="overview-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1615461066159-fa5966998606?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="overview-hero-overlay"></div>
+    <div class="overview-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="overview-hero-badge"><span class="pulse-dot"></span> Verified donor network</span>
+                <h3 class="overview-hero-title"><%= greeting %>, <%= user.name %></h3>
+                <p class="overview-hero-sub mb-0">Respond to emergency blood requests in <%= user.city %>, coordinate with patients, and track your donation impact.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="overview-hero-aside">
+                    <%- include('../shared/user-avatar', { user, avatarSize: 'lg', avatarClass: 'overview-hero-avatar' }) %>
+                    <div class="overview-hero-meta">
+                    <div><small>Blood group</small><strong><%= donorProfile ? donorProfile.bloodGroup : '—' %></strong></div>
+                    <div><small>Status</small><strong class="text-capitalize"><%= donorProfile ? donorProfile.status : 'setup' %></strong></div>
+                    <div><small>Live cases</small><strong class="text-danger"><%= activeList.length %></strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (donorProfile && donorProfile.status === 'pending') { %>
+<div class="dn-status-banner pending mb-4">
+    <i data-lucide="clock" style="width:22px;height:22px;color:#d97706;"></i>
+    <div>
+        <strong>Verification in progress</strong>
+        <p class="mb-0 small text-muted">Admin is reviewing your medical documents. You can browse requests but contact actions unlock after approval.</p>
+    </div>
+</div>
+<% } else if (donorProfile && donorProfile.status === 'rejected') { %>
+<div class="dn-status-banner rejected mb-4">
+    <i data-lucide="x-circle" style="width:22px;height:22px;color:#dc2626;"></i>
+    <div>
+        <strong>Application not approved</strong>
+        <p class="mb-0 small text-muted">Re-upload corrected medical documents in the Documents section for another review.</p>
+    </div>
+    <a href="#" class="btn btn-outline-danger btn-sm ms-auto" data-dn-section="documents" data-dn-label="Medical Documents">Update docs</a>
+</div>
+<% } else if (donorProfile && donorCooldownRemaining(donorProfile) > 0) { %>
+<div class="dn-status-banner cooldown mb-4">
+    <i data-lucide="timer" style="width:22px;height:22px;color:#dc2626;"></i>
+    <div>
+        <strong>90-day cooldown active</strong>
+        <p class="mb-0 small text-muted">You can respond again in <strong><%= donorCooldownRemaining(donorProfile) %> day(s)</strong>. Contact buttons are disabled during this period.</p>
+    </div>
+</div>
+<% } else if (!donorProfile) { %>
+<div class="overview-action-banner mb-4">
+    <div class="overview-action-banner-icon">
+        <img src="https://images.unsplash.com/photo-1584982751661-6085a089094a?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
+    </div>
+    <div class="flex-grow-1">
+        <h6 class="mb-1">Complete donor registration</h6>
+        <p class="mb-0 small text-muted">Upload medical documents and select your blood group to join the verified donor network.</p>
+    </div>
+    <a href="#" class="btn btn-success btn-sm" data-dn-section="documents" data-dn-label="Medical Documents">Upload documents</a>
+</div>
+<% } %>
+
+<div class="row g-3 mb-4">
+    <% kpis.forEach(function(stat) { %>
+    <div class="col-sm-6 col-xl-4 col-xxl-2">
+        <div class="overview-kpi overview-kpi-<%= stat.tone %>">
+            <div class="overview-kpi-visual">
+                <img src="<%= stat.img %>" alt="" loading="lazy">
+                <div class="overview-kpi-visual-shade"></div>
+            </div>
+            <div class="overview-kpi-body">
+                <div class="overview-kpi-icon"><i data-lucide="<%= stat.icon %>" style="width:20px;height:20px;"></i></div>
+                <div class="overview-kpi-label"><%= stat.label %></div>
+                <div class="overview-kpi-value text-capitalize"><%= stat.value %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel">
+            <div class="overview-panel-head"><h5>Quick actions</h5></div>
+            <div class="overview-panel-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <a href="#" class="overview-quick-link" data-dn-section="requests" data-dn-label="Emergency Requests">
+                            <i data-lucide="siren" style="width:22px;height:22px;"></i>
+                            <span>View emergencies</span>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="#" class="overview-quick-link" data-dn-section="availability" data-dn-label="Availability">
+                            <i data-lucide="toggle-right" style="width:22px;height:22px;"></i>
+                            <span>Set availability</span>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="#" class="overview-quick-link" data-dn-section="messages" data-dn-label="Messages">
+                            <i data-lucide="messages-square" style="width:22px;height:22px;"></i>
+                            <span>Open inbox</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="overview-panel overview-panel-accent">
+            <div class="overview-panel-head border-0 pb-0"><h5 class="text-white mb-0">Rank higher in search</h5></div>
+            <div class="overview-panel-body">
+                <p class="small mb-3" style="color:rgba(255,255,255,0.78);">Paid plans boost your visibility when patients search for donors and in AI matching.</p>
+                <a href="#" class="btn btn-outline-light btn-sm w-100" data-dn-section="subscription" data-dn-label="Plans & Billing">View plans</a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,38 @@
+<section class="home-section" id="gallery">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-2xl mx-auto mb-10">
+            <span class="home-badge">Gallery</span>
+            <h2 class="home-section-title mt-4">View our work</h2>
+            <p class="home-section-lead mx-auto">Moments from blood drives, camps, and community outreach. Add your own images to <code class="text-xs bg-slate-100 px-2 py-1 rounded">public/uploads/home/gallery/</code>.</p>
+        </div>
+
+        <div class="home-gallery-grid">
+            <% (galleryItems || []).forEach(function(item, index) { %>
+                <button type="button"
+                    class="home-gallery-item"
+                    data-gallery-item
+                    data-src="<%= item.src %>"
+                    data-type="<%= item.type || 'image' %>"
+                    data-caption="<%= item.caption || item.title || ('Gallery ' + (index + 1)) %>"
+                    aria-label="Open gallery item <%= index + 1 %>">
+                    <% if (item.type === 'video') { %>
+                        <video src="<%= item.src %>" muted preload="metadata"></video>
+                    <% } else { %>
+                        <img src="<%= item.src %>" alt="<%= item.caption || item.title %>" loading="lazy">
+                    <% } %>
+                    <span class="home-gallery-caption"><%= item.caption || item.title || ('Our work — ' + (index + 1)) %></span>
+                </button>
+            <% }); %>
+        </div>
+    </div>
+</section>
+
+<div class="home-lightbox" id="homeLightbox" role="dialog" aria-modal="true" aria-label="Gallery viewer">
+    <button type="button" class="home-lightbox-close" id="homeLightboxClose" aria-label="Close gallery">
+        <i data-lucide="x" style="width:22px;height:22px;"></i>
+    </button>
+    <div class="text-center">
+        <div id="homeLightboxMedia"></div>
+        <p id="homeLightboxCaption" class="text-white mt-4 text-sm font-semibold"></p>
+    </div>
+</div>

@@ -1,0 +1,241 @@
+<% if (analytics) { %>
+<%
+const pendingApprovals = (analytics.donorsByStatus.pending || 0) + (allBloodBanks || []).filter(function(b) { return b.status === 'pending'; }).length;
+const activeEmergencies = (bloodRequests || []).filter(function(r) { return ['active', 'contacted'].includes(r.status); });
+const totalInventory = Object.values(analytics.inventoryTotals || {}).reduce(function(a, b) { return a + Number(b || 0); }, 0);
+const hour = new Date().getHours();
+const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+const kpis = [
+    { key: 'patients', label: 'Registered Patients', icon: 'users', tone: 'blue', img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=260&fit=crop&q=80' },
+    { key: 'verifiedDonors', label: 'Verified Donors', icon: 'heart-handshake', tone: 'red', img: 'https://images.unsplash.com/photo-1615461066159-fa5966998606?w=400&h=260&fit=crop&q=80' },
+    { key: 'activeBloodBanks', label: 'Active Blood Banks', icon: 'building-2', tone: 'green', img: 'https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=400&h=260&fit=crop&q=80' },
+    { key: 'activeRequests', label: 'Live Emergencies', icon: 'siren', tone: 'amber', img: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=400&h=260&fit=crop&q=80' },
+    { key: 'donations', label: 'Total Donations', icon: 'droplets', tone: 'rose', img: 'https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=400&h=260&fit=crop&q=80' },
+    { key: 'donors', label: 'All Donors', icon: 'user-check', tone: 'slate', img: 'https://images.unsplash.com/photo-1582719471137-c3967fb5767b?w=400&h=260&fit=crop&q=80' },
+];
+%>
+
+<!-- Hero banner -->
+<div class="overview-hero mb-4">
+    <div class="overview-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="overview-hero-overlay"></div>
+    <div class="overview-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="overview-hero-badge"><span class="pulse-dot"></span> System operational</span>
+                <h3 class="overview-hero-title"><%= greeting %>, <%= user.name.split(' ')[0] %></h3>
+                <p class="overview-hero-sub mb-0">Real-time command center for emergency blood matching, donor verification, and hospital inventory across the platform.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="overview-hero-aside">
+                    <%- include('../shared/user-avatar', { user, avatarSize: 'lg', avatarClass: 'overview-hero-avatar' }) %>
+                    <div class="overview-hero-meta">
+                    <div><small>Platform blood stock</small><strong><%= totalInventory %> units</strong></div>
+                    <div><small>Live emergencies</small><strong class="text-danger"><%= activeEmergencies.length %></strong></div>
+                    <div><small>Pending reviews</small><strong class="<%= pendingApprovals > 0 ? 'text-danger' : 'text-success' %>"><%= pendingApprovals %></strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (pendingApprovals > 0) { %>
+<div class="overview-action-banner mb-4">
+    <div class="overview-action-banner-icon">
+        <img src="https://images.unsplash.com/photo-1584982751661-6085a089094a?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
+    </div>
+    <div class="flex-grow-1">
+        <h6 class="mb-1">Approval queue needs attention</h6>
+        <p class="mb-0 small text-muted"><%= pendingApprovals %> donor or blood bank registration(s) awaiting your review.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="#" class="btn btn-danger btn-sm" data-admin-section="donors" data-admin-label="Donor Management">Review donors</a>
+        <a href="#" class="btn btn-outline-danger btn-sm" data-admin-section="bloodbanks" data-admin-label="Blood Banks">Review banks</a>
+    </div>
+</div>
+<% } %>
+
+<!-- KPI grid -->
+<div class="row g-3 mb-4">
+    <% kpis.forEach(function(kpi) { %>
+    <div class="col-sm-6 col-xl-4">
+        <div class="overview-kpi overview-kpi-<%= kpi.tone %>">
+            <div class="overview-kpi-visual">
+                <img src="<%= kpi.img %>" alt="" loading="lazy">
+                <div class="overview-kpi-visual-shade"></div>
+            </div>
+            <div class="overview-kpi-body">
+                <div class="overview-kpi-icon"><i data-lucide="<%= kpi.icon %>" style="width:20px;height:20px;"></i></div>
+                <div class="overview-kpi-label"><%= kpi.label %></div>
+                <div class="overview-kpi-value"><%= analytics.totals[kpi.key] != null ? analytics.totals[kpi.key] : 0 %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Charts column -->
+    <div class="col-xl-8">
+        <div class="overview-panel h-100">
+            <div class="overview-panel-head">
+                <div>
+                    <h5>Platform analytics</h5>
+                    <p class="text-muted small mb-0">Donor pipeline, request urgency, and blood inventory distribution</p>
+                </div>
+                <span class="overview-live-pill"><span class="pulse-dot"></span> Live</span>
+            </div>
+            <div class="overview-panel-body">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="overview-chart-box">
+                            <div class="overview-chart-title"><i data-lucide="pie-chart" style="width:14px;height:14px;"></i> Donor status</div>
+                            <canvas id="donorStatusChart" height="190"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="overview-chart-box">
+                            <div class="overview-chart-title"><i data-lucide="bar-chart-3" style="width:14px;height:14px;"></i> Request urgency</div>
+                            <canvas id="requestUrgencyChart" height="190"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="overview-chart-box">
+                            <div class="overview-chart-title"><i data-lucide="flask-conical" style="width:14px;height:14px;"></i> Blood inventory</div>
+                            <canvas id="inventoryChart" height="190"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="overview-chart-box mt-3">
+                    <div class="overview-chart-title"><i data-lucide="activity" style="width:14px;height:14px;"></i> Request status breakdown</div>
+                    <canvas id="requestStatusChart" height="120"></canvas>
+                </div>
+                <div class="row g-4 mt-1">
+                    <div class="col-md-6">
+                        <div class="overview-chart-box">
+                            <div class="overview-chart-title"><i data-lucide="sparkles" style="width:14px;height:14px;"></i> AI eligibility screening</div>
+                            <canvas id="aiEligibilityChart" height="160"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="overview-chart-box">
+                            <div class="overview-chart-title"><i data-lucide="gauge" style="width:14px;height:14px;"></i> AI risk distribution</div>
+                            <canvas id="aiRiskChart" height="160"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <% if (analytics.avgEmergencyResponseMinutes != null) { %>
+                <p class="small text-muted mt-3 mb-0"><i data-lucide="timer" style="width:14px;height:14px;"></i> Average first emergency response time: <strong><%= analytics.avgEmergencyResponseMinutes %> minutes</strong> · AI flagged donors: <strong><%= analytics.totals.aiFlaggedDonors || 0 %></strong> · Blood group mismatches: <strong><%= analytics.totals.bloodGroupMismatches || 0 %></strong></p>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side panels -->
+    <div class="col-xl-4">
+        <div class="overview-panel mb-4">
+            <div class="overview-panel-head">
+                <div>
+                    <h5>Blood stock levels</h5>
+                    <p class="text-muted small mb-0"><%= totalInventory %> units across all banks</p>
+                </div>
+            </div>
+            <div class="overview-panel-body overview-stock-list">
+                <% ['O+','O-','A+','A-','B+','B-','AB+','AB-'].forEach(function(group) {
+                    const units = analytics.inventoryTotals[group] || 0;
+                    const pct = totalInventory ? Math.round((units / totalInventory) * 100) : 0;
+                    const level = units <= 5 ? 'critical' : units <= 15 ? 'low' : 'ok';
+                %>
+                <div class="overview-stock-row">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="overview-blood-badge"><%= group %></span>
+                        <span class="small fw-semibold"><%= units %> u</span>
+                    </div>
+                    <div class="overview-stock-bar"><span class="overview-stock-fill <%= level %>" style="width:<%= Math.max(pct, units > 0 ? 8 : 0) %>%"></span></div>
+                </div>
+                <% }); %>
+            </div>
+        </div>
+
+        <div class="overview-panel overview-panel-accent">
+            <div class="overview-panel-head border-0 pb-0">
+                <h5 class="text-white mb-0">Quick actions</h5>
+            </div>
+            <div class="overview-panel-body pt-2">
+                <a href="#" class="overview-quick-link" data-admin-section="requests" data-admin-label="Emergency Requests">
+                    <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <span>Monitor emergencies</span>
+                    <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
+                </a>
+                <a href="#" class="overview-quick-link" data-admin-section="donors" data-admin-label="Donor Management">
+                    <img src="https://images.unsplash.com/photo-1615461066159-fa5966998606?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <span>Verify donors</span>
+                    <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
+                </a>
+                <a href="#" class="overview-quick-link" data-admin-section="notifications" data-admin-label="Notifications">
+                    <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <span>View alerts</span>
+                    <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent emergencies strip -->
+<div class="overview-panel">
+    <div class="overview-panel-head">
+        <div class="d-flex align-items-center gap-3">
+            <div class="overview-thumb">
+                <img src="https://images.unsplash.com/photo-1516549655169-df83a0774514?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
+            </div>
+            <div>
+                <h5 class="mb-0">Recent emergency activity</h5>
+                <p class="text-muted small mb-0"><%= activeEmergencies.length %> active request(s) on the network right now</p>
+            </div>
+        </div>
+        <a href="#" class="btn btn-sm btn-outline-danger" data-admin-section="requests" data-admin-label="Emergency Requests">View all</a>
+    </div>
+    <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm ring-1 ring-slate-900/5">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm">
+                <thead class="bg-gradient-to-r from-rose-50 via-slate-50 to-white">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Patient</th>
+                        <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Blood</th>
+                        <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Hospital</th>
+                        <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">City</th>
+                        <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Urgency</th>
+                        <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white">
+                    <% if (activeEmergencies.length) { %>
+                        <% activeEmergencies.slice(0, 6).forEach(function(r) {
+                            const urgKey = String(r.urgencyLevel).toLowerCase();
+                            const urgClass = urgKey === 'critical' ? 'bg-rose-50 text-rose-800 ring-rose-600/20' : 'bg-amber-50 text-amber-800 ring-amber-600/20';
+                            const statusClass = r.status === 'contacted' ? 'bg-sky-50 text-sky-800 ring-sky-600/20' : 'bg-orange-50 text-orange-800 ring-orange-600/20';
+                        %>
+                        <tr class="transition-colors hover:bg-slate-50/90">
+                            <td class="px-4 py-3 font-semibold text-slate-900 whitespace-nowrap"><%= r.patientName %></td>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="inline-flex rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 ring-1 ring-inset ring-rose-600/20"><%= r.bloodGroup %></span></td>
+                            <td class="px-4 py-3 text-slate-700 max-w-[140px] truncate"><%= r.hospitalName %></td>
+                            <td class="px-4 py-3 text-slate-600 whitespace-nowrap"><%= r.city %></td>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset <%= urgClass %>"><%= r.urgencyLevel %></span></td>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset <%= statusClass %>"><%= r.status %></span></td>
+                        </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr><td colspan="6" class="px-4 py-10 text-center text-sm text-slate-500">No active emergencies — platform is stable</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<% } else { %>
+<div class="alert alert-info">Analytics data is loading…</div>
+<% } %>

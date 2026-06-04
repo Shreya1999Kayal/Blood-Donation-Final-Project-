@@ -1,0 +1,166 @@
+<%
+const items = inbox || [];
+const isFullPageMode = typeof isFullPage !== 'undefined' ? !!isFullPage : false;
+const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+const todayList = items.filter(function(i) { return i.updatedAt && new Date(i.updatedAt) >= todayStart; });
+const patientList = items.filter(function(i) { return i.otherUser && i.otherUser.role === 'user'; });
+const emptyThreads = items.filter(function(i) { return !i.lastMessage || !i.lastMessage.text; }).length;
+const withMessages = items.filter(function(i) { return i.lastMessage && i.lastMessage.text; }).length;
+
+const msgStats = [
+    { label: 'Conversations', value: items.length, icon: 'messages-square', tone: 'blue', img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=260&fit=crop&q=80' },
+    { label: 'Patients', value: patientList.length, icon: 'heart-pulse', tone: 'rose', img: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=260&fit=crop&q=80' },
+    { label: 'Active today', value: todayList.length, icon: 'calendar-clock', tone: 'green', img: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=260&fit=crop&q=80' },
+];
+%>
+
+<div class="msg-hero mb-4 dn-hero">
+    <div class="msg-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="msg-hero-overlay"></div>
+    <div class="msg-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="msg-hero-badge"><i data-lucide="messages-square" style="width:14px;height:14px;"></i> Secure messaging</span>
+                <h3 class="msg-hero-title">Messages</h3>
+                <p class="msg-hero-sub mb-0">Chat with patients in real time. Open a conversation from emergency requests or your inbox.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="msg-hero-meta">
+                    <div><small>Inbox</small><strong id="msgFeedTotal"><%= items.length %></strong></div>
+                    <div><small>With messages</small><strong><%= withMessages %></strong></div>
+                    <div><small>Status</small><strong class="text-success">Live</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <% msgStats.forEach(function(stat) { %>
+    <div class="col-sm-6 col-xl-4">
+        <div class="overview-kpi overview-kpi-<%= stat.tone %>">
+            <div class="overview-kpi-visual">
+                <img src="<%= stat.img %>" alt="" loading="lazy">
+                <div class="overview-kpi-visual-shade"></div>
+            </div>
+            <div class="overview-kpi-body">
+                <div class="overview-kpi-icon"><i data-lucide="<%= stat.icon %>" style="width:20px;height:20px;"></i></div>
+                <div class="overview-kpi-label"><%= stat.label %></div>
+                <div class="overview-kpi-value"><%= stat.value %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="dn-inbox-panel">
+            <div class="dn-inbox-header">
+                <div class="dn-inbox-header-main">
+                    <span class="dn-inbox-header-eyebrow">
+                        <span class="dn-inbox-live-dot"></span>
+                        Real-time inbox
+                    </span>
+                    <h4 class="dn-inbox-header-title">Conversation inbox</h4>
+                    <p class="dn-inbox-header-sub">
+                        <strong id="msgVisibleCount"><%= items.length %></strong> of <%= items.length %> thread<%= items.length !== 1 ? 's' : '' %> shown
+                    </p>
+                </div>
+                <div class="dn-inbox-header-actions">
+                    <% if (!isFullPageMode) { %>
+                    <a href="/messages" class="dn-inbox-header-btn dn-inbox-header-btn--ghost">
+                        <i data-lucide="external-link" style="width:14px;height:14px;"></i> Full page
+                    </a>
+                    <% } %>
+                    <a href="#" class="dn-inbox-header-btn dn-inbox-header-btn--primary" data-dn-section="requests" data-dn-label="Emergency Requests">
+                        <i data-lucide="siren" style="width:14px;height:14px;"></i> Emergencies
+                    </a>
+                </div>
+            </div>
+
+            <div class="dn-inbox-toolbar">
+                <div class="dn-inbox-search-wrap">
+                    <i data-lucide="search" style="width:16px;height:16px;"></i>
+                    <input type="search" id="msgSearch" autocomplete="off"
+                           placeholder="Search name, city, phone, or message preview…"
+                           class="dn-inbox-search">
+                </div>
+
+                <div class="dn-inbox-filters">
+                    <div class="dn-inbox-filter-block">
+                        <div class="dn-inbox-filter-label">
+                            <span>Activity</span>
+                            <small class="dn-inbox-live-badge"><span class="dn-inbox-live-dot"></span> Live</small>
+                        </div>
+                        <div id="msgWhenFilters" class="dn-when-pill-row">
+                            <button type="button" class="dn-when-pill is-selected" data-msg-when="all" aria-pressed="true">
+                                <i data-lucide="infinity" style="width:14px;height:14px;"></i>
+                                <span>All time</span>
+                                <span class="dn-when-pill-count"><%= items.length %></span>
+                            </button>
+                            <button type="button" class="dn-when-pill" data-msg-when="today" aria-pressed="false">
+                                <i data-lucide="calendar-clock" style="width:14px;height:14px;"></i>
+                                <span>Today</span>
+                                <span class="dn-when-pill-count dn-when-pill-count--today"><%= todayList.length %></span>
+                            </button>
+                            <button type="button" class="dn-when-pill" data-msg-when="empty" aria-pressed="false">
+                                <i data-lucide="mail-open" style="width:14px;height:14px;"></i>
+                                <span>No messages yet</span>
+                                <span class="dn-when-pill-count dn-when-pill-count--empty"><%= emptyThreads %></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="msgInboxWrap" class="dn-inbox-body">
+                <%- include('messages-board', { inbox: items, isFullPage: isFullPageMode }) %>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="overview-panel dn-msg-aside mb-4">
+            <div class="overview-panel-head"><h5>Start a conversation</h5></div>
+            <div class="overview-panel-body">
+                <div class="dn-msg-steps">
+                    <div class="dn-msg-step">
+                        <span class="dn-msg-step-num">1</span>
+                        <div>
+                            <strong>Respond to an emergency</strong>
+                            <p class="small text-muted mb-0">Contact a patient from the emergency requests board.</p>
+                        </div>
+                    </div>
+                    <div class="dn-msg-step">
+                        <span class="dn-msg-step-num">2</span>
+                        <div>
+                            <strong>Click Chat on any request</strong>
+                            <p class="small text-muted mb-0">Opens a secure real-time conversation instantly.</p>
+                        </div>
+                    </div>
+                    <div class="dn-msg-step mb-0">
+                        <span class="dn-msg-step-num">3</span>
+                        <div>
+                            <strong>Return here anytime</strong>
+                            <p class="small text-muted mb-0">All threads stay in your inbox for follow-up.</p>
+                        </div>
+                    </div>
+                </div>
+                <a href="#" class="btn btn-danger w-100 mt-3" data-dn-section="requests" data-dn-label="Emergency Requests">
+                    <i data-lucide="siren" style="width:14px;height:14px;"></i> Browse emergencies
+                </a>
+            </div>
+        </div>
+
+        <div class="dn-msg-security-card">
+            <div class="dn-msg-security-icon">
+                <i data-lucide="shield-check" style="width:20px;height:20px;"></i>
+            </div>
+            <div>
+                <h6>Secure donor messaging</h6>
+                <p>Messages are encrypted in transit. Only you and the contact can read your conversation.</p>
+            </div>
+        </div>
+    </div>
+</div>

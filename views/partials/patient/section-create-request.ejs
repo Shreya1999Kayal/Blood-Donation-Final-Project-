@@ -1,0 +1,100 @@
+<div class="cp-hero mb-4 pt-hero">
+    <div class="cp-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1584982751661-6085a089094a?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="cp-hero-overlay"></div>
+    <div class="cp-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="cp-hero-badge"><i data-lucide="siren" style="width:14px;height:14px;"></i> Emergency posting</span>
+                <h3 class="cp-hero-title">Create blood request</h3>
+                <p class="cp-hero-sub mb-0">Upload your blood test report and doctor prescription. Your location helps match nearby donors and hospitals faster.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="cp-hero-meta">
+                    <div><small>City</small><strong><%= user.city %></strong></div>
+                    <div><small>Contact</small><strong><%= user.phone %></strong></div>
+                    <div><small>Documents</small><strong>Required</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel">
+            <div class="overview-panel-head">
+                <h5>Emergency request form</h5>
+                <p class="text-muted small mb-0">All fields are required. Files: PDF, JPG, or PNG (max 10 MB each).</p>
+            </div>
+            <div class="overview-panel-body pt-create-form">
+                <div class="pt-doc-hint mb-4">
+                    <strong>Before you submit</strong> — Have your latest blood test report and a valid doctor prescription ready. These are verified by responders before coordination.
+                </div>
+                <form action="/request/create" method="POST" enctype="multipart/form-data" data-geo-form>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Blood group needed</label>
+                            <select name="bloodGroup" class="form-select" required>
+                                <% ['A+','A-','B+','B-','AB+','AB-','O+','O-'].forEach(function(bg) { %>
+                                    <option><%= bg %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Required units</label>
+                            <input type="number" name="requiredUnits" class="form-control" required min="1" placeholder="e.g. 2">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Hospital name</label>
+                            <input type="text" name="hospitalName" class="form-control" required placeholder="Hospital where blood is needed">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Blood test report</label>
+                            <input type="file" name="bloodTestReport" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Doctor prescription</label>
+                            <input type="file" name="prescription" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                        </div>
+                    </div>
+                    <input type="hidden" name="latitude" data-geo-lat>
+                    <input type="hidden" name="longitude" data-geo-lng>
+                    <div class="d-flex gap-2 flex-wrap mt-4">
+                        <button type="submit" class="btn btn-danger">
+                            <i data-lucide="send" style="width:16px;height:16px;"></i> Post emergency request
+                        </button>
+                        <a href="#" class="btn btn-outline-secondary" data-pt-section="requests" data-pt-label="My Requests">View my requests</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="overview-panel mb-4">
+            <div class="overview-panel-head"><h5>What happens next</h5></div>
+            <div class="overview-panel-body pt-2">
+                <div class="cp-tip">
+                    <img src="https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <div>
+                        <strong>Instant city alert</strong>
+                        <p class="small text-muted mb-0">Verified donors and blood banks in <%= user.city %> are notified immediately.</p>
+                    </div>
+                </div>
+                <div class="cp-tip">
+                    <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <div>
+                        <strong>Responders contact you</strong>
+                        <p class="small text-muted mb-0">Donors and hospitals appear under Responders on your request.</p>
+                    </div>
+                </div>
+                <div class="cp-tip mb-0">
+                    <img src="https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <div>
+                        <strong>Mark as received</strong>
+                        <p class="small text-muted mb-0">After you get blood, select the donor or hospital and close the request.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

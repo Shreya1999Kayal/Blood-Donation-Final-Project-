@@ -1,0 +1,101 @@
+<div class="cp-hero mb-4 pt-hero">
+    <div class="cp-hero-bg" style="background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1400&h=420&fit=crop&q=85');"></div>
+    <div class="cp-hero-overlay"></div>
+    <div class="cp-hero-content">
+        <div class="row align-items-end g-3">
+            <div class="col-lg-8">
+                <span class="cp-hero-badge"><i data-lucide="bar-chart-3" style="width:14px;height:14px;"></i> Pro / Advanced insights</span>
+                <h3 class="cp-hero-title">Your analytics</h3>
+                <p class="cp-hero-sub mb-0">Track request activity, response rates, and emergency outcomes for your account.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="cp-hero-meta">
+                    <div><small>Total requests</small><strong><%= userAnalytics ? userAnalytics.totalRequests : 0 %></strong></div>
+                    <div><small>Active</small><strong><%= userAnalytics ? userAnalytics.activeRequests : 0 %></strong></div>
+                    <div><small>Response rate</small><strong><%= userAnalytics ? userAnalytics.responseRate : 0 %>%</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (!userAnalytics) { %>
+<div class="alert alert-info">Upgrade to Pro or Advanced to unlock patient analytics.</div>
+<% } else if (userAnalytics.message) { %>
+<div class="alert alert-warning"><%= userAnalytics.message %></div>
+<% } else { %>
+
+<div class="row g-3 mb-4">
+    <% [
+        { label: 'Total requests', value: userAnalytics.totalRequests, icon: 'clipboard-list', tone: 'slate' },
+        { label: 'Active emergencies', value: userAnalytics.activeRequests, icon: 'siren', tone: 'red' },
+        { label: 'Total responses', value: userAnalytics.totalResponses, icon: 'phone-call', tone: 'blue' },
+        { label: 'Response rate', value: userAnalytics.responseRate + '%', icon: 'activity', tone: 'green' },
+    ].forEach(function(stat) { %>
+    <div class="col-sm-6 col-xl-3">
+        <div class="overview-kpi overview-kpi-<%= stat.tone %>">
+            <div class="overview-kpi-body py-3 px-3">
+                <div class="overview-kpi-icon"><i data-lucide="<%= stat.icon %>" style="width:20px;height:20px;"></i></div>
+                <div class="overview-kpi-label"><%= stat.label %></div>
+                <div class="overview-kpi-value"><%= stat.value %></div>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="overview-panel">
+            <div class="overview-panel-head">
+                <h5>Request activity</h5>
+                <p class="text-muted small mb-0">Overview of your emergency blood requests</p>
+            </div>
+            <div class="overview-panel-body">
+                <div class="overview-chart-box">
+                    <canvas id="ptRequestChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="overview-panel h-100">
+            <div class="overview-panel-head"><h5>Summary</h5></div>
+            <div class="overview-panel-body pt-2">
+                <div class="pt-snapshot-row"><span>Patient</span><strong><%= user.name %></strong></div>
+                <div class="pt-snapshot-row"><span>City</span><strong><%= user.city %></strong></div>
+                <div class="pt-snapshot-row"><span>Plan</span><strong class="text-capitalize"><%= (user.subscription && user.subscription.plan) || 'free' %></strong></div>
+                <div class="pt-snapshot-row"><span>Responses</span><strong><%= userAnalytics.totalResponses %></strong></div>
+                <% if (canExportData) { %>
+                <a href="/export/my-data" class="btn btn-outline-dark btn-sm w-100 mt-3">
+                    <i data-lucide="download" style="width:14px;height:14px;"></i> Export full report
+                </a>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    if (typeof Chart === 'undefined') return;
+    const el = document.getElementById('ptRequestChart');
+    if (!el) return;
+    new Chart(el, {
+        type: 'bar',
+        data: {
+            labels: ['Total', 'Active', 'Responses'],
+            datasets: [{
+                label: 'Count',
+                data: [<%= userAnalytics.totalRequests %>, <%= userAnalytics.activeRequests %>, <%= userAnalytics.totalResponses %>],
+                backgroundColor: ['#64748b', '#dc2626', '#0284c7'],
+            }],
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+        },
+    });
+})();
+</script>
+<% } %>

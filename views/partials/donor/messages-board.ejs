@@ -1,0 +1,135 @@
+<%
+const items = inbox || [];
+const isFullPageMode = typeof isFullPage !== 'undefined' ? !!isFullPage : false;
+const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+
+function dnRoleLabel(role) {
+    if (role === 'user') return 'Patient';
+    if (role === 'bloodbank') return 'Blood bank';
+    if (role === 'donor') return 'Donor';
+    return role || 'Contact';
+}
+function dnIsToday(d) {
+    return d && new Date(d) >= todayStart;
+}
+function dnPreview(item) {
+    const text = item.lastMessage && item.lastMessage.text ? item.lastMessage.text : '';
+    return text.length > 120 ? text.slice(0, 117) + '…' : text;
+}
+function dnFilterRole(role) {
+    if (role === 'user') return 'patient';
+    if (role === 'bloodbank') return 'bloodbank';
+    return 'other';
+}
+function dnRoleClass(role) {
+    if (role === 'user') return 'is-patient';
+    if (role === 'bloodbank') return 'is-bank';
+    return 'is-other';
+}
+function dnFormatTime(d) {
+    if (!d) return '';
+    const date = new Date(d);
+    const now = new Date();
+    const isToday = date >= todayStart;
+    if (isToday) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    if (diffDays < 7) {
+        return date.toLocaleDateString([], { weekday: 'short' }) + ' · ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+%>
+
+<div id="msgBoard" class="dn-inbox-list">
+    <% if (items.length) { %>
+        <% items.forEach(function(item) {
+            const other = item.otherUser || {};
+            const searchText = [other.name, other.city, other.phone, dnRoleLabel(other.role), dnPreview(item)].filter(Boolean).join(' ').toLowerCase();
+            const when = dnIsToday(item.updatedAt) ? 'today' : 'older';
+            const hasPreview = !!(item.lastMessage && item.lastMessage.text);
+            const filterRole = dnFilterRole(other.role);
+            const isToday = when === 'today';
+        %>
+        <a href="/chat/<%= other._id %>"
+           class="dn-inbox-thread <%= dnRoleClass(other.role) %> <%= hasPreview && isToday ? 'is-recent' : '' %> <%= !hasPreview ? 'is-empty-thread' : '' %>"
+           data-msg-item
+           data-role="<%= filterRole %>"
+           data-when="<%= when %>"
+           data-has-msg="<%= hasPreview ? '1' : '0' %>"
+           data-search="<%= searchText.replace(/"/g, '') %>">
+            <div class="dn-inbox-thread-accent" aria-hidden="true"></div>
+            <div class="dn-inbox-thread-main">
+                <div class="dn-inbox-thread-avatar-wrap">
+                    <%- include('../shared/card-avatar', { contactUser: other, cardAvatarClass: 'dn-inbox-thread-avatar' }) %>
+                    <% if (hasPreview && isToday) { %>
+                    <span class="dn-inbox-thread-live" title="Active today"></span>
+                    <% } %>
+                </div>
+                <div class="dn-inbox-thread-content">
+                    <div class="dn-inbox-thread-top">
+                        <div class="dn-inbox-thread-ident">
+                            <span class="dn-inbox-role-tag"><%= dnRoleLabel(other.role) %></span>
+                            <% if (!hasPreview) { %>
+                            <span class="dn-inbox-new-tag">Awaiting first message</span>
+                            <% } %>
+                            <h6 class="dn-inbox-thread-name"><%= other.name || 'Contact' %></h6>
+                        </div>
+                        <time class="dn-inbox-thread-time"><%= dnFormatTime(item.updatedAt) %></time>
+                    </div>
+                    <% if (hasPreview) { %>
+                    <p class="dn-inbox-thread-preview"><%= dnPreview(item) %></p>
+                    <% } else { %>
+                    <p class="dn-inbox-thread-preview is-placeholder">Open chat to send your first message</p>
+                    <% } %>
+                    <div class="dn-inbox-thread-meta">
+                        <% if (other.city) { %>
+                        <span><i data-lucide="map-pin" style="width:12px;height:12px;"></i> <%= other.city %></span>
+                        <% } %>
+                        <% if (other.phone) { %>
+                        <span><i data-lucide="phone" style="width:12px;height:12px;"></i> <%= other.phone %></span>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <div class="dn-inbox-thread-actions">
+                <% if (other.phone) { %>
+                <span onclick="event.preventDefault(); event.stopPropagation(); window.location.href='tel:<%= other.phone %>';"
+                      class="dn-inbox-action-btn dn-inbox-action-btn--call"
+                      title="Call contact">
+                    <i data-lucide="phone-call" style="width:16px;height:16px;"></i>
+                </span>
+                <% } %>
+                <span class="dn-inbox-action-btn dn-inbox-action-btn--open" title="Open conversation">
+                    <i data-lucide="message-circle" style="width:16px;height:16px;"></i>
+                </span>
+            </div>
+        </a>
+        <% }); %>
+    <% } else { %>
+        <div class="dn-inbox-empty" id="msgEmptyState">
+            <div class="dn-inbox-empty-icon">
+                <i data-lucide="messages-square" style="width:32px;height:32px;"></i>
+            </div>
+            <h5>No conversations yet</h5>
+            <p>Respond to an emergency request and tap <strong>Chat</strong> to message a patient.</p>
+            <a href="<%= isFullPageMode ? '/dashboard#section-requests' : '#' %>"
+               class="btn btn-danger"
+               <% if (!isFullPageMode) { %>data-dn-section="requests" data-dn-label="Emergency Requests"<% } %>>
+                <i data-lucide="siren" style="width:14px;height:14px;"></i> View emergencies
+            </a>
+        </div>
+    <% } %>
+</div>
+
+<div id="msgEmptyFilter" class="dn-inbox-empty dn-inbox-empty-filter dn-msg-hidden">
+    <div class="dn-inbox-empty-icon is-muted">
+        <i data-lucide="filter-x" style="width:28px;height:28px;"></i>
+    </div>
+    <h5>No conversations match your filters</h5>
+    <p>Try a different activity filter or clear your search.</p>
+    <button type="button" id="msgClearFilters" class="btn btn-outline-danger btn-sm">
+        <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i> Clear filters
+    </button>
+</div>
