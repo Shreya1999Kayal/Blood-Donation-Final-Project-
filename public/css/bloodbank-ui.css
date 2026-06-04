@@ -195,13 +195,20 @@
     color: inherit;
 }
 
-.bb-quick-action img {
-    width: 52px;
-    height: 52px;
-    border-radius: 10px;
-    object-fit: cover;
+.bb-quick-action-icon {
     flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
+.bb-quick-action-icon-danger { background: #fef2f2; color: #dc2626; }
+.bb-quick-action-icon-rose { background: #fff1f2; color: #e11d48; }
+.bb-quick-action-icon-blue { background: #eff6ff; color: #2563eb; }
+.bb-quick-action-icon-green { background: #f0fdf4; color: #16a34a; }
+.bb-quick-action-icon-slate { background: #f1f5f9; color: #475569; }
 
 .bb-quick-action i:last-child {
     margin-left: auto;
@@ -820,19 +827,32 @@
     min-width: 0;
 }
 
-.bb-issue-avatar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.bb-issue-avatar-slot {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2);
+    border: 2px solid #fff;
+    background: linear-gradient(135deg, var(--bb-accent, #0284c7), var(--bb-accent-dark, #0369a1));
+}
+
+.bb-issue-avatar-face {
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: linear-gradient(135deg, var(--bb-accent, #0284c7), var(--bb-accent-dark, #0369a1));
-    color: #fff;
+}
+
+.bb-issue-avatar-face .card-avatar-img {
+    border-radius: 12px;
+}
+
+.bb-issue-avatar-face .card-avatar-text {
     font-size: 0.72rem;
     font-weight: 800;
-    flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+    color: #fff;
+    background: linear-gradient(135deg, var(--bb-accent, #0284c7), var(--bb-accent-dark, #0369a1));
 }
 
 .bb-issue-patient-name {

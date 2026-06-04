@@ -23,17 +23,6 @@ const io = socketIo(server);
 */
 connectDB();
 
-const { getEmailDeliveryStatus } = require('./app/services/emailService');
-const { isTwilioConfigured } = require('./app/services/smsService');
-const emailStatus = getEmailDeliveryStatus();
-const smsReady = isTwilioConfigured();
-console.log(
-    `[RaktaSetu] Email: ${emailStatus.configured ? emailStatus.provider + ' (' + emailStatus.from + ')' : 'NOT CONFIGURED — OTP emails will fail in production'}`,
-);
-console.log(
-    `[RaktaSetu] SMS: ${smsReady ? 'Twilio configured' : 'NOT CONFIGURED — set TWILIO_* on Render for phone OTP'}`,
-);
-
 // Middleware
 app.use(helmet({
     contentSecurityPolicy: false,

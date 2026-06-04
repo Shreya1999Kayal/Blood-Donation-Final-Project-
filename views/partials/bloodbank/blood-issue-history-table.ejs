@@ -1,13 +1,4 @@
 <%
-
-function bbInitials(name) {
-
-    if (!name) return '?';
-
-    return name.split(' ').map(function(p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
-
-}
-
 const history = bloodIssueHistory || [];
 
 %>
@@ -114,6 +105,8 @@ const history = bloodIssueHistory || [];
 
                         const patientName = patient.name || item.patientName || 'Patient';
 
+                        const patientContact = (patient && (patient._id || patient.name)) ? patient : { name: patientName };
+
                         const issuedDate = item.issuedAt || item.createdAt;
 
                         const prev = item.previousStock != null ? Number(item.previousStock) : null;
@@ -148,7 +141,11 @@ const history = bloodIssueHistory || [];
 
                             <div class="bb-issue-patient">
 
-                                <span class="bb-issue-avatar"><%= bbInitials(patientName) %></span>
+                                <div class="bb-issue-avatar-slot">
+
+                                    <%- include('../shared/card-avatar', { contactUser: patientContact, cardAvatarClass: 'bb-issue-avatar-face' }) %>
+
+                                </div>
 
                                 <div>
 

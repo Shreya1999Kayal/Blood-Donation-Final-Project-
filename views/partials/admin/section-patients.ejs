@@ -72,9 +72,6 @@ const ptStats = [
 
 <% if (withActiveEmergency > 0) { %>
 <div class="pt-alert-strip mb-4">
-    <div class="pt-alert-strip-icon">
-        <img src="https://images.unsplash.com/photo-1516549655169-df83a0774514?w=100&h=100&fit=crop&q=80" alt="" loading="lazy">
-    </div>
     <div class="flex-grow-1">
         <h6 class="mb-1"><i data-lucide="heart-pulse" style="width:16px;height:16px;"></i> <%= withActiveEmergency %> patient<%= withActiveEmergency !== 1 ? 's' : '' %> with active blood requests</h6>
         <p class="mb-0 small text-muted">These patients currently have open or in-progress emergency cases on the network.</p>

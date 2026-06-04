@@ -48,9 +48,8 @@ function isTodayDate(d) {
                 data-chat-user-role="<%= chatMeta.role %>"
                 <% } %>
             >
-                <div class="nt-card-thumb">
-                    <img src="<%= meta.img %>" alt="" loading="lazy">
-                    <span class="nt-type-icon"><i data-lucide="<%= meta.icon %>" style="width:16px;height:16px;"></i></span>
+                <div class="nt-card-icon nt-card-icon-<%= meta.tone %>" aria-hidden="true">
+                    <i data-lucide="<%= meta.icon %>" style="width:20px;height:20px;"></i>
                 </div>
                 <div class="nt-card-body">
                     <div class="nt-card-head">

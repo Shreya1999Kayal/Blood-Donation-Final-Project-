@@ -41,9 +41,6 @@ const ntStats = [
 </div>
 
 <div class="nt-live-banner mb-4">
-    <div class="nt-live-banner-icon">
-        <img src="https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=100&h=100&fit=crop&q=80" alt="" loading="lazy">
-    </div>
     <div class="flex-grow-1">
         <h6 class="mb-1"><i data-lucide="radio" style="width:16px;height:16px;"></i> Socket feed connected</h6>
         <p class="mb-0 small text-muted">New critical alerts, requests, and platform notifications appear here instantly. <span class="badge bg-danger ms-1" id="notifBadge" style="display:none;">new</span></p>
@@ -134,15 +131,15 @@ const ntStats = [
             <div class="overview-panel-head"><h5>Alert types guide</h5></div>
             <div class="overview-panel-body pt-2">
                 <div class="nt-guide-item">
-                    <img src="https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <span class="nt-guide-icon nt-guide-icon-danger" aria-hidden="true"><i data-lucide="siren" style="width:18px;height:18px;"></i></span>
                     <div><strong>Request & critical</strong><p class="small text-muted mb-0">New blood requests and urgent shortage alerts.</p></div>
                 </div>
                 <div class="nt-guide-item">
-                    <img src="https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <span class="nt-guide-icon nt-guide-icon-blue" aria-hidden="true"><i data-lucide="badge-check" style="width:18px;height:18px;"></i></span>
                     <div><strong>Approval & contact</strong><p class="small text-muted mb-0">Donor/bank verifications and responder contact events.</p></div>
                 </div>
                 <div class="nt-guide-item mb-0">
-                    <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <span class="nt-guide-icon nt-guide-icon-slate" aria-hidden="true"><i data-lucide="bell" style="width:18px;height:18px;"></i></span>
                     <div><strong>System</strong><p class="small text-muted mb-0"><%= systemList.length %> system message(s) in current feed.</p></div>
                 </div>
             </div>

@@ -147,13 +147,13 @@ function donorEligibilityBadge(donor) {
         const href = opts.link || '/dashboard';
         const time = opts.time || new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
         const meta = {
-            request: { icon: 'siren', tone: 'danger', label: 'Request', img: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=120&h=120&fit=crop&q=80' },
-            critical: { icon: 'alert-triangle', tone: 'danger', label: 'Critical', img: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=120&h=120&fit=crop&q=80' },
-            match: { icon: 'heart-handshake', tone: 'success', label: 'Match', img: 'https://images.unsplash.com/photo-1615461066159-fa5966998606?w=120&h=120&fit=crop&q=80' },
-            approval: { icon: 'badge-check', tone: 'blue', label: 'Approval', img: 'https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=120&h=120&fit=crop&q=80' },
-            contact: { icon: 'phone', tone: 'info', label: 'Contact', img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=120&h=120&fit=crop&q=80' },
-            received: { icon: 'check-circle', tone: 'green', label: 'Received', img: 'https://images.unsplash.com/photo-1628348068343-c6a848d2b126?w=120&h=120&fit=crop&q=80' },
-            system: { icon: 'bell', tone: 'slate', label: 'System', img: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=120&h=120&fit=crop&q=80' },
+            request: { icon: 'siren', tone: 'danger', label: 'Request' },
+            critical: { icon: 'alert-triangle', tone: 'danger', label: 'Critical' },
+            match: { icon: 'heart-handshake', tone: 'success', label: 'Match' },
+            approval: { icon: 'badge-check', tone: 'blue', label: 'Approval' },
+            contact: { icon: 'phone', tone: 'info', label: 'Contact' },
+            received: { icon: 'check-circle', tone: 'green', label: 'Received' },
+            system: { icon: 'bell', tone: 'slate', label: 'System' },
         };
         const m = meta[type] || meta.system;
         const search = [opts.title, opts.message, m.label].filter(Boolean).join(' ').toLowerCase().replace(/"/g, '');
@@ -167,8 +167,8 @@ function donorEligibilityBadge(donor) {
         item.dataset.when = 'today';
         item.dataset.search = search;
         item.innerHTML =
-            '<div class="nt-card-thumb"><img src="' + m.img + '" alt="" loading="lazy">' +
-            '<span class="nt-type-icon"><i data-lucide="' + m.icon + '" style="width:16px;height:16px;"></i></span></div>' +
+            '<div class="nt-card-icon nt-card-icon-' + m.tone + '" aria-hidden="true">' +
+            '<i data-lucide="' + m.icon + '" style="width:20px;height:20px;"></i></div>' +
             '<div class="nt-card-body"><div class="nt-card-head"><div>' +
             '<span class="nt-type-badge nt-type-' + m.tone + '">' + m.label + '</span>' +
             '<h6 class="nt-title">' + title + '</h6></div>' +
@@ -271,7 +271,6 @@ function donorEligibilityBadge(donor) {
         });
     }
     makeChart('donorStatusChart', analytics.donorsByStatus, 'doughnut');
-    makeChart('requestUrgencyChart', analytics.requestsByUrgency, 'bar');
     makeChart('inventoryChart', analytics.inventoryTotals, 'polarArea');
     makeChart('requestStatusChart', analytics.requestsByStatus, 'line');
     makeChart('aiEligibilityChart', analytics.aiEligibilityCounts, 'doughnut');

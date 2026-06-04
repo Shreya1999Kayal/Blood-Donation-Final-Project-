@@ -43,9 +43,6 @@ const kpis = [
 
 <% if (pendingApprovals > 0) { %>
 <div class="overview-action-banner mb-4">
-    <div class="overview-action-banner-icon">
-        <img src="https://images.unsplash.com/photo-1584982751661-6085a089094a?w=120&h=120&fit=crop&q=80" alt="" loading="lazy">
-    </div>
     <div class="flex-grow-1">
         <h6 class="mb-1">Approval queue needs attention</h6>
         <p class="mb-0 small text-muted"><%= pendingApprovals %> donor or blood bank registration(s) awaiting your review.</p>
@@ -83,25 +80,19 @@ const kpis = [
             <div class="overview-panel-head">
                 <div>
                     <h5>Platform analytics</h5>
-                    <p class="text-muted small mb-0">Donor pipeline, request urgency, and blood inventory distribution</p>
+                    <p class="text-muted small mb-0">Donor pipeline, request status, and blood inventory distribution</p>
                 </div>
                 <span class="overview-live-pill"><span class="pulse-dot"></span> Live</span>
             </div>
             <div class="overview-panel-body">
                 <div class="row g-4">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="overview-chart-box">
                             <div class="overview-chart-title"><i data-lucide="pie-chart" style="width:14px;height:14px;"></i> Donor status</div>
                             <canvas id="donorStatusChart" height="190"></canvas>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="overview-chart-box">
-                            <div class="overview-chart-title"><i data-lucide="bar-chart-3" style="width:14px;height:14px;"></i> Request urgency</div>
-                            <canvas id="requestUrgencyChart" height="190"></canvas>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="overview-chart-box">
                             <div class="overview-chart-title"><i data-lucide="flask-conical" style="width:14px;height:14px;"></i> Blood inventory</div>
                             <canvas id="inventoryChart" height="190"></canvas>
@@ -165,17 +156,17 @@ const kpis = [
             </div>
             <div class="overview-panel-body pt-2">
                 <a href="#" class="overview-quick-link" data-admin-section="requests" data-admin-label="Emergency Requests">
-                    <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <span class="overview-quick-link-icon" aria-hidden="true"><i data-lucide="siren" style="width:18px;height:18px;"></i></span>
                     <span>Monitor emergencies</span>
                     <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
                 </a>
                 <a href="#" class="overview-quick-link" data-admin-section="donors" data-admin-label="Donor Management">
-                    <img src="https://images.unsplash.com/photo-1615461066159-fa5966998606?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <span class="overview-quick-link-icon" aria-hidden="true"><i data-lucide="heart-handshake" style="width:18px;height:18px;"></i></span>
                     <span>Verify donors</span>
                     <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
                 </a>
                 <a href="#" class="overview-quick-link" data-admin-section="notifications" data-admin-label="Notifications">
-                    <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=80&h=80&fit=crop&q=80" alt="" loading="lazy">
+                    <span class="overview-quick-link-icon" aria-hidden="true"><i data-lucide="bell" style="width:18px;height:18px;"></i></span>
                     <span>View alerts</span>
                     <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
                 </a>
@@ -207,15 +198,12 @@ const kpis = [
                         <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Blood</th>
                         <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Hospital</th>
                         <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">City</th>
-                        <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Urgency</th>
                         <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Status</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
                     <% if (activeEmergencies.length) { %>
                         <% activeEmergencies.slice(0, 6).forEach(function(r) {
-                            const urgKey = String(r.urgencyLevel).toLowerCase();
-                            const urgClass = urgKey === 'critical' ? 'bg-rose-50 text-rose-800 ring-rose-600/20' : 'bg-amber-50 text-amber-800 ring-amber-600/20';
                             const statusClass = r.status === 'contacted' ? 'bg-sky-50 text-sky-800 ring-sky-600/20' : 'bg-orange-50 text-orange-800 ring-orange-600/20';
                         %>
                         <tr class="transition-colors hover:bg-slate-50/90">
@@ -223,12 +211,11 @@ const kpis = [
                             <td class="px-4 py-3 whitespace-nowrap"><span class="inline-flex rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 ring-1 ring-inset ring-rose-600/20"><%= r.bloodGroup %></span></td>
                             <td class="px-4 py-3 text-slate-700 max-w-[140px] truncate"><%= r.hospitalName %></td>
                             <td class="px-4 py-3 text-slate-600 whitespace-nowrap"><%= r.city %></td>
-                            <td class="px-4 py-3 whitespace-nowrap"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset <%= urgClass %>"><%= r.urgencyLevel %></span></td>
                             <td class="px-4 py-3 whitespace-nowrap"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset <%= statusClass %>"><%= r.status %></span></td>
                         </tr>
                         <% }); %>
                     <% } else { %>
-                        <tr><td colspan="6" class="px-4 py-10 text-center text-sm text-slate-500">No active emergencies — platform is stable</td></tr>
+                        <tr><td colspan="5" class="px-4 py-10 text-center text-sm text-slate-500">No active emergencies — platform is stable</td></tr>
                     <% } %>
                 </tbody>
             </table>

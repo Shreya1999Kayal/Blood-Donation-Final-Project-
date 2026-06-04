@@ -1,79 +1,116 @@
 <%
-function dnThClass() {
-    return 'px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap';
-}
-function dnTdClass() {
-    return 'px-4 py-3.5 align-middle text-slate-700';
-}
-function dnRowClass() {
-    return 'transition-colors hover:bg-emerald-50/40 group';
-}
-function dnBadgeBase() {
-    return 'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset';
-}
-function dnBloodTw() {
-    return dnBadgeBase() + ' bg-rose-50 text-rose-700 ring-rose-600/20';
-}
 const history = donationHistory || [];
+const totalUnits = history.reduce(function(sum, item) { return sum + Number(item.units || 0); }, 0);
+const hospitals = new Set(history.map(function(item) { return item.hospitalName; }).filter(Boolean)).size;
 %>
 
-<div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm ring-1 ring-slate-900/5">
-    <div class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 via-white to-slate-50/50 px-4 py-3">
-        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-            <span class="inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-            Donation history registry
+<div class="overview-panel dn-donation-registry">
+    <div class="overview-panel-head flex-wrap gap-3">
+        <div class="d-flex align-items-start gap-3 flex-grow-1">
+            <div class="dn-donation-registry-icon" aria-hidden="true">
+                <i data-lucide="heart-handshake" style="width:22px;height:22px;"></i>
+            </div>
+            <div>
+                <h5 class="mb-1">Donation history registry</h5>
+                <p class="text-muted small mb-0">Every unit you donated through RaktaSetu — hospital, patient case, blood group, and date.</p>
+            </div>
         </div>
-        <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600"><%= history.length %> record<%= history.length !== 1 ? 's' : '' %></span>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="dn-donation-stat-pill">
+                <i data-lucide="clipboard-list" style="width:14px;height:14px;"></i>
+                <%= history.length %> donation<%= history.length !== 1 ? 's' : '' %>
+            </span>
+            <% if (history.length) { %>
+            <span class="dn-donation-stat-pill dn-donation-stat-pill--units">
+                <i data-lucide="droplets" style="width:14px;height:14px;"></i>
+                <%= totalUnits %> units
+            </span>
+            <% if (hospitals) { %>
+            <span class="dn-donation-stat-pill dn-donation-stat-pill--hospitals">
+                <i data-lucide="building-2" style="width:14px;height:14px;"></i>
+                <%= hospitals %> hospital<%= hospitals !== 1 ? 's' : '' %>
+            </span>
+            <% } %>
+            <% } %>
+        </div>
     </div>
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 text-sm">
-            <thead class="bg-gradient-to-r from-emerald-50 via-slate-50 to-white">
-                <tr>
-                    <th class="<%= dnThClass() %>">Date</th>
-                    <th class="<%= dnThClass() %>">Hospital</th>
-                    <th class="<%= dnThClass() %>">Patient case</th>
-                    <th class="<%= dnThClass() %>">Blood</th>
-                    <th class="<%= dnThClass() %> text-right">Units</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 bg-white">
-                <% if (history.length) { %>
-                    <% history.forEach(function(item) { %>
-                    <tr class="<%= dnRowClass() %>">
-                        <td class="<%= dnTdClass() %> whitespace-nowrap">
-                            <div class="font-semibold text-slate-900"><%= new Date(item.donatedAt).toLocaleDateString() %></div>
-                            <div class="text-xs text-slate-500"><%= new Date(item.donatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %></div>
+
+    <div class="overview-panel-body p-0">
+        <% if (history.length) { %>
+        <div class="dn-donation-search-wrap px-3 px-md-4 pt-3 pb-2 border-bottom bg-light-subtle">
+            <div class="dn-donation-search">
+                <i data-lucide="search" style="width:16px;height:16px;"></i>
+                <input type="search" id="dnDonationSearch" class="form-control form-control-sm" placeholder="Search hospital, patient, blood group…" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="table-responsive dn-donation-table-wrap">
+            <table class="table dn-donation-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Donated on</th>
+                        <th scope="col">Hospital</th>
+                        <th scope="col">Patient case</th>
+                        <th scope="col">Blood group</th>
+                        <th scope="col" class="text-center">Units</th>
+                    </tr>
+                </thead>
+                <tbody id="dnDonationTableBody">
+                    <% history.forEach(function(item) {
+                        const req = item.requestId || {};
+                        const patientLabel = req.patientName
+                            ? req.patientName + (req.city ? ' · ' + req.city : '')
+                            : '';
+                        const searchText = [item.hospitalName, patientLabel, req.city, item.bloodGroup].filter(Boolean).join(' ').toLowerCase();
+                    %>
+                    <tr class="dn-donation-row" data-donation-search="<%= searchText.replace(/"/g, '') %>">
+                        <td data-label="Donated on">
+                            <div class="dn-donation-date">
+                                <span class="dn-donation-date-icon"><i data-lucide="calendar" style="width:14px;height:14px;"></i></span>
+                                <div>
+                                    <strong><%= new Date(item.donatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %></strong>
+                                    <small><%= new Date(item.donatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) %></small>
+                                </div>
+                            </div>
                         </td>
-                        <td class="<%= dnTdClass() %>">
-                            <span class="font-medium text-slate-900"><%= item.hospitalName || '—' %></span>
+                        <td data-label="Hospital">
+                            <div class="dn-donation-hospital">
+                                <span class="dn-donation-hospital-icon"><i data-lucide="building-2" style="width:14px;height:14px;"></i></span>
+                                <strong><%= item.hospitalName || '—' %></strong>
+                            </div>
                         </td>
-                        <td class="<%= dnTdClass() %> text-slate-600">
-                            <% if (item.requestId && item.requestId.patientName) { %>
-                            <%= item.requestId.patientName %><% if (item.requestId.city) { %> · <%= item.requestId.city %><% } %>
+                        <td data-label="Patient case">
+                            <% if (patientLabel) { %>
+                            <span class="dn-donation-case"><%= patientLabel %></span>
                             <% } else { %>
-                            <span class="text-slate-400">—</span>
+                            <span class="text-muted">—</span>
                             <% } %>
                         </td>
-                        <td class="<%= dnTdClass() %> whitespace-nowrap">
-                            <span class="<%= dnBloodTw() %>"><%= item.bloodGroup %></span>
+                        <td data-label="Blood group">
+                            <span class="overview-blood-badge dn-donation-blood"><%= item.bloodGroup %></span>
                         </td>
-                        <td class="<%= dnTdClass() %> text-right whitespace-nowrap">
-                            <span class="inline-flex h-8 min-w-[2rem] items-center justify-center rounded-lg bg-emerald-50 px-2 text-sm font-bold text-emerald-800 ring-1 ring-emerald-600/10"><%= item.units %></span>
+                        <td data-label="Units" class="text-center">
+                            <span class="dn-donation-units"><%= item.units %><small>unit<%= Number(item.units) !== 1 ? 's' : '' %></small></span>
                         </td>
                     </tr>
                     <% }); %>
-                <% } else { %>
-                    <tr>
-                        <td colspan="5" class="px-4 py-14 text-center">
-                            <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                                <i data-lucide="history" style="width:22px;height:22px;"></i>
-                            </div>
-                            <p class="text-sm font-medium text-slate-700">No donation history yet</p>
-                            <p class="text-xs text-slate-500">When you fulfill an emergency request, donations are logged here automatically.</p>
-                        </td>
-                    </tr>
-                <% } %>
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="dnDonationEmptyFilter" class="dn-donation-empty-filter d-none">
+            <i data-lucide="filter-x" style="width:28px;height:28px;"></i>
+            <p class="mb-2 fw-semibold">No donations match your search</p>
+            <button type="button" class="btn btn-sm btn-outline-danger" id="dnDonationClearSearch">Clear search</button>
+        </div>
+        <% } else { %>
+        <div class="dn-donation-empty">
+            <div class="dn-donation-empty-icon">
+                <i data-lucide="history" style="width:32px;height:32px;"></i>
+            </div>
+            <h6>No donation history yet</h6>
+            <p class="text-muted small mb-0">When you fulfill an emergency request, each donation is logged here automatically with hospital and patient details.</p>
+        </div>
+        <% } %>
     </div>
 </div>

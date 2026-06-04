@@ -1,13 +1,5 @@
 <%
-function bannerForActivity(stats) {
-    if (stats.active > 0) return 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=600&h=200&fit=crop&q=80';
-    if (stats.total > 0) return 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=200&fit=crop&q=80';
-    return 'https://images.unsplash.com/photo-1579684385127-1ef15fd50859?w=600&h=200&fit=crop&q=80';
-}
-function initials(name) {
-    if (!name) return '?';
-    return name.split(' ').map(function(p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
-}
+const patientCardBanner = '/images/patient-profile-banner.png?v=1';
 %>
 
 <div class="pt-board" id="ptBoard">
@@ -28,11 +20,16 @@ function initials(name) {
         >
             <div class="pt-card-top">
                 <div class="pt-card-cover">
-                    <img src="<%= bannerForActivity(stats) %>" alt="" loading="lazy">
+                    <img src="<%= patientCardBanner %>" alt="" loading="lazy">
                     <div class="pt-card-cover-shade"></div>
                 </div>
                 <div class="pt-card-identity">
-                    <%- include('../shared/card-avatar', { contactUser: u, cardAvatarClass: 'pt-card-avatar' }) %>
+                    <div class="pt-card-avatar">
+                        <div class="pt-card-avatar-ring" style="background-image: url('<%= patientCardBanner %>');"></div>
+                        <div class="pt-card-avatar-inner">
+                            <%- include('../shared/card-avatar', { contactUser: u, cardAvatarClass: 'pt-card-avatar-face' }) %>
+                        </div>
+                    </div>
                     <div class="pt-card-identity-main">
                         <span class="pt-card-plan pt-plan-<%= tone %>"><%= planLabel(u) %></span>
                         <div class="pt-card-top-badges">

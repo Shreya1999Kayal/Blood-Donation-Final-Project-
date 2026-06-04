@@ -82,7 +82,7 @@ async function getIssueHistoryForBloodBank(bloodBankId, bloodBankUserId) {
 
     return BloodIssueHistory.find({ bloodBankId })
         .populate('requestId', 'patientName city status')
-        .populate('patientUserId', 'name phone city')
+        .populate('patientUserId', 'name phone city profileImage')
         .sort({ issuedAt: -1 })
         .lean();
 }

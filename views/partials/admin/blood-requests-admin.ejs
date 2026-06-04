@@ -8,54 +8,36 @@ function statusBadge(s) {
     const map = { active: 'warning', contacted: 'info', received: 'success', cancelled: 'secondary' };
     return map[label] || 'secondary';
 }
-function urgencyClass(u) {
-    const level = String(u || 'High').toLowerCase();
-    if (level === 'critical') return 'critical';
-    if (level === 'normal') return 'normal';
-    return 'high';
-}
-function bannerImg(u) {
-    const level = urgencyClass(u);
-    if (level === 'critical') return 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=600&h=200&fit=crop&q=80';
-    if (level === 'normal') return 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&h=200&fit=crop&q=80';
-    return 'https://images.unsplash.com/photo-1519494027932-80aedc1da952?w=600&h=200&fit=crop&q=80';
-}
 function filterStatus(s) {
     const label = statusLabel(s);
     if (['active', 'contacted'].includes(label)) return label;
     return 'closed';
 }
-const showUrgency = typeof hideUrgency === 'undefined' ? true : !hideUrgency;
-const bloodRequestBanner = '/images/blood-request-banner.png';
+const showUrgency = typeof hideUrgency !== 'undefined' ? !hideUrgency : false;
+const bloodRequestBanner = '/images/blood-request-banner.png?v=1';
 %>
 
 <div class="req-board" id="reqBoard">
     <% if (bloodRequests && bloodRequests.length > 0) { %>
         <% bloodRequests.forEach(function(r) {
             const label = statusLabel(r.status);
-            const urg = showUrgency ? urgencyClass(r.urgencyLevel) : '';
             const isLive = ['active', 'contacted'].includes(label);
             const searchText = [r.patientName, r.bloodGroup, r.hospitalName, r.city, r.contactName, r.contactPhone].join(' ').toLowerCase();
             const matchedCount = (r.matchedDonors || []).length;
             const responderCount = (r.contacts || []).length;
-            const cardBanner = showUrgency ? bannerImg(r.urgencyLevel) : bloodRequestBanner;
         %>
         <article
-            class="req-card<%= showUrgency && urg ? ' req-card-' + urg : '' %><%= !showUrgency ? ' req-card-banner-brand' : '' %><%= isLive ? '' : ' req-card-closed' %>"
+            class="req-card req-card-banner-brand<%= isLive ? '' : ' req-card-closed' %>"
             data-req-item
             data-status="<%= filterStatus(r.status) %>"
             data-live="<%= isLive ? '1' : '0' %>"
-            <% if (showUrgency) { %>data-urgency="<%= urg %>"<% } %>
             data-search="<%= searchText.replace(/"/g, '') %>"
         >
             <div class="req-card-banner">
-                <img src="<%= cardBanner %>" alt="" loading="lazy">
+                <img src="<%= bloodRequestBanner %>" alt="" loading="lazy">
                 <div class="req-card-banner-shade"></div>
                 <div class="req-card-blood"><%= r.bloodGroup %></div>
                 <div class="req-card-top-badges">
-                    <% if (showUrgency && r.urgencyLevel) { %>
-                    <span class="req-urgency-badge <%= urg %>"><%= r.urgencyLevel %></span>
-                    <% } %>
                     <span class="req-status-badge <%= label %>"><%= label %></span>
                 </div>
                 <% if (r.isPriorityBoost) { %>

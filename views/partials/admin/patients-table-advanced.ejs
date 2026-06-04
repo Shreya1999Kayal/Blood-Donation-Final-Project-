@@ -1,4 +1,5 @@
 <%
+const patientCardBanner = '/images/patient-profile-banner.png?v=1';
 function twInitials(name) {
     if (!name) return '?';
     return name.split(' ').map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
@@ -57,7 +58,12 @@ const patients = allUsers || [];
                         data-search="<%= searchText.replace(/"/g, '') %>">
                         <td class="<%= twTdClass() %> whitespace-nowrap">
                             <div class="flex items-center gap-3">
-                                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-red-700 text-[11px] font-bold text-white ring-2 ring-white"><%= twInitials(u.name) %></div>
+                                <div class="pt-table-avatar-wrap">
+                                    <div class="pt-table-avatar-ring" style="background-image: url('<%= patientCardBanner %>');"></div>
+                                    <div class="pt-table-avatar-inner">
+                                        <%- include('../shared/card-avatar', { contactUser: u, cardAvatarClass: 'pt-table-avatar-face' }) %>
+                                    </div>
+                                </div>
                                 <div>
                                     <div class="font-semibold text-slate-900"><%= u.name %></div>
                                     <div class="text-xs text-slate-500 truncate max-w-[180px]"><%= u.email %></div>

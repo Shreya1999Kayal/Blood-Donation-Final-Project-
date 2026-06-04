@@ -20,9 +20,11 @@ const dbConnection = async () => {
             console.warn('Payment index cleanup skipped:', cleanupErr.message);
         }
     } catch (err) {
-        console.log('❌ MongoDB Connection Failed');
-        console.log(err.message);
-        process.exit(1);
+        console.error('MongoDB connection failed:', err.message);
+        console.error('Set MONGODB_URI (or MONGO_URL) in .env to your Atlas connection string.');
+        if (process.env.NODE_ENV === 'production') {
+            process.exit(1);
+        }
     }
 };
 

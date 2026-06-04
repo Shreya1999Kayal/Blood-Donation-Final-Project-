@@ -69,7 +69,6 @@
     const reqCardsView = document.getElementById('reqCardsView');
     const reqTableView = document.getElementById('reqTableView');
     let reqStatusFilter = 'all';
-
     function reqItems() {
         return reqBoard ? Array.from(reqBoard.querySelectorAll('[data-req-item]')) : [];
     }

@@ -418,4 +418,33 @@
             window.RaktaSetuPayments.openCheckout({ purpose: purpose }, '#059669');
         });
     });
+
+    /* Donation history registry search */
+    const dnDonationSearch = document.getElementById('dnDonationSearch');
+    const dnDonationRows = document.querySelectorAll('.dn-donation-row');
+    const dnDonationEmptyFilter = document.getElementById('dnDonationEmptyFilter');
+    const dnDonationTableWrap = document.querySelector('.dn-donation-table-wrap');
+
+    function applyDnDonationSearch() {
+        const query = (dnDonationSearch?.value || '').trim().toLowerCase();
+        let visible = 0;
+        dnDonationRows.forEach(function (row) {
+            const hay = (row.dataset.donationSearch || '').toLowerCase();
+            const show = !query || hay.indexOf(query) !== -1;
+            row.classList.toggle('d-none', !show);
+            if (show) visible += 1;
+        });
+        if (dnDonationEmptyFilter && dnDonationTableWrap) {
+            const hasRows = dnDonationRows.length > 0;
+            dnDonationEmptyFilter.classList.toggle('d-none', !hasRows || visible > 0 || !query);
+            dnDonationTableWrap.classList.toggle('d-none', hasRows && visible === 0 && !!query);
+        }
+    }
+
+    dnDonationSearch?.addEventListener('input', applyDnDonationSearch);
+    document.getElementById('dnDonationClearSearch')?.addEventListener('click', function () {
+        if (dnDonationSearch) dnDonationSearch.value = '';
+        applyDnDonationSearch();
+        dnDonationSearch?.focus();
+    });
 })();

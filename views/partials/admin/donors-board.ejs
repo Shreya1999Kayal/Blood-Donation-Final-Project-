@@ -1,9 +1,5 @@
 <%
-const donorCardBanner = '/images/donor-profile-banner.png?v=2';
-function initials(name) {
-    if (!name) return '?';
-    return name.split(' ').map(function(p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
-}
+const donorCardBanner = '/images/donor-profile-banner.png?v=1';
 function isPdfUrl(url) {
     if (!url || typeof url !== 'string') return false;
     return /\.pdf($|\?|#)/i.test(url) || (url.includes('cloudinary.com') && url.includes('/raw/upload/'));
