@@ -441,3 +441,7 @@ The platform includes:
 This is a highly advanced industry-level Node.js + EJS healthcare emergency platform.
 
 Render link - https://blood-donation-final-project.onrender.com/
+
+github link - https://github.com/Shreya1999Kayal/Blood-Donation-Final-Project-
+
+
