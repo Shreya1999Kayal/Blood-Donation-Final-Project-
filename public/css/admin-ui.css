@@ -1857,6 +1857,7 @@
 .cp-tip-icon-danger { background: #fef2f2; color: #dc2626; }
 .cp-tip-icon-blue { background: #eff6ff; color: #2563eb; }
 .cp-tip-icon-green { background: #f0fdf4; color: #16a34a; }
+.cp-tip-icon-slate { background: #f1f5f9; color: #475569; }
 .cp-tip strong { display: block; font-size: 0.85rem; margin-bottom: 0.15rem; }
 
 @media (max-width: 767px) {
