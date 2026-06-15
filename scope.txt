@@ -2,7 +2,7 @@ AI-Powered Blood Donation & Emergency Blood Finder System
 (Real-Time + Medical Verification + Intelligent Donor Screening)
 1. 📌 Project Overview
 
-The AI-Powered Blood Donation & Emergency Blood Finder System is a full-stack, role-based healthcare emergency platform designed to intelligently connect verified blood donors, blood banks, patients, hospitals, and administrators during emergency situations.
+The AI-Powered Blood Donation & Emergency Blood Finder System is a role-based healthcare emergency platform designed to intelligently connect verified blood donors, blood banks, patients, hospitals, and administrators during emergency situations.
 
 The system focuses on:
 
