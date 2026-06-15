@@ -6,7 +6,6 @@ const socketIo = require('socket.io');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
-const morgan = require('morgan');
 const connectDB = require('./app/config/dbconfig.js');
 const { configureSockets } = require('./app/sockets');
 const { normalizeDocumentUrl, profileImageUrl, userInitials } = require('./app/utils/upload');
@@ -29,6 +28,7 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false,
 }));
 if (process.env.NODE_ENV !== 'production') {
+    const morgan = require('morgan');
     app.use(morgan('dev'));
 }
 app.use('/payment/webhook', express.raw({ type: 'application/json' }));
