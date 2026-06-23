@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
+const BCRYPT_HASH_PATTERN = /^\$2[aby]\$\d{2}\$/;
+
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
@@ -63,8 +65,30 @@ userSchema.pre('save', async function () {
     this.password = await bcrypt.hash(this.password, 10);
 });
 
+async function hashTokenField(doc, fieldName) {
+    const value = doc[fieldName];
+    if (!doc.isModified(fieldName) || !value || BCRYPT_HASH_PATTERN.test(value)) return;
+    doc[fieldName] = await bcrypt.hash(value, 10);
+}
+
+// Refresh token hashing
+userSchema.pre('save', async function () {
+    await hashTokenField(this, 'refreshTokenHash');
+    await hashTokenField(this, 'previousRefreshTokenHash');
+});
+
 userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
+};
+
+userSchema.methods.compareRefreshToken = async function (candidateToken) {
+    if (!candidateToken || !this.refreshTokenHash) return false;
+    return await bcrypt.compare(candidateToken, this.refreshTokenHash);
+};
+
+userSchema.methods.comparePreviousRefreshToken = async function (candidateToken) {
+    if (!candidateToken || !this.previousRefreshTokenHash) return false;
+    return await bcrypt.compare(candidateToken, this.previousRefreshTokenHash);
 };
 
 module.exports = mongoose.model('User', userSchema);

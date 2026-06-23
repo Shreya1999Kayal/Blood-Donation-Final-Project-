@@ -1,6 +1,5 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 const User = require('../models/User');
 
 const ACCESS_COOKIE = 'accessToken';
@@ -62,15 +61,6 @@ async function generateRefreshTokenValue() {
     return crypto.randomBytes(48).toString('hex');
 }
 
-async function hashRefreshToken(token) {
-    return bcrypt.hash(token, 12);
-}
-
-async function verifyRefreshTokenHash(token, hash) {
-    if (!token || !hash) return false;
-    return bcrypt.compare(token, hash);
-}
-
 function formatRefreshCookie(userId, token) {
     return `${userId}.${token}`;
 }
@@ -116,7 +106,7 @@ function clearAuthCookies(res) {
 }
 
 async function persistRefreshToken(user, plainRefreshToken) {
-    user.refreshTokenHash = await hashRefreshToken(plainRefreshToken);
+    user.refreshTokenHash = plainRefreshToken;
     user.refreshTokenExpires = new Date(Date.now() + getRefreshExpiresMs());
     await user.save();
 }
@@ -183,12 +173,12 @@ async function rotateRefreshToken(refreshCookieValue, res) {
         throw new Error('Refresh token expired');
     }
 
-    const isValid = await verifyRefreshTokenHash(parsed.token, user.refreshTokenHash);
+    const isValid = await user.compareRefreshToken(parsed.token);
 
     if (!isValid) {
         if (
             user.previousRefreshTokenHash &&
-            (await verifyRefreshTokenHash(parsed.token, user.previousRefreshTokenHash))
+            (await user.comparePreviousRefreshToken(parsed.token))
         ) {
             await revokeAllSessions(user);
             throw new Error('Refresh token reuse detected');
@@ -198,7 +188,7 @@ async function rotateRefreshToken(refreshCookieValue, res) {
 
     user.previousRefreshTokenHash = user.refreshTokenHash;
     const newPlain = await generateRefreshTokenValue();
-    user.refreshTokenHash = await hashRefreshToken(newPlain);
+    user.refreshTokenHash = newPlain;
     user.refreshTokenExpires = new Date(Date.now() + getRefreshExpiresMs());
     await user.save();
 
